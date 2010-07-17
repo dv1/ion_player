@@ -1,0 +1,15 @@
+<RCC>
+  <qresource prefix="icons">
+    <file alias="open_playlist">icons/media-eject.png</file>
+    <file alias="pause">icons/media-playback-pause.png</file>
+    <file alias="play">icons/media-playback-start.png</file>
+    <file alias="stop">icons/media-playback-stop.png</file>
+    <file alias="back">icons/media-seek-backward.png</file>
+    <file alias="forward">icons/media-seek-forward.png</file>
+    <file alias="previous">icons/media-skip-backward.png</file>
+    <file alias="next">icons/media-skip-forward.png</file>
+    <file alias="quit">icons/emblem-unreadable.png</file>
+    <file alias="unmuted">icons/audio-volume-high.png</file>
+    <file alias="muted">icons/audio-volume-muted.png</file>
+  </qresource>
+</RCC>
