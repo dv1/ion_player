@@ -1,0 +1,468 @@
+====================================================
+ION PLAYER DESIGN DOCUMENT
+last update: 2010-07-17
+====================================================
+====================================================
+====================================================
+
+
+
+
+1. Overview
+
+Ion player is a media player with a multiprocessing based design to enhance application stability. It splits the player into a front- and a backend.
+These are separate processes, which communicate on a per-line basis via standard I/O. As said, one line = one command. The backend is launched by the frontend,
+and remains a child process of the frontend until it is told to shut down, or until it gets terminated. The multiprocessing design means that if the backend
+crashes, the frontend does not crash as well. In fact, the frontend can detect backend crashes and react accordingly, such as retrying to play a resource, and
+if the backend crashes again, mark said resource to be unplayable with this backend.
+
+Notable differences to other client/server designed players are that the emphasis lies on fault tolerance, not on independence from a user interface, and that
+the backend knows nothing about playlists.
+
+The player's second main focus is support for many module and video game music formats, such as MOD, S3M, IT, XM, VGM, KSS, GYM, ... as well as many game specific
+formats. MP3, AAC, Ogg Vorbis, FLAC are supported as well, but these are not the player's focus.
+
+In future, it is possible that the player gets the possibility to playback videos as well. Nothing speaks against having multiple backends available. Currently
+there is one audio-only backend however. Nevertheless, this document is written with this fundamental design decision in mind: ion player is NOT hardcoded to
+play audio only. Of course, with a different backend, one may need a different frontend, that understands a different set of backend specific commands. Further-
+more, it is possible to have one frontend for multiple backends, that has internal subsystems for handling each type of backend.
+
+
+
+
+1.1. Terminology
+
+Resource - Entity that can be consumed by a device. Example: songs, video streams ...
+URI      - Resource identifier that describes the location of the resource and zero or more resource parameters. Example: file://foo/bar?someparam=somevalue.
+           Note: In a playlist, URIs do -not- identify an entry, since a playlist can have multiple URIs.
+Playlist - A collection of URIs.
+Metadata - Resources can have metadata, such as title, length, genre. ion stores metadata in JSON format.
+Frontend - The part of a player that handles the GUI and backend events and issues requests to the backend. The frontend usually also houses a playlist.
+Backend  - The part of a player that performs the actual playback and scanning for metadata.
+Command  - One line passed through standard I/O from front- to backend, describing a command that shall be executed.
+Event    - Special form of a command; the backend sends these to the frontend.
+
+
+
+1.2. Line-based communication
+
+The front- and backend communicate through standard I/O. One line means one command. Included in this line are the command parameters, which are always enclosed
+in double quotes. Example: somecmd "foo" "bar"
+In case a parameter contain multi-line data, said data is converted to single line in a reversible way. In the current implementation, \n and \r symbols are
+escaped (as well as quotes, to allow for parameter data with quotes in it). Even if one parameter is a JSON object, it must fit in one line.
+
+
+
+
+2. Basic frontend structure
+
+The frontend is the parent process, and spawns backend processes when necessary. It does know the semantics of a playlist and trick play, though playlist
+related functions like shuffle or playlist repeat are playlist specific and not defined by the frontend. (Do not confuse playlist repeat with the looping
+commands for the backend!)
+
+Note that the frontend itself does not have to have the GUI hardcoded. The only thing the frontend has to do is to send commands and handle events.
+
+Watching the backend implies taking action when it crashes. See section 2.5 for more about this.
+
+
+
+2.1. The absence of a request-response model
+
+The frontend must not be implemented in a way thats blocks and waits for a response.
+In fact, the whole notion of a "response" is omitted in this player. For instance, the get_metadata command does not "respond" with metadata; instead, it is
+understood to trigger mechanisms inside the backend that will eventually cause it to send a metadata event. It is not important whether or not this event was
+caused by get_metadata. This allows for asynchronous designs with minimal blocking.
+
+
+
+2.2. Playback history
+
+A race condition can occur if a resource is followed by one with very short playback length. The backend will then first send a transition event,
+and while the frontend gets the event, the next resource already finished playing because its so short. The frontend didn't have the chance to send
+a set_next_resource command in time; as a result, the decoder thinks playback is finished, and sends resource_finished. In other words, the backend
+sends a transition event after a current->next transition, but the frontend receives it only after the backend's new current resoruce finished playback
+as well.
+
+Example sequence:
+
+Frontend                        Backend
+--> PLAY
+                                --> PLAY
+                                <-- TRANSITION
+				<-- RESOURCE_FINISHED
+<-- TRANSITION
+--> SET_NEXT_RESOURCE
+                                --> SET_NEXT_RESOURCE
+<-- RESOURCE_FINISHED
+--> SET_NEXT_RESOURCE
+                                --> SET_NEXT_RESOURCE
+
+This can confuse the frontend, thinking its newly sent next resource just finished, for example. This is especially true for cases where multiple playlist
+entries have the same uri.
+
+The solution is a "playback history", an STL map, like std::map < uri, long >.
+The value (long) is a counter. It counts how many times the key (uri) has been used in PLAY or SET_NEXT_RESOURCE commands.
+When sending PLAY/SET_NEXT_RESOURCE, the uri count gets incremented in the history. (If the uri is not present in the map, add a new entry with count 1.)
+When receiving RESOURCE_FINISHED/TRANSITION, the uri count of the specified uri gets decremented. If the count becomes 0, remove the entry from the map.
+If the total amount of entries in the STL map is <2, it is time to send SET_NEXT_RESOURCE commands, since the backend needs more uri's to keep playing.
+When receiving STOPPED, empty the STL map, do not send any more SET_NEXT_RESOURCE commands.
+
+Note how this does not affect the backend at all; the history is implemented in the frontend.
+
+
+
+2.3. Multiple backends, one frontend
+
+As mentioned in section 1, it is entirely reasonable to have multiple backends running. For instance, one might want a GStreamer based backend for playing
+videos, while using another backend for audio-only playback. The frontend keeps track of the backends, and certain operations may be tried across backends.
+For instance, if the frontend does not know what backend can play a given resource, it gives the first backend in its list the uri to that resource, and
+tells the backend to scan for metadata. If the backend succeeds, the frontend tells the backend to commence playback. If this succeeds as well, then the
+frontend associates the resource with this backend. In case of scan or playback failure, the frontend moves to the next backend etc.
+
+
+
+2.4. Scanning resources
+
+Typically, players allow for adding whole directories to their playlists. These may contain subdirectories etc. and playable resources inside shall all be scanned.
+Furthermore, some resources may be corrupted, or mistook by internal decoders inside the backend to be playable and scannable, subsequently causing crashes.
+Also, a playback may be already running.
+
+The solution to this is to launch backends and let them try to scan the file. The resources' uris are put in a list called "unscanned". Similar to 2.3, the first
+backend in the list of backends is launched and told to scan the given resources. Those resources which were successfully scanned get removed from the "unscanned"
+list. The remaining ones retain the reason why they were rejected. For instance, if a resource could not be scanned, this is retained.
+If the backend crashes while scanning for metadata, the following algorithm is used:
+1. All remaining URIs that were not scanned yet are sent again to the restarted backend.
+2. If it crashes again, the URIs are sent synchronously, e.g. the backend is given only one URI at a time. It it doesnt crash for any URL, skip to step 4.
+   Otherwise, (that is, it crashes on a specific URI), then this URL is marked as rejected, the reason being "caused_crash". Move to step 3.
+3. if there are any remaining songs to be scanned, go to 1.
+4. Finished.
+
+Afterwards, if there are any remaining URIs in the list, pass this list on to the next backend, and perform the steps described above.
+
+After all backends have been consulted, mark any remaining URI as erroneous, the error being the retained reason why they could not be scanned.
+
+Note that "trying out a backend", "telling a backend to scan this resource" etc. implies that backends are started and shut down. Any existing backend that is
+busy playing something is left completely unaffected. Again, the multiprocessing model yiels benefits, since any crashes during the scan are handled properly
+and do not affect the current playback.
+
+
+
+2.5. Handling backend crashes
+
+Backend crashes are categorized according to their current status.
+- If the backend is currently playing, and crashes before the frontend ever recevied a resource_finished or stopped event, the frontend restarts the backend,
+  and sends a play command with the current and next resource. If the backend then crashes immediately again, the current resource is marked as unplayable with
+  this backend, and notifies the user about this. Specialized frontends may also try to restore states like a playback position.
+- If the backend was stopped, the frontend simply restarts it. If it crashes again, the frontend again restarts it. After five backend crashes, the frontend marks
+  the backend as broken, and notifies the user about this.
+- If the backend was scanning for metadata, see section 2.4.
+
+
+
+2.6. Handling data source failures
+
+Assuming the data source is reliable and always present is dangerous in some situations. One example is a network share; if the server fails, something reinitializes
+the NIC, a firewall starts blocking the share, or somebody trips over the network cable, I/O no longer works properly all of a sudden. If this is not treated, it is
+possible the application "hangs", waiting forever for new data. This means that data sources have to be considered unreliable (= they can stop working at any moment).
+
+In case of a sudden data source failure, a data_source_failure event must be sent to the frontend. This event is for information ONLY, and does not imply any actions
+that should be taken by the frontend. The data source informs the backend about the failure, which immediately stops playing the current resource. The frontend only sees said
+data_source_failure event, followed by a resource_finished or transition event. In case of a transition event, normal operation continues; it tries to play the next song. If
+the data source fails there again, it again sends a data_source_failure event, and no started event (since it does not even start playing). Following this, it sends a
+resource_finished or transition event again etc.
+
+This works in accordance with the playback history described in 2.2.
+
+To emphasize: it is CRITICAL that data sources can deal with unreliable I/O. The data source must NEVER hang.
+
+
+
+
+3. Basic backend structure
+
+The backend performs the actual playback at the request of the frontend. It does not know of playlists, or shuffle modes, trick play etc. A backend knows only
+what to play now, and what to play next. The notion of a "next resource" is necessary to facilitate gapless playback, which the backend must try to achieve if
+possible.
+Each backend must implement a minimum command and event list, which is defined in 3.2 and 3.3.
+
+
+
+3.1. Basic functionality
+
+A backend can be in a playing or in a stopped state. The transition stopped->playing is done by initiating playback through the play or the set_next_resource
+commands. The transition playing->stopped is done when either the stopped command was sent to the backend (the backend will then emit the stopped event), or
+the current resource has finished playing and no next resource is set (resource_finished is then emitted), or an error happened (an error event will be emitted
+in this case). Should the backend crash during playback, then the backend is reinitialized, and the frontend attempts to restart playback. See section 2.5 for
+more about this.
+
+The backend understands the notion of a current and a next resource. A current resource is currently being played, or will be right now in case of a successful
+play command. A next resource is scheduled to take over playback right when the current resource is finished. This way, the backend can better ensure gapless
+playback; the next resource can start filling an output device's ring buffer segment right after the current playback wrote its last sample.
+
+Another advantage of the next resource is the possibility for preloading resource data. With some media formats, it takes a while to load until playback is
+possible; in other cases, initiating the decoder takes time. With this scheme, the next decoder can have everything prepared, and as soon as the current
+resource is done, the next one can output samples immediately.
+
+Furthermore, the backend can then avoid unnecessary audio output device shutdowns. Older media players have a design flaw; they shut down and reinitialize the
+audio device between resources. This is entirely avoided with the current/next system.
+
+
+
+3.2. Command list
+
+--- play <uri> [<metadata>] [[<next_uri>] [<metadata>]]
+Plays back the given uri, if loading is successful. If it isn't, it responds with an error. If another resource is playing while calling play, the resource will
+continue to play if this play call fails. If the play call succeeds, the new resource will be played.
+
+next_uri is in place to allow for the gapless transitions in a playlist. The backend typically preloads the resource given by next_uri, so that a switch to
+the next resource can happen immediately when the resource given by <uri> ends. Note that next_uri does not have to be passed; in that case, no next resource
+is used.
+
+The metadata fields are JSON objects containing resource specific metadata. These values are optional; if they aren't present, or if they are empty ( "" ),
+then the backend scans for metadata. Since this may be slow, it is wise to perform the scanning once, before playing. More on this in chapter 2.4.
+
+
+--- stop
+Stops current playback. If nothing is being played, it does nothing.
+After stop, the backend should release any playback-related resources, such as file handles, audio device handles etc. For this reason, it is not advisable to
+call stop before play when the user wants to play another resource; just call play instead. (Do not confuse this with moving to next resource, which is done
+automatically by the backend, provided a next resource was specified in the play command.)
+
+
+--- set_next_resource <uri> [<metadata>]
+Sets the next resource to be played. This is typically used when the backend sent a transition event; in that case, the frontend knows the next resource is
+now the current one. If no resource is currently playing, this command behaves like a play command with no next resource given.
+
+
+--- get_metadata
+Causes the backend to get send a metadata event containing the currently playing resource's metadata. If no resource is playing, this function does nothing
+(-> does not report an error).
+
+
+--- ping [<ping_data>]
+Tells the backend to send a pong event. If a ping data is given, said data will be passed to the pong event unchanged. This command is used by the frontend
+to check whether or not the backend is still alive and reactive.
+
+
+--- get_backend_type
+Causes a backend_type event to be sent.
+
+
+
+3.3. Event list
+
+--- invalid_uri <uri>
+Reports an invalid URI.
+
+
+--- resource_not_found <uri>
+The URI is valid, but refers to an unknown resource.
+
+
+--- error <description> [<failed_command> [<failed_command_param>] [<failed_command_param>] ...]
+Reports an error. <description> describes the error. The failed command will be passed in as a second parameter. *Its* parameters will be appended.
+Note that everything past <description> is optional. If no failed command is given, the error is assumed to be a general one.
+
+
+--- unknown_command <command_name>
+This event is sent when an unknown command was issued to the backend.
+
+
+--- resource_finished <uri>
+The current resource just finished playing, no next resource is defined; playback stopped.
+
+
+--- stopped <uri>
+The currently playing resource has just been stopped. This is -not- sent when an automatic transition to a next resource happens (see transition).
+
+
+--- started <uri>
+The given resource has just started playing. This is -not- sent when an automatic transition to a next resource happens (see transition).
+
+
+--- metadata <uri> <data>
+This event informs about a resource's metadata. The metadata is given as a JSON object.
+
+
+--- transition <previous_uri> <next_uri>
+The current playback just finished, and a next resource is set -> the backend just made a transition; the next resource became the current one.
+<previous_uri> is the URI of the resource that was just playing, and <next_uri> is the URI for the new resource.
+
+
+--- pong [<pong_data>]
+Tells the frontend the backend is still alive. If the ping command that causes this pong event to be sent carried a ping_data parameter with it,
+said parameter's contents are passed unchanged as pong's pong_data parameter. For example, if the frontend sent ping "123", then the backend will
+send back pong "123".
+
+
+--- backend_type <backend_type_id>
+This event specifies the backend's ID.
+
+
+
+3.4. Command-line arguments
+
+Given that a backend is an executable, it can be started like any regular program. Three modes are possible: the backend is called
+1. without arguments: it starts in the default mode, which is: listen for lines on stdin, output event lines to stdout.
+2. with a -scan argument and one or more uris (example: foobackend -scan file://ABC file://DEF): the backend then scans the given uris for metadata.
+   If a resource is successfully scanned, it prints a metadata event to stdout.
+   If a resource is not handled by this backend, it prints an unknown_resource_type event to stdout.
+   If a resource is not found, it prints a resource_not_found event to stdout.
+   In case of any other error, it prints an error event to stdout.
+   In all these cases, the resource's full uri is supplied, along with any uri parameter it has.
+   If a general error happens, an error event with no uri is printed to stdout, and the backend exits.
+   See sections 2.4 and 4 for details about the backend crashing while scanning.
+3. with an -id argument: the backend then prints a backend_type event line to stdout, and quits.
+
+
+
+
+4. Audio player specifics
+
+As mentioned in section 1, the player focuses on playing less well known audio formats, many of which are custom made for a specific game or application.
+This includes support for subsongs: many old games define subsongs in their songs, for example to have one "song" for world 1, and a subsong for each level.
+
+The player is made up of two parts: an audio playback backend, and a frontend with a GUI.
+
+
+
+4.1. Backend structure
+
+The pureplayer backend is made up of modules, which are grouped in: sources, decoders, sinks.
+
+- source: A source gets data upon request. A source can be a local file, an HTTP stream etc. Sources must comply to the rules defined in section 2.6.
+          Sources do not interpret the data in any way, not even for ASCII newline conversions (for example, \r\n stays \r\n, no matter what system it
+          runs on.)
+- decoder: The decoder reads in data via a source, and outputs samples that can be played. Decoders get metadata like the sample format (16bit, 24bit,
+          32bit float....) and the playback frequency told, and then are queried by the sink for new samples.
+- sink: A sink requests a number of samples from a decoder and outputs them using the sound hardware, or dumps them to disk etc. Sinks usually have a
+        loop running in a separate thread that continually requests new samples from decoder until the decoder stops delivering or the user decides to
+        to stop playing.
+
+Each module has a type ID (not to be confused with C++ typeid values). This type ID is used for selecting said modules at run-time. For instance, there is
+a "file" source, a "mpg123" decoder, an "alsa" sink etc.
+
+Internally, there is a "creator" for each module. A creator is an implementation of the factory pattern. It gets added to a creator registry. Using the
+type ID, it is possible to create a module at run-time based on the type ID.
+
+The module types are documented in detail in source.hpp, decoder.hpp, and sink.hpp.
+
+
+
+4.2. Reserved metadata contents
+
+As mentioned in earlier sections, the metadata is a JSON object. Pureplayer reserves some member names for its own use. These are:
+- title: song title
+- artist: who composed the song
+- album: album this song belongs to
+- num_subsongs: used for songs which contain subsongs; not present otherwise
+* decoder_type: type ID for the decoder to be used; if this is set to "", or the decoder with this ID fails to decode the song, then the backend will
+                try to find a suitable decoder
+* num_ticks: song length, in ticks. This is 0 if the song length cannot be determined.
+* num_ticks_per_second: how many ticks amount to a second. This is -1 if the ticks per second cannot be determined. [TODO: update decoder.hpp on this]
+                        divide num_ticks by num_ticks_per_second, and the result is the song length in seconds.
+
+The ones starting with a * are always present, the other ones are optional. These values should not be modified by the frontend (only read them).
+
+There is one exception: decoder_type. It is possible to explicitely set and change the decoder type in the JSON object prior to calling play or set_next_resource.
+This is useful for example if one knows already that a resource is an MP3 file; in that case, one passes a JSON object with only one member,
+decoder_type, value "mpg123" (or whatever MP3 decoder is used). The backend then uses this decoder directly, instead of trying out each one until
+decoding starts successfully. Modifying existing metadata is very similar, except that it requires erasing the num_ticks and num_ticks_per_second members as well
+before calling play or set_next_resource. This is because the backend is free to use any of the values mentioned above instead of calculating them, to
+save processing time. Changing the decoder type may involve changes to num_ticks or num_ticks_per_second as well - these changes may not happen however unless
+one removes the old values.
+
+
+
+4.3. Subsongs
+
+Songs that contain subsongs are treated like any other resource. A subsong is referred to by using an URI parameter called "subsong". Example:
+file://foo/bar/abc.tfmx?subsong=1 . If a song has 10 subsongs, then the song's URI will be present 10 times in the playlist, each entry having a different
+subsong number. This affects the scanning procedure described in section 2.4:
+- when scanning resources, a regular URI is used, like file://foo/bar/abc.tfmx. The backend then returns a metadata object (just like when scanning other resources).
+  If num_subsongs is set in the returned object, then an additional step is taken:
+- N resources are added to the playlist, N being the number of subsongs. Each entry shall have the resource's URI with an added subsong=<index>
+  parameter. the N resources are then scanned.
+
+Of course, one could argue that this means switching between subsongs is inefficient, since they are considered separate songs, when in fact they are different
+subsets of the same song, meaning that the resource is opened and closed unnecessarily between transitions in the playlist. This can be countered by introducing
+a flyweight pattern implementation, where the flyweight is the song, and the individual decoders contain only information about the subsongs.
+
+
+
+4.4. Frontend
+
+
+
+4.5. Module GUIs
+
+[TODO: global, creator GUIs, and extra decoder GUIs for manipulating URI parameters]
+
+
+
+4.6. Command list
+
+In addition to the commands described in 3.2, these commands exist in pureplayer:
+
+--- pause
+Pauses playback. If nothing is being played, it does nothing. If playback is already paused, it does nothing.
+
+
+--- resume
+Resumes playback. If nothing is being played, it does nothing. If playback is not paused, it does nothing.
+
+
+--- get_current_position
+Returns the current playback position, in ticks. The meaning of ticks depend on the decoder. The length of the song, in ticks, can be retrieved by using get_metadata.
+
+
+--- set_current_position <new_position_in_ticks>
+Sets the current playback position, in ticks.
+
+
+--- get_current_volume
+Returns the current volume. 0.0 means silence, 1.0 means full volume.
+
+
+--- set_current_volume <new_volume>
+Sets the current volume. 0.0 means silence, 1.0 means full volume.
+
+
+--- get_loop_mode
+Returns the current loop mode. See set_loop_mode for the meaning of <mode>.
+
+
+--- set_loop_mode <mode>
+Sets the current loop mode. If mode is <0, looping is disabled. mode = 0 means infinite looping, mode > 0 means loop mode times.
+
+
+--- get_modules
+-- response: modules [<module 1> <id 1>] [<module 2> <id 2>] [<module 3> <id 3>] ...
+Gets a list of modules. The amount of arguments is always even (since for each module, there will be <moduleN> and <idN>).
+<moduleN>: type of the Nth substem. <idN>: identifies the Nth module.
+
+
+
+4.7. Event list
+
+In addition to the commands described in 3.3, these events exist in pureplayer:
+
+--- paused <uri>
+The currently playing song has just been paused.
+
+
+--- resumed <uri>
+The currently playing song has just been resumed.
+
+
+--- current_position <position_in_ticks>
+The position where the playback is at the moment, given in ticks.
+
+
+--- current_volume <position_in_ticks>
+The current volume the playback is using. 0.0 means silence, 1.0 means full volume.
+
+
+--- loop_mode <mode>
+The current loop mode. See set_loop_mode for the meaning of <mode>.
+

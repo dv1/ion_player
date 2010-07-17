@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+def set_options(opt):
+	pass
+
+
+def configure(conf):
+	pass
+
+
+def build(bld):
+	obj = bld(
+		features = ['cxx', 'cstaticlib'],
+		uselib = 'BOOST BUILDMODE STRICT',
+		target = 'ionplayer_common',
+		name = 'ionplayer_common',
+		uselib_local = 'jsoncpp',
+		export_incdirs = '.',
+		includes = '.'
+	)
+	obj.find_sources_in_dirs('ion')
+

@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+def set_options(opt):
+	pass
+
+
+def configure(conf):
+	conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs')
+	conf.check_cfg(package='libmpg123', uselib_store='MPG123', args='--cflags --libs')
+
+
+def build(bld):
+	obj = bld(
+		features = ['cxx', 'cstaticlib'],
+		uselib = 'BOOST_THREAD ALSA MPG123 RESAMPLE BOOST BUILDMODE STRICT',
+		target = 'ionplayer_backend',
+		name = 'ionplayer_backend',
+		uselib_local = 'ionplayer_common dumb jsoncpp',
+		includes = '.'
+	)
+	obj.find_sources_in_dirs('.')
+	obj.source.remove('./main.cpp')
+
+	obj = bld(
+		features = ['cxx', 'cprogram'],
+		uselib = 'BOOST_THREAD ALSA MPG123 BOOST BUILDMODE STRICT',
+		target = 'backend',
+		uselib_local = 'ionplayer_backend ionplayer_common',
+		includes = '.',
+		source = 'main.cpp'
+	)
+

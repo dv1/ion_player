@@ -1,0 +1,202 @@
+#ifndef ION_URI_HPP
+#define ION_URI_HPP
+
+#include <iostream>
+#include <stdexcept>
+#include <map>
+#include <string>
+#include <boost/foreach.hpp>
+
+
+namespace ion
+{
+
+
+class uri
+{
+public:
+	class invalid_uri:
+		public std::runtime_error
+	{
+	public:
+		explicit invalid_uri(std::string const &erroneous_uri):
+			runtime_error(erroneous_uri.c_str())
+		{
+		}
+	};
+
+
+	typedef std::map < std::string, std::string > options_t;
+
+
+	uri()
+	{
+	}
+
+	uri(std::string const &full_uri)
+	{
+		set(full_uri);
+	}
+
+
+	void set(std::string const &full_uri)
+	{
+		std::size_t delimiter_pos = full_uri.find("://");
+
+		if ((delimiter_pos > 0) && ((int(full_uri.length()) - int(delimiter_pos) - 3) > 0) && (delimiter_pos != std::string::npos))
+		{
+			std::string new_type = full_uri.substr(0, delimiter_pos);
+			std::string new_path = full_uri.substr(std::streamoff(delimiter_pos) + 3);
+
+			if (new_type.empty()) std::cerr << "warning: uri \"" << full_uri << "\" type is empty";
+			if (new_path.empty()) std::cerr << "warning: uri \"" << full_uri << "\" path is empty";
+
+			{
+				std::size_t options_delimiter_pos = new_path.find_first_of("?");
+				if (options_delimiter_pos != std::string::npos)
+				{
+					std::string path_options = new_path.substr(options_delimiter_pos + 1);
+					new_path = new_path.substr(0, options_delimiter_pos);
+
+					options_t new_options;
+					std::string current_option;
+					bool escaping = false;
+
+					BOOST_FOREACH(char c, path_options)
+					{
+						if (escaping)
+						{
+							switch (c)
+							{
+								case '\\': current_option += '\\'; break;
+								case '?': current_option += '?'; break;
+								case '&': current_option += '&'; break;
+								case '=': current_option += "\\="; break; // pass the escaped char unchanged, so add_option() can handle it itself
+								default: throw invalid_uri(full_uri);
+							}
+							escaping = false;
+						}
+						else
+						{
+							switch (c)
+							{
+								case '\\': escaping = true; break;
+
+								case '&':
+									if (!current_option.empty())
+									{
+										add_to_options(new_options, current_option, full_uri);
+										current_option = "";
+									}
+									break;
+
+								default: current_option += c;
+							}
+						}
+					}
+
+					if (escaping)
+						throw invalid_uri(full_uri); // if still escaping after the uri was scanned, then there is a "\" at the end of it -> invalid
+
+					if (!current_option.empty())
+					{
+						add_to_options(new_options, current_option, full_uri);
+					}
+
+					options = new_options;
+				}
+			}
+
+			type = new_type;
+			path = new_path;
+		}
+		else
+			throw invalid_uri(full_uri);
+	}
+
+
+	uri& operator = (std::string const &full_uri)
+	{
+		set(full_uri);
+		return *this;
+	}
+
+
+	bool operator == (uri const &other) const
+	{
+		return (type == other.type) && (path == other.path) && (options == other.options);
+	}
+
+	bool operator != (uri const &other) const
+	{
+		return ! (operator == (other));
+	}
+
+	bool operator < (uri const &other) const
+	{
+		if (type < other.type)
+			return true;
+		else if (path < other.path)
+			return true;
+		else if (options < other.options)
+			return true;
+		else
+			return false;
+	}
+
+
+	std::string const & get_type() const { return type; }
+	std::string const & get_path() const { return path; }
+	std::string get_full() const { return type + "://" + path; }
+	options_t const & get_options() const { return options; }
+
+
+protected:
+	void add_to_options(options_t &options_, std::string const &option, std::string const &full_uri)
+	{
+		std::string key, value;
+
+		bool has_value = false, escaping = false;
+		BOOST_FOREACH(char c, option)
+		{
+			std::string &dest = has_value ? value : key;
+
+			if (escaping)
+			{
+				switch (c)
+				{
+					case '=': dest += '='; break;
+					default: throw invalid_uri(full_uri);
+				}
+				escaping = false;
+			}
+			else
+			{
+				switch (c)
+				{
+					case '\\': escaping = true; break;
+					case '=':
+						if (!has_value)
+							has_value = true;
+						else
+							throw invalid_uri(full_uri);
+						break;
+					default: dest += c; break;
+				}
+			}
+		}
+
+		options_[key] = value;
+	}
+
+
+	std::string type, path;
+	options_t options;
+};
+
+
+}
+
+
+#endif
+
