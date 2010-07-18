@@ -359,7 +359,7 @@ As mentioned in earlier sections, the metadata is a JSON object. Pureplayer rese
 * decoder_type: type ID for the decoder to be used; if this is set to "", or the decoder with this ID fails to decode the song, then the backend will
                 try to find a suitable decoder
 * num_ticks: song length, in ticks. This is 0 if the song length cannot be determined.
-* num_ticks_per_second: how many ticks amount to a second. This is -1 if the ticks per second cannot be determined. [TODO: update decoder.hpp on this]
+* num_ticks_per_second: how many ticks amount to a second. This is -1 if the ticks per second cannot be determined.
                         divide num_ticks by num_ticks_per_second, and the result is the song length in seconds.
 
 The ones starting with a * are always present, the other ones are optional. These values should not be modified by the frontend (only read them).

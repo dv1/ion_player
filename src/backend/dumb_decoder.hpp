@@ -90,7 +90,7 @@ class dumb_decoder_creator:
 	public decoder_creator
 {
 public:
-	virtual decoder_ptr_t create(source_ptr_t source_, std::string const &metadata, message_callback_t const &message_callback);
+	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback);
 	virtual std::string get_type() const { return "dumb"; }
 };
 

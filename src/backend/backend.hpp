@@ -5,7 +5,9 @@
 
 #include <ion/uri.hpp>
 #include <ion/backend_base.hpp>
+#include <ion/metadata.hpp>
 
+#include "types.hpp"
 #include "source_creator.hpp"
 #include "decoder_creator.hpp"
 #include "sink_creator.hpp"
@@ -87,9 +89,9 @@ public:
 
 
 protected:
-	void set_next_decoder(std::string const &uri_str, std::string const &decoder_type, std::string const &metadata);
+	void set_next_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata);
 	source_ptr_t create_new_source(ion::uri const &uri_);
-	decoder_ptr_t create_new_decoder(std::string const &uri_str, std::string const &decoder_type, std::string const &metadata);
+	decoder_ptr_t create_new_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata);
 	void resource_finished_callback();
 
 

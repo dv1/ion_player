@@ -2,8 +2,10 @@
 #define ION_BACKEND_DECODER_CREATOR_HPP
 
 #include <string>
+#include <json/value.h>
 #include <ion/message_callback.hpp>
 #include <ion/uri.hpp>
+#include <ion/metadata.hpp>
 #include "component_creator.hpp"
 #include "decoder.hpp"
 #include "source.hpp"
@@ -19,7 +21,7 @@ class decoder_creator:
 	public component_creator < decoder_creator >
 {
 public:
-	virtual decoder_ptr_t create(source_ptr_t source_, std::string const &metadata, message_callback_t const &message_callback) = 0;
+	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback) = 0;
 };
 
 

@@ -500,7 +500,7 @@ unsigned int mpg123_decoder::update_no_resample(void *dest, unsigned int const n
 
 
 
-decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, std::string const &metadata, message_callback_t const &message_callback)
+decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback)
 {
 	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(message_callback, source_);
 	if (!mpg123_decoder_->is_initialized())

@@ -388,7 +388,7 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 
 
 
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, std::string const &metadata, message_callback_t const &message_callback)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
 	long filesize = source_->get_size();

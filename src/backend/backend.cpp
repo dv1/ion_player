@@ -182,17 +182,33 @@ void backend::start_playback(params_t const &params)
 	if (params.empty())
 		throw std::invalid_argument("no URL specified");
 
-	std::string uri_str[2];
+	std::string uri_str[2], decoder_type[2];
 	uri_str[0] = params[0];
-	if (params.size() >= 4) uri_str[1] = params[3];
+	if (params.size() >= 3) uri_str[1] = params[2];
 
-	std::string decoder_type[2];
-	if (params.size() >= 2) decoder_type[0] = params[1];
-	if (params.size() >= 5) decoder_type[1] = params[4];
-
-	std::string metadata[2];
-	if (params.size() >= 3) metadata[0] = params[2];
-	if (params.size() >= 6) metadata[1] = params[5];
+	metadata_t metadata[2];
+	if (params.size() >= 2)
+	{
+		metadata_optional_t temp_result = parse_metadata(params[1]);
+		if (temp_result)
+		{
+			metadata[0] = *temp_result;
+			decoder_type[0] = metadata[0].get("decoder_type", "").asString();
+		}
+		else
+			throw std::invalid_argument("current uri metadata is not a valid JSON object");
+	}
+	if (params.size() >= 4)
+	{
+		metadata_optional_t temp_result = parse_metadata(params[3]);
+		if (temp_result)
+		{
+			metadata[1] = *temp_result;
+			decoder_type[1] = metadata[1].get("decoder_type", "").asString();
+		}
+		else
+			throw std::invalid_argument("next uri metadata is not a valid JSON object");
+	}
 
 
 	boost::lock_guard < boost::mutex > lock(decoder_mutex);
@@ -247,7 +263,7 @@ void backend::start_playback(params_t const &params)
 }
 
 
-void backend::set_next_decoder(std::string const &uri_str, std::string const &decoder_type, std::string const &metadata)
+void backend::set_next_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata)
 {
 	decoder_ptr_t new_next_decoder;
 	if (uri_str.empty())
@@ -283,10 +299,19 @@ void backend::set_next_resource(params_t const &params)
 
 	boost::unique_lock < boost::mutex > lock(decoder_mutex, boost::adopt_lock_t());
 
-	std::string uri_str = params[0];
-	std::string metadata, decoder_type;
-	if (params.size() >= 2) decoder_type = params[1];
-	if (params.size() >= 3) metadata = params[2];
+	std::string uri_str = params[0], decoder_type;
+	metadata_t metadata;
+	if (params.size() >= 2)
+	{
+		metadata_optional_t temp_result = parse_metadata(params[1]);
+		if (temp_result)
+		{
+			metadata = *temp_result;
+			decoder_type = metadata.get("decoder_type", "").asString();
+		}
+		else
+			throw std::invalid_argument("metadata is not a valid JSON object");
+	}
 
 	// in case of failure, an exception is thrown inside set_next_decoder(), this function exits, and the next decoder isn't set
 	set_next_decoder(uri_str, decoder_type, metadata);
@@ -443,7 +468,7 @@ source_ptr_t backend::create_new_source(ion::uri const &uri_)
 }
 
 
-decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::string const &decoder_type, std::string const &metadata)
+decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata)
 {
 	ion::uri uri_(uri_str);
 	source_ptr_t new_source = create_new_source(uri_);
