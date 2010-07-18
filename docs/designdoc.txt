@@ -339,6 +339,9 @@ The pureplayer backend is made up of modules, which are grouped in: sources, dec
         loop running in a separate thread that continually requests new samples from decoder until the decoder stops delivering or the user decides to
         to stop playing.
 
+It follows from the notes above that ion uses a pull model in the sink's playback loop. It pulls data from the decoder; the alternative would be for the
+decoder to push data into the sink. This is impractical in practice; in situations such as live streams, the decoders buffer incoming data instead.
+
 Each module has a type ID (not to be confused with C++ typeid values). This type ID is used for selecting said modules at run-time. For instance, there is
 a "file" source, a "mpg123" decoder, an "alsa" sink etc.
 
@@ -349,7 +352,32 @@ The module types are documented in detail in source.hpp, decoder.hpp, and sink.h
 
 
 
-4.2. Reserved metadata contents
+4.2. Gapless playback
+
+Gapless playback is mainly an issue when switching songs. An audible gap between songs may be introduced with improperly designed audio code.
+Section 3.1 already mentions preloading and avoiding of unnecessary audio device shutdowns. These two steps must be taken in order to ensure gapless playback.
+In addition, the sinks are designed to immediately use a next resource, if one is set. A common sink base code is provided that guarantees gapless switching
+at a sample level; in other words, after the last sample of the current song, the first sample of the next song follows.
+
+
+
+4.3. Granularity
+
+Audio devices usually work with buffers; a buffer is given to the device, and said device is told to playback this buffer. The audio device API may or may not
+block until playback is done.
+
+With this approach, the sink must deliver buffers extremely quickly, or audible gaps may occur (sound device finished playing and is doing nothing until the next
+buffer playback call). For this reason, ring buffers are often used. The ring buffer has N segments, and all N segments are filled with data from the sink. Then,
+playback starts. The writer's position is at segment N-1 (here, sink=writer). The reader's position is 0 (here, audio device=reader). Once the reader is done with
+segment 0, the writer moves to the next segment. Since N-1 is the last segment in the ring buffer, the writer "wraps around" the buffer, arriving at segment 0,
+and starts filling it with data. In the meantime, the audio device is busy playing segment 1 etc. This approach eliminates the gaps mentioned above (not to be
+confused with the gaps from section 4.2),  at the cost of latency. Pausing, resuming, stopping, changing song etc. happen at a ring buffer segment granularity;
+for example, a song is not changed while a segment is filled with data, only when said filling is finished. The only things that happens at sub-segment granularity
+are song transitions as described in section 4.2.
+
+
+
+4.4. Reserved metadata contents
 
 As mentioned in earlier sections, the metadata is a JSON object. Pureplayer reserves some member names for its own use. These are:
 - title: song title
@@ -374,7 +402,7 @@ one removes the old values.
 
 
 
-4.3. Subsongs
+4.5. Subsongs
 
 Songs that contain subsongs are treated like any other resource. A subsong is referred to by using an URI parameter called "subsong". Example:
 file://foo/bar/abc.tfmx?subsong=1 . If a song has 10 subsongs, then the song's URI will be present 10 times in the playlist, each entry having a different
@@ -390,17 +418,17 @@ a flyweight pattern implementation, where the flyweight is the song, and the ind
 
 
 
-4.4. Frontend
+4.6. Frontend
 
 
 
-4.5. Module GUIs
+4.7. Module GUIs
 
 [TODO: global, creator GUIs, and extra decoder GUIs for manipulating URI parameters]
 
 
 
-4.6. Command list
+4.8. Command list
 
 In addition to the commands described in 3.2, these commands exist in pureplayer:
 
@@ -443,7 +471,7 @@ Gets a list of modules. The amount of arguments is always even (since for each m
 
 
 
-4.7. Event list
+4.9. Event list
 
 In addition to the commands described in 3.3, these events exist in pureplayer:
 

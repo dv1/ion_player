@@ -41,7 +41,7 @@ public:
 	typedef std::vector < std::string > parameters_t;
 
 	virtual std::string get_type() const = 0;
-	virtual bool exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params) = 0;
+	virtual void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params) = 0;
 
 	virtual ~backend_base()
 	{

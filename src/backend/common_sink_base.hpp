@@ -17,6 +17,29 @@ namespace backend
 {
 
 
+/*
+Base code for sinks, using CRTP. Most sinks should use this and implement only a few necessary member functions:
+	bool is_initialized() const
+	bool initialize_audio_device()
+	void shutdown_audio_device()
+	bool render_samples(unsigned int const num_samples_to_render)
+
+	std::size_t get_sample_buffer_size() const
+	uint8_t* get_sample_buffer()
+
+
+This code makes extensive use of smart pointers. The reason for this is that the assignments current_song_decoder = next_song_decoder;
+and next_song_decoder = null; then automatically deallocate songs that are no longer necessary. Of course this means that the decoder
+must not spend a lot of time in its destructor.
+
+An improvement would be to check if a decoder will be set to null, and if so, stuff it in a "deallocation queue". So, before setting
+current_song_decoder = next_song_decoder, check if next_song_decoder is null. If so, push current_song_decoder in a deallocation queue.
+This queue will house smart pointers, so pushing it will keep the decoder alive. Then, a *different* thread can get a notification that
+something was put into the queue, and pop it until its empty, dropping the smart pointers in the process. This avoids race conditions,
+and makes it unnecessary to require fast decoder shutdowns. (The queue can be implemented with an STL deque for storage and a thread
+condition variable for notification.)
+*/
+
 template < typename Derived >
 class common_sink_base:
 	public sink
@@ -233,7 +256,7 @@ protected:
 						else
 							send_message(resource_finished, boost::assign::list_of(current_decoder->get_uri().get_full()));
 
-						// if (next_song_decoder == null) deallocation_queue.push(current_song_decoder); // TODO: see audio.txt docs for details
+						// if (next_song_decoder == null) deallocation_queue.push(current_song_decoder); // TODO: see deferred shutdown note at the beginning of this file for details
 						current_decoder = next_decoder;
 						next_decoder = decoder_ptr_t();
 

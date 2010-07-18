@@ -37,10 +37,11 @@ std::string backend::get_metadata(std::string const &uri_str)
 }
 
 
+// Helper functions for getting/setting values
 namespace
 {
 
-// Using a getter function instead of a direct value, to allow for lazy data retrieval (a value would imply that something gets said value in each call)
+// Using a getter function instead of a direct value, to allow for lazy data retrieval (a value would imply that something gets said value in each call, every time)
 template < typename Getter >
 inline void exec_command_get_value(decoder_ptr_t decoder_, std::string const &response_command_in, Getter const &getter, std::string &response_command_out, params_t &response_params)
 {
@@ -66,11 +67,14 @@ inline void exec_command_set_value(Setter const &setter, params_t const &params)
 }
 
 
-bool backend::exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params)
+void backend::exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params)
 {
+	// Main command dispatch function.
+
 	try
 	{
 		#define DECODER_GUARD boost::lock_guard < boost::mutex > lock(decoder_mutex)
+
 
 		if (command == "play")
 		{
@@ -144,6 +148,7 @@ bool backend::exec_command(std::string const &command, params_t const &params, s
 			response_params.push_back(command);
 		}
 
+
 		#undef DECODER_GUARD
 	}
 	catch (resource_not_found const &exc)
@@ -169,8 +174,6 @@ bool backend::exec_command(std::string const &command, params_t const &params, s
 			response_params.push_back(param);
 		}
 	}
-
-	return true;
 }
 
 
@@ -187,28 +190,8 @@ void backend::start_playback(params_t const &params)
 	if (params.size() >= 3) uri_str[1] = params[2];
 
 	metadata_t metadata[2];
-	if (params.size() >= 2)
-	{
-		metadata_optional_t temp_result = parse_metadata(params[1]);
-		if (temp_result)
-		{
-			metadata[0] = *temp_result;
-			decoder_type[0] = metadata[0].get("decoder_type", "").asString();
-		}
-		else
-			throw std::invalid_argument("current uri metadata is not a valid JSON object");
-	}
-	if (params.size() >= 4)
-	{
-		metadata_optional_t temp_result = parse_metadata(params[3]);
-		if (temp_result)
-		{
-			metadata[1] = *temp_result;
-			decoder_type[1] = metadata[1].get("decoder_type", "").asString();
-		}
-		else
-			throw std::invalid_argument("next uri metadata is not a valid JSON object");
-	}
+	if (params.size() >= 2) { metadata[0] = checked_parse_metadata(params[1], "current uri metadata is not a valid JSON object"); decoder_type[0] = metadata[0].get("decoder_type", "").asString(); }
+	if (params.size() >= 4) { metadata[1] = checked_parse_metadata(params[3], "next uri metadata is not a valid JSON object"); decoder_type[1] = metadata[1].get("decoder_type", "").asString(); }
 
 
 	boost::lock_guard < boost::mutex > lock(decoder_mutex);
@@ -301,17 +284,7 @@ void backend::set_next_resource(params_t const &params)
 
 	std::string uri_str = params[0], decoder_type;
 	metadata_t metadata;
-	if (params.size() >= 2)
-	{
-		metadata_optional_t temp_result = parse_metadata(params[1]);
-		if (temp_result)
-		{
-			metadata = *temp_result;
-			decoder_type = metadata.get("decoder_type", "").asString();
-		}
-		else
-			throw std::invalid_argument("metadata is not a valid JSON object");
-	}
+	if (params.size() >= 2) { metadata = checked_parse_metadata(params[1], "metadata is not a valid JSON object"); decoder_type = metadata.get("decoder_type", "").asString(); }
 
 	// in case of failure, an exception is thrown inside set_next_decoder(), this function exits, and the next decoder isn't set
 	set_next_decoder(uri_str, decoder_type, metadata);
@@ -455,6 +428,16 @@ void backend::resource_finished_callback()
 
 	current_decoder = next_decoder;
 	next_decoder = decoder_ptr_t();
+}
+
+
+metadata_t backend::checked_parse_metadata(std::string const &metadata_str, std::string const &error_msg)
+{
+	metadata_optional_t temp_result = parse_metadata(metadata_str);
+	if (temp_result)
+		return *temp_result;
+	else
+		throw std::invalid_argument(error_msg);
 }
 
 

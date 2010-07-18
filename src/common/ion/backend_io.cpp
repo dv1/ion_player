@@ -50,9 +50,9 @@ bool backend_io::iterate()
 	{
 		std::string response_command;
 		params_t response_params;
-		bool ok = backend_.exec_command(command, params, response_command, response_params);
+		backend_.exec_command(command, params, response_command, response_params);
 
-		if (ok && !response_command.empty())
+		if (!response_command.empty())
 			send_response(response_command, response_params);
 	}
 

@@ -15,12 +15,11 @@ class mock_backend:
 public:
 	virtual std::string get_type() const { return "mock_backend"; }
 
-	virtual bool exec_command(std::string const &command, ion::params_t const &params, std::string &response_command, ion::params_t &response_params)
+	virtual void exec_command(std::string const &command, ion::params_t const &params, std::string &response_command, ion::params_t &response_params)
 	{
 		++num_exec_command_calls;
 		response_command = command + "_out";
 		response_params = params;
-		return true;
 	}
 };
 

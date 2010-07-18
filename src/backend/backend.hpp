@@ -42,7 +42,7 @@ public:
 	// post: does not affect backend states.
 	std::string get_metadata(std::string const &uri_str);
 
-	virtual bool exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
+	virtual void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
 
 
 	decoder_creators_t & get_decoder_creators() { return decoder_creators; }
@@ -93,6 +93,8 @@ protected:
 	source_ptr_t create_new_source(ion::uri const &uri_);
 	decoder_ptr_t create_new_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata);
 	void resource_finished_callback();
+
+	metadata_t checked_parse_metadata(std::string const &metadata_str, std::string const &error_msg);
 
 
 	message_callback_t message_callback;
