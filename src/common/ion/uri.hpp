@@ -147,8 +147,21 @@ public:
 
 	std::string const & get_type() const { return type; }
 	std::string const & get_path() const { return path; }
-	std::string get_full() const { return type + "://" + path; }
 	options_t const & get_options() const { return options; }
+
+	std::string get_full() const
+	{
+		std::string result = type + "://" + path;
+
+		for (options_t::const_iterator option_iter = options.begin(); option_iter != options.end(); ++option_iter)
+		{
+			result += (option_iter == options.begin()) ? '?' : '&';
+			result += option_iter->first + '=' + option_iter->second;
+		}
+
+		return result;
+	//	return type + "://" + path;
+	}
 
 
 protected:

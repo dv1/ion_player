@@ -53,6 +53,14 @@ int test_main(int, char **)
 	}
 
 	{
+		ion::uri uri_;
+		TEST_NO_EXCEPTION(uri_.set("http://localhost?abc=5&def=2"), "");
+		TEST_ASSERT(uri_.get_options().size() == 2, "got " << uri_.get_options().size());
+		TEST_ASSERT(uri_.get_path() == "localhost", "got " << uri_.get_path());
+		TEST_ASSERT(uri_.get_full() == "http://localhost?abc=5&def=2", "got " << uri_.get_full());
+	}
+
+	{
 		ion::uri uri_("http://localhost?abc=5&ugh=&ztt&def=i7x&x\\&=\\?y");
 		TEST_ASSERT(uri_.get_type() == "http", "got " << uri_.get_type());
 		TEST_ASSERT(uri_.get_path() == "localhost", "got " << uri_.get_path());
