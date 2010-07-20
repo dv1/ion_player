@@ -129,6 +129,10 @@ def build(bld):
 		)
 
 
+	# non-trivial tests
+	bld.recurse('test/backend_handler')
+
+
 	# get the list of variants
 	build_variants = bld.env['BUILD_VARIANTS']
 

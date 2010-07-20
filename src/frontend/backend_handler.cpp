@@ -1,3 +1,4 @@
+#include <iostream>
 #include <boost/assign/list_of.hpp>
 #include <ion/command_line_tools.hpp>
 #include "backend_handler.hpp"
@@ -30,10 +31,13 @@ void backend_handler::set_playlist(playlist const &new_playlist)
 
 void backend_handler::play(uri const &uri_)
 {
-	uri_optional_t new_next_uri = playlist_->get_succeeding_uri(uri_);
+	uri_optional_t new_next_uri;
+	
+	if (playlist_ != 0)
+		new_next_uri = playlist_->get_succeeding_uri(uri_);
 
 	if (new_next_uri)
-		send_to_backend_function(recombine_command_line("play", boost::assign::list_of(uri_.get_full())(new_next_uri->get_full())));
+		send_to_backend_function(recombine_command_line("play", boost::assign::list_of(uri_.get_full())("{}")(new_next_uri->get_full())));
 	else
 		send_to_backend_function(recombine_command_line("play", boost::assign::list_of(uri_.get_full())));
 
@@ -53,6 +57,26 @@ void backend_handler::stop()
 backend_handler::uri_optional_t backend_handler::get_current_uri() const
 {
 	return current_uri;
+}
+
+
+void backend_handler::parse_received_backend_line(std::string const &line)
+{
+	std::string event_command_name;
+	params_t event_params;
+
+	split_command_line(line, event_command_name, event_params);
+
+	std::cerr << "parse_received_backend_line: " << line << std::endl;
+
+	if ((event_command_name == "transition") && (event_params.size() >= 2))
+		transition(event_params[0], event_params[1]);
+	else if ((event_command_name == "started") && (event_params.size() >= 1))
+		started(event_params[0]);
+	else if ((event_command_name == "stopped") && (event_params.size() >= 1))
+		stopped(event_params[0]);
+	else if ((event_command_name == "song_finished") && (event_params.size() >= 1))
+		stopped(event_params[0]);
 }
 
 

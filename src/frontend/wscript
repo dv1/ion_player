@@ -10,12 +10,22 @@ def configure(conf):
 
 def build(bld):
 	obj = bld(
-		features = ['cxx', 'cprogram'],
+		features = ['cxx', 'cstaticlib'],
 		uselib = 'QTCORE QTGUI BUILDMODE STRICT',
-		target = 'frontend',
+		target = 'ionplayer_frontend',
+		name = 'ionplayer_frontend',
 		uselib_local = 'ionplayer_common',
 		includes = '.'
 	)
 	obj.find_sources_in_dirs('.')
+	obj.source.remove('./main.cpp')
 
+	obj = bld(
+		features = ['cxx', 'cprogram'],
+		uselib = 'QTCORE QTGUI BUILDMODE STRICT',
+		target = 'frontend',
+		uselib_local = 'ionplayer_frontend ionplayer_common',
+		includes = '.',
+		source = 'main.cpp'
+	)
 

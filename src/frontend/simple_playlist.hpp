@@ -25,6 +25,9 @@ public:
 	{
 		ion::uri uri_;
 		metadata_t metadata;
+
+		explicit entry() {}
+		explicit entry(ion::uri const &uri_, metadata_t const &metadata): uri_(uri_), metadata(metadata) {}
 	};
 
 	struct sequence_tag {};
