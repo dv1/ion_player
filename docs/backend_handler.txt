@@ -1,0 +1,34 @@
+BACKEND HANDLER:
+
+
+actions:
+- play
+- stop
+
+accessors:
+- get_current_uri
+
+signals:
+- current_uri_changed(optional < uri >)
+
+backend event handlers:
+- transition
+- started
+- stopped
+- song_finished
+
+playlist event handlers:
+- resource_added
+- resource_removed
+
+
+PLAYLIST:
+
+
+actions:
+- add
+- remove
+- move
+
+accessors:
+- get_succeeding_uri(uri)
