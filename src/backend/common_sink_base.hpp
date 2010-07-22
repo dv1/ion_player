@@ -247,24 +247,30 @@ protected:
 						num_samples_to_write -= num_samples_written;
 						sample_offset += num_samples_written;
 
+						std::string current_uri = current_decoder->get_uri().get_full();
+						std::string next_uri;
+						
 						if (next_decoder)
-							send_message(transition,
-								boost::assign::list_of
-									(current_decoder->get_uri().get_full())
-									(next_decoder->get_uri().get_full())
-							);
-						else
-							send_message(resource_finished, boost::assign::list_of(current_decoder->get_uri().get_full()));
+							next_uri = next_decoder->get_uri().get_full();
 
 						// if (next_song_decoder == null) deallocation_queue.push(current_song_decoder); // TODO: see deferred shutdown note at the beginning of this file for details
 						current_decoder = next_decoder;
 						next_decoder = decoder_ptr_t();
 
-						if (!current_decoder)
-							do_shutdown = true;
-
 						if (resource_finished_callback)
 							resource_finished_callback();
+
+						if (!next_uri.empty())
+							send_message(transition,
+								boost::assign::list_of
+									(current_uri)
+									(next_uri)
+							);
+						else
+							send_message(resource_finished, boost::assign::list_of(current_uri));
+
+						if (!current_decoder)
+							do_shutdown = true;
 					}
 					else // rest of buffer fully filled -> exit loop, we are done
 					{
