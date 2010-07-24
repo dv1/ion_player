@@ -276,8 +276,8 @@ The current resource just finished playing, no next resource is defined; playbac
 The currently playing resource has just been stopped. This is -not- sent when an automatic transition to a next resource happens (see transition).
 
 
---- started <uri>
-The given resource has just started playing. This is -not- sent when an automatic transition to a next resource happens (see transition).
+--- started <current_uri> <next_uri>
+The current_uri resource has just started playing, the next_uri one will follow. This is -not- sent when an automatic transition to a next resource happens (see transition).
 
 
 --- metadata <uri> <data>

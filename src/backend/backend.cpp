@@ -86,6 +86,11 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 			stop_playback();
 			response_command = "";
 		}
+		else if (command == "trigger_transition")
+		{
+			trigger_transition();
+			response_command = "";
+		}
 		else if (command == "resume")
 		{
 			if (current_sink)
@@ -139,7 +144,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		else if (command == "get_metadata")
 		{
 			DECODER_GUARD;
-			exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_songinfo_str,   current_decoder.get()), response_command, response_params);
+			exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_songinfo_str,   current_decoder.get(), true), response_command, response_params);
 		}
 		else
 		{
@@ -301,6 +306,29 @@ void backend::stop_playback()
 
 	current_decoder = decoder_ptr_t();
 	next_decoder = decoder_ptr_t();
+}
+
+
+void backend::trigger_transition()
+{
+	std::string current_uri, current_metadata, next_uri, next_metadata;
+
+	{
+		boost::lock_guard < boost::mutex > lock(decoder_mutex);
+		if (!current_decoder)
+			return;
+
+		current_uri = current_decoder->get_uri().get_full();
+		current_metadata = current_decoder->get_songinfo_str(false);
+
+		if (next_decoder)
+		{
+			next_uri = next_decoder->get_uri().get_full();
+			next_metadata = next_decoder->get_songinfo_str(false);
+		}
+	}
+
+	start_playback(boost::assign::list_of(current_uri)(current_metadata)(next_uri)(next_metadata));
 }
 
 

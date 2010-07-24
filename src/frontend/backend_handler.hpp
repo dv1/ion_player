@@ -55,15 +55,15 @@ public:
 
 	void parse_received_backend_line(std::string const &line);
 	void transition(uri const &old_uri, uri const &new_uri);
-	void started(uri const &uri_);
+	void started(uri const &current_uri_, uri const &next_uri_);
 	void stopped(uri const &uri_);
 	void song_finished(uri const &uri_);
 
 
 	// Playlist event handlers
 
-	void resource_added(uri const &uri_);
-	void resource_removed(uri const &uri_);
+	void resource_added(uri const &added_uri);
+	void resource_removed(uri const &removed_uri);
 
 
 protected:

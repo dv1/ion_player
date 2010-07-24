@@ -103,10 +103,15 @@ public:
 			resume(false);
 		else
 		{
+			std::string current_uri = current_decoder->get_uri().get_full();
+			std::string next_uri;			
+			if (next_decoder)
+				next_uri = next_decoder->get_uri().get_full();
+
 			is_paused = false;
 			run_playback_loop = true;
 			playback_thread = boost::thread(boost::lambda::bind(&self_t::playback_loop, this));
-			send_message(started, boost::assign::list_of(current_decoder->get_uri().get_full()));
+			send_message(started, boost::assign::list_of(current_uri)(next_uri));
 		}
 	}
 

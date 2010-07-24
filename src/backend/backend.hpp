@@ -74,6 +74,8 @@ public:
 	// If something is playing, playback will cease, and the current decoder is uninitialized. If a next resource is set, its decoder too will be uninitialized.
 	void stop_playback();
 
+	void trigger_transition();
+
 	// Sets the loop mode, putting the response in the two response_* arguments. See the set_loop_mode command for details.
 	// pre: nothing.
 	// post: if an integer was given, the loop mode will be set accordingly. Otherwise, nothing is changed.
