@@ -9,10 +9,10 @@ testclass::testclass():
 {
 	backend_handler_ = new ion::frontend::backend_handler(boost::lambda::bind(&testclass::print_backend_line, this, boost::lambda::_1));
 
-	simple_playlist_.entries.push_back(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/witness.mod"), ion::metadata_t("{}")));
-	simple_playlist_.entries.push_back(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/back_again.mod"), ion::metadata_t("{}")));
-	simple_playlist_.entries.push_back(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/spx-shuttledeparture.it"), ion::metadata_t("{}")));
-	simple_playlist_.entries.push_back(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/suspiria.xm"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/witness.mod"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/back_again.mod"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/spx-shuttledeparture.it"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/suspiria.xm"), ion::metadata_t("{}")));
 
 	backend_handler_->set_playlist(simple_playlist_);
 
