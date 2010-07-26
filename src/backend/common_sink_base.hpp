@@ -7,6 +7,8 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/shared_ptr.hpp>
+#include "resampler.hpp"
 #include "sink.hpp"
 #include "sink_creator.hpp"
 
@@ -44,6 +46,7 @@ template < typename Derived >
 class common_sink_base:
 	public sink
 {
+	typedef boost::shared_ptr < resampler > resampler_ptr_t;
 public:
 	typedef Derived derived_t;
 	typedef common_sink_base < Derived > self_t;
@@ -70,6 +73,8 @@ public:
 				message_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
 				return;
 			}
+
+			resampler_ = resampler_ptr_t(new resampler(playback_properties_.num_channels, 5, playback_properties_.frequency));
 		}
 
 		{
@@ -246,7 +251,8 @@ protected:
 				{
 					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
-					unsigned int num_samples_written = current_decoder->update(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write);
+					//unsigned int num_samples_written = current_decoder->update(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write);
+					unsigned int num_samples_written = (*resampler_)(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write, *current_decoder);
 					if (num_samples_written < num_samples_to_write) // less samples were written than expected -> adjust offset and num samples to write, and try the next song
 					{
 						num_samples_to_write -= num_samples_written;
@@ -310,6 +316,7 @@ protected:
 	bool run_playback_loop, is_paused;
 	boost::thread playback_thread;
 	boost::mutex mutex;
+	resampler_ptr_t resampler_;
 };
 
 

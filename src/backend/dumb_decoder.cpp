@@ -369,6 +369,12 @@ void dumb_decoder::set_playback_properties(playback_properties const &new_playba
 }
 
 
+unsigned int dumb_decoder::get_decoder_samplerate() const
+{
+	return 0;
+}
+
+
 unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_write)
 {
 	if (!is_initialized())

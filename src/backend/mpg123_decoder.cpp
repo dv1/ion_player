@@ -1,12 +1,6 @@
-#define DONT_USE_LIBRESAMPLE
-
-
 #include <cstring>
 #include <iostream>
 #include <boost/thread/locks.hpp>
-#ifndef DONT_USE_LIBRESAMPLE
-#include <libresample.h>
-#endif
 #include "mpg123_decoder.hpp"
 
 
@@ -48,7 +42,6 @@ mpg123_decoder::mpg123_decoder(message_callback_t const message_callback, source
 	decoder(message_callback),
 	source_(source_),
 	mpg123_handle_(0),
-	resample_handle(0),
 	current_volume(16777215),
 	in_buffer_size(16384),
 	out_buffer_pad_size(32768),
@@ -193,11 +186,6 @@ mpg123_decoder::~mpg123_decoder()
 	if (mpg123_handle_ != 0)
 		mpg123_delete(mpg123_handle_);
 
-#ifndef DONT_USE_LIBRESAMPLE
-	if (resample_handle != 0)
-		resample_close(resample_handle);
-#endif
-
 	mpg123_decrement();
 }
 
@@ -210,11 +198,7 @@ bool mpg123_decoder::is_initialized() const
 
 bool mpg123_decoder::can_playback() const
 {
-	return is_initialized()
-#ifndef DONT_USE_LIBRESAMPLE
-		&& (resample_handle != 0)
-#endif
-		;
+	return is_initialized();
 }
 
 
@@ -346,15 +330,12 @@ void mpg123_decoder::set_playback_properties(playback_properties const &new_play
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
 	playback_properties_ = new_playback_properties;
+}
 
 
-#ifndef DONT_USE_LIBRESAMPLE
-	if (resample_handle == 0)
-	{
-		float factor = float(new_playback_properties.frequency) / float(src_frequency);
-		resample_handle = resample_open(1, factor, factor);
-	}
-#endif
+unsigned int mpg123_decoder::get_decoder_samplerate() const
+{
+	return src_frequency;
 }
 
 
@@ -365,79 +346,6 @@ unsigned int mpg123_decoder::update(void *dest, unsigned int const num_samples_t
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
-#ifndef DONT_USE_LIBRESAMPLE
-	if (playback_properties_.frequency != src_frequency)
-		return update_resample(dest, num_samples_to_write);
-	else
-#endif
-		return update_no_resample(dest, num_samples_to_write);
-}
-
-
-unsigned int mpg123_decoder::update_resample(void *dest, unsigned int const num_samples_to_write)
-{
-	unsigned int size_to_write = num_samples_to_write * playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_) * src_frequency / playback_properties_.frequency;
-
-
-	// If not enough data is stored in the out buffer, fill it until it is full, an error occurs, or reading fails
-	while ((out_buffer.size() < size_to_write) && (last_read_return_value != MPG123_ERR))
-	{
-		size_t decoded_size;
-		unsigned int out_buffer_offset = out_buffer.size();
-		out_buffer.resize(out_buffer_offset + out_buffer_pad_size); // make room for new output data
-
-		// Check if the last decode call reported a need for more input
-		if (last_read_return_value == MPG123_NEED_MORE)
-		{
-			// mpg123 needs more input data, lets deliver some
-			unsigned long read_size = 0;
-			if (source_->can_read())
-				read_size = source_->read(&in_buffer[0], in_buffer_size);
-			if (read_size == 0) // the source could not deliver data, no further input possible
-			{
-				out_buffer.resize(out_buffer_offset); // revert to old size
-				break;
-			}
-
-			last_read_return_value = mpg123_decode(mpg123_handle_, &in_buffer[0], read_size, &out_buffer[out_buffer_offset], out_buffer_pad_size, &decoded_size);
-		}
-		else
-		{
-			// Currently, no more input data is needed - just decode
-			last_read_return_value = mpg123_decode(mpg123_handle_, 0, 0, &out_buffer[out_buffer_offset], out_buffer_pad_size, &decoded_size);
-		}
-
-		out_buffer.resize(out_buffer_offset + decoded_size); // most likely not all of the room we've made for new output data is actually used - contract the buffer again
-	}
-
-
-	// If the buffer is empty at this point, then there is no more input data as well - just return zero
-	if (out_buffer.size() == 0)
-		return 0;
-
-
-	// Get the size of the decoded data that is actually available for the caller
-	unsigned int available_size = std::min(static_cast < unsigned int > (out_buffer.size()), size_to_write);
-	// Copy the available data to the caller's buffer, and keep any remaining data in it in case there is more available than the caller requested
-	unsigned int remaining_size = out_buffer.size() - available_size;
-
-	std::memcpy(dest, &out_buffer[0], available_size); // Copy to the dest buffer
-
-	if (remaining_size > 0)
-	{
-		std::memcpy(&out_buffer[0], &out_buffer[available_size], remaining_size); // Copy any remaining data to the start of the out buffer
-		out_buffer.resize(remaining_size); // Resize the out buffer to the size of the remaining data
-	}
-	else
-		out_buffer.clear(); // no more data remaining - clear the out buffer
-
-
-	return available_size / (playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_)); // Return the actual amount of samples written to dest
-}
-
-
-unsigned int mpg123_decoder::update_no_resample(void *dest, unsigned int const num_samples_to_write)
-{
 	unsigned int size_to_write = num_samples_to_write * playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 
 

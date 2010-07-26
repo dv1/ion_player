@@ -149,15 +149,16 @@ public:
 
 	/**
 	* Sets the loop mode. See the set_loop_mode command for details.
-	* pre: nothing.
-	* post: the loop mode will be set accordingly.
+	* @pre: nothing.
+	* @post: the loop mode will be set accordingly.
 	*/
 	virtual void set_loop_mode(int const new_loop_mode) = 0;
 
 	/**
 	* Sets playback properties, telling the decoder what the output should be like.
 	* Note that there is no room for tolerance here; the decoder MUST ensure the output matches these properties.
-	* If necessary, resample/convert/etc. in the decoder.
+	* If necessary, convert in the decoder. The one exception is the samplerate, which may be ignored. In this case, get_decoder_samplerate() must return a meaningful
+	* value. The sink will then resample.
 	*
 	* @param new_playback_properties The new playback properties to use
 	* @pre new_playback_properties must be valid; if not, this call will not do anything
@@ -166,6 +167,17 @@ public:
 	*      in some decoders, a reset may be necessary, with a subsequent seek to the previous position not being possible)
 	*/
 	virtual void set_playback_properties(playback_properties const &new_playback_properties) = 0;
+
+	/**
+	* Returns the decoder's samplerate. If the decoder performs internal resampling, then this function must return the resampled data's frequency, NOT the original one.
+	* If said resampling converts the data to match the sample rate specified in set_playback_properties(), then this must return either 0 or said sample rate.
+	* In other words, the sink checks if the return value of this function is 0 or the sink's playback sample rate. In this case, the sink chooses not to resample.
+	* Otherwise, it does.
+	*
+	* @pre: nothing.
+	* @return The decoder's samplerate.
+	*/
+	virtual unsigned int get_decoder_samplerate() const = 0;
 
 	/**
 	* Updates the dest buffer with new samples. num_samples_to_write specifies how many samples to write.

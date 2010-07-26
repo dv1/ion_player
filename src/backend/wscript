@@ -7,12 +7,14 @@ def set_options(opt):
 def configure(conf):
 	conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs')
 	conf.check_cfg(package='libmpg123', uselib_store='MPG123', args='--cflags --libs')
+	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs')
+	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs')
 
 
 def build(bld):
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 RESAMPLE BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX BOOST BUILDMODE STRICT',
 		target = 'ionplayer_backend',
 		name = 'ionplayer_backend',
 		uselib_local = 'ionplayer_common dumb jsoncpp',

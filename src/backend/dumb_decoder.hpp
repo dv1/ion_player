@@ -58,6 +58,8 @@ public:
 
 	virtual void set_playback_properties(playback_properties const &new_playback_properties);
 
+	virtual unsigned int get_decoder_samplerate() const;
+
 	virtual unsigned int update(void *dest, unsigned int const num_samples_to_write);
 
 

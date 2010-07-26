@@ -50,14 +50,12 @@ public:
 
 	virtual void set_playback_properties(playback_properties const &new_playback_properties);
 
+	virtual unsigned int get_decoder_samplerate() const;
+
 	virtual unsigned int update(void *dest, unsigned int const num_samples_to_write);
 
 
 protected:
-	unsigned int update_resample(void *dest, unsigned int const num_samples_to_write);
-	unsigned int update_no_resample(void *dest, unsigned int const num_samples_to_write);
-
-
 	typedef std::vector < uint8_t > buffer_t;
 
 	mutable boost::mutex mutex_;
@@ -65,8 +63,6 @@ protected:
 	unsigned int src_frequency, src_num_channels;
 	source_ptr_t source_;
 	mpg123_handle *mpg123_handle_;
-	void *resample_handle;
-	buffer_t resample_buffer;
 	buffer_t in_buffer, out_buffer;
 	long current_volume;
 	unsigned long const in_buffer_size, out_buffer_pad_size;
