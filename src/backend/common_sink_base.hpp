@@ -74,7 +74,7 @@ public:
 				return;
 			}
 
-			resampler_ = resampler_ptr_t(new resampler(playback_properties_.num_channels, 5, playback_properties_.frequency));
+			resampler_ = resampler_ptr_t(new resampler(playback_properties_.num_channels, 0, playback_properties_.frequency));
 		}
 
 		{

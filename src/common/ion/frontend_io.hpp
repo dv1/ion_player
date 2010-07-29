@@ -2,6 +2,9 @@
 #define ION_FRONTEND_IO_HPP
 
 #include <boost/noncopyable.hpp>
+#include <boost/optional.hpp>
+
+#include <ion/uri.hpp>
 
 
 namespace ion
@@ -81,9 +84,20 @@ These are simple. They just send a command to the backend, nothing more.
 
 
 
+Additional actions and event handlers are front/backend specific (= defined in derived frontend_ios). Examples are pause, resume,
+set/get volume, set/get position, set/get current subsong, get settings ui, ....
 
-Additional actions and event handlers are front/backend specific. Examples are pause, resume, set/get volume, set/get position,
-set/get current subsong, get settings ui, ....
+
+
+=== Handling crashing backends
+
+If the backend crashes during playback, the frontend_io will get notified, that is, its backend_terminated() function will get called.
+The frontend_io keeps a termination counter, which starts at zero. Each backend_terminated() call increases this counter. If the counter reaches
+3, the current resource will be skipped (like a transition, but without the communication to the backend), and the playlist will be told
+that this backend cannot handle this resource. The playlist can then try another backend, and if all backends crash or are otherwise unable
+to handle the resource, mark the resource as broken. After the backend was restarted, backend_started() gets called. The frontend_io then
+retries to play the current song.
+
 
 */
 
@@ -92,7 +106,39 @@ class frontend_io:
 	private boost::noncopyable
 {
 public:
+	typedef boost::optional < uri > uri_optional_t;
+
+
+
+	virtual ~frontend_io() {}
+
+
+	// Actions
+
+	void play(uri const &uri_);
+	void stop();
+
+
+	// Playlist event handlers
+
+	void resource_added(uri const &added_uri);
+	void resource_removed(uri const &removed_uri);
+
+
+	// Backend start/termination event handlers
+
+	virtual void backend_started();
+	virtual void backend_terminated(); // not to be called if the backend exists normally
+
 protected:
+	void transition(uri const &old_uri, uri const &new_uri);
+	void started(uri const &current_uri_, uri const &next_uri_);
+	void stopped(uri const &uri_);
+	void resource_finished(uri const &uri_);
+
+
+	bool termination_counter;
+	uri_optional_t current_uri, next_uri;
 };
 
 
