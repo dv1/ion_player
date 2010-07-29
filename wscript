@@ -123,7 +123,7 @@ def external(ctx):
 def clean_external():
 	run_cmd("make distclean", 'extern/mpg123-1.12.3')
 	run_cmd("make clean", 'extern/uade-2.13')
-	run_cmd("make clean", 'extern/adplug-2.2.1')
+	run_cmd("make distclean", 'extern/adplug-2.2.1')
 
 
 
