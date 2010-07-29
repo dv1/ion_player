@@ -110,7 +110,7 @@ def external(ctx):
 	run_cmd("./configure --enable-static --disable-shared", 'extern/mpg123-1.12.3')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/mpg123-1.12.3')
 
-	# mpg123
+	# uade
 	run_cmd("./configure --without-uadefs --without-audacious --without-uade123 --without-xmms --only-uadecore", 'extern/uade-2.13')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/uade-2.13')
 
@@ -120,7 +120,7 @@ def external(ctx):
 
 
 
-def clean_external():
+def clean_external(ctx):
 	run_cmd("make distclean", 'extern/mpg123-1.12.3')
 	run_cmd("make clean", 'extern/uade-2.13')
 	run_cmd("make distclean", 'extern/adplug-2.2.1')
@@ -187,8 +187,4 @@ def build(bld):
 	# add post-build function to show the unit test result summary
 	import unittestw
 	bld.add_post_fun(unittestw.summary)
-
-
-def distclean(ctx):
-	clean_external()
 
