@@ -109,6 +109,16 @@ def external(ctx):
 	run_cmd("./configure --enable-static --disable-shared", 'extern/mpg123-1.12.3')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/mpg123-1.12.3')
 
+	# mpg123
+	run_cmd("./configure --without-uadefs --without-audacious --without-uade123 --without-xmms --only-uadecore", 'extern/uade-2.13')
+	run_cmd("make -j%d" % get_num_jobs(), 'extern/uade-2.13')
+
+
+
+def clean_external():
+	run_cmd("make distclean", 'extern/mpg123-1.12.3')
+	run_cmd("make clean", 'extern/uade-2.13')
+
 
 
 def build(bld):
@@ -173,6 +183,5 @@ def build(bld):
 
 
 def distclean(ctx):
-	# externals distcleaned by their own build scripts
-	run_cmd("make distclean", 'extern/mpg123-1.12.3')
+	clean_external()
 
