@@ -13,6 +13,7 @@ typedef Json::Value metadata_t;
 typedef boost::optional < metadata_t > metadata_optional_t;
 
 metadata_optional_t parse_metadata(std::string const &metadata_str);
+std::string get_metadata_string(metadata_t const &metadata);
 
 
 }

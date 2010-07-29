@@ -6,6 +6,7 @@
 #include <map>
 #include <string>
 #include <boost/foreach.hpp>
+#include <boost/optional.hpp>
 
 
 namespace ion
@@ -206,6 +207,9 @@ protected:
 	std::string type, path;
 	options_t options;
 };
+
+
+typedef boost::optional < uri > uri_optional_t;
 
 
 }

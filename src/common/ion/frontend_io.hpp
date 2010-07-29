@@ -1,8 +1,12 @@
 #ifndef ION_FRONTEND_IO_HPP
 #define ION_FRONTEND_IO_HPP
 
+#include <string>
+
 #include <boost/noncopyable.hpp>
 #include <boost/optional.hpp>
+#include <boost/function.hpp>
+#include <boost/signals2/signal.hpp>
 
 #include <ion/uri.hpp>
 
@@ -102,15 +106,23 @@ retries to play the current song.
 */
 
 
+class playlist;
+
+
 class frontend_io:
 	private boost::noncopyable
 {
 public:
-	typedef boost::optional < uri > uri_optional_t;
+	typedef boost::function < void(std::string const &line) > send_line_to_backend_t;
+	typedef boost::signals2::signal < void(uri_optional_t const &new_current_uri) > current_uri_changed_signal_t;
 
 
 
-	virtual ~frontend_io() {}
+	explicit frontend_io(send_line_to_backend_t const &send_line_to_backend);
+	virtual ~frontend_io();
+
+
+	void parse_incoming_line(std::string const &line);
 
 
 	// Actions
@@ -127,18 +139,25 @@ public:
 
 	// Backend start/termination event handlers
 
-	virtual void backend_started();
+	virtual void backend_started(std::string const &backend_type);
 	virtual void backend_terminated(); // not to be called if the backend exists normally
+
+
+	void set_current_playlist(playlist &new_current_playlist);
+
 
 protected:
 	void transition(uri const &old_uri, uri const &new_uri);
-	void started(uri const &current_uri_, uri const &next_uri_);
+	void started(uri const &current_uri_, uri_optional_t const &next_uri_);
 	void stopped(uri const &uri_);
 	void resource_finished(uri const &uri_);
 
 
 	bool termination_counter;
 	uri_optional_t current_uri, next_uri;
+	playlist *current_playlist;
+	send_line_to_backend_t send_line_to_backend;
+	current_uri_changed_signal_t current_uri_changed_signal;
 };
 
 

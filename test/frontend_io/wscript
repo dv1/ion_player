@@ -12,9 +12,9 @@ def build(bld):
 	obj = bld(
 		features = ['cxx', 'cprogram'],
 		uselib = 'QTCORE BUILDMODE STRICT',
-		target = 'backend_handler_test',
-		uselib_local = 'ionplayer_frontend ionplayer_common',
-		includes = '. ../../src/frontend'
+		target = 'frontend_io_test',
+		uselib_local = 'ionplayer_common',
+		includes = '.'
 	)
 	obj.find_sources_in_dirs('.')
 

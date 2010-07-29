@@ -1,4 +1,5 @@
 #include <json/reader.h>
+#include <json/writer.h>
 #include "metadata.hpp"
 
 
@@ -20,6 +21,13 @@ metadata_optional_t parse_metadata(std::string const &metadata_str)
 	}
 
 	return boost::none;
+}
+
+
+std::string get_metadata_string(metadata_t const &metadata)
+{
+	Json::StyledWriter writer;
+	return writer.write(metadata);
 }
 
 

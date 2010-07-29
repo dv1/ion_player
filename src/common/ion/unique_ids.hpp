@@ -1,13 +1,11 @@
-#ifndef ION_FRONTEND_UNIQUE_IDS_HPP
-#define ION_FRONTEND_UNIQUE_IDS_HPP
+#ifndef ION_UNIQUE_IDS_HPP
+#define ION_UNIQUE_IDS_HPP
 
 #include <cstdlib>
 #include <tr1/unordered_set>
 
 
 namespace ion
-{
-namespace frontend
 {
 
 
@@ -47,7 +45,6 @@ protected:
 };
 
 
-}
 }
 
 

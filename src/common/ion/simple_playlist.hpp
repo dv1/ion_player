@@ -1,5 +1,5 @@
-#ifndef ION_FRONTEND_SIMPLE_PLAYLIST_HPP
-#define ION_FRONTEND_SIMPLE_PLAYLIST_HPP
+#ifndef ION_SIMPLE_PLAYLIST_HPP
+#define ION_SIMPLE_PLAYLIST_HPP
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
@@ -10,15 +10,14 @@
 #include <ion/metadata.hpp>
 #include <ion/uri.hpp>
 
-#include "backend_handler.hpp"
+#include "playlist.hpp"
+
 
 namespace ion
 {
-namespace frontend
-{
 
 
-class backend_handler;
+class frontend_io;
 
 
 class simple_playlist:
@@ -52,7 +51,10 @@ public:
 
 
 	virtual uri_optional_t get_succeeding_uri(uri const &uri_) const;
-	void add_to_backend_handler(backend_handler &backend_handler_);
+	virtual metadata_optional_t get_metadata_for(uri const &uri_) const;
+	virtual void backend_resource_incompatibility(std::string const &backend_type, uri const &uri_);
+
+	void add_to_frontend_io(frontend_io &frontend_io_);
 
 	void add_entry(entry const &entry_);
 	void remove_entry(entry const &entry_);
@@ -64,7 +66,6 @@ protected:
 };
 
 
-}
 }
 
 #endif
