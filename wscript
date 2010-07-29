@@ -113,6 +113,10 @@ def external(ctx):
 	run_cmd("./configure --without-uadefs --without-audacious --without-uade123 --without-xmms --only-uadecore", 'extern/uade-2.13')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/uade-2.13')
 
+	# adplug
+	run_cmd("./configure --enable-static --disable-shared", 'extern/adplug-2.2.1')
+	run_cmd("make -j%d" % get_num_jobs(), 'extern/adplug-2.2.1')
+
 
 
 def clean_external():
