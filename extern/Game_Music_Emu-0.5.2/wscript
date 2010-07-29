@@ -1,0 +1,19 @@
+def set_options(opt):
+	pass
+
+def configure(conf):
+	# TODO: GME has several internal preprocessor defines, which are hard-coded at the moment; instead, the config part
+	# should add/remove these defines
+	conf.env['CXXFLAGS_GMEFLAGS'] = ['-Wno-overflow']
+
+def build(bld):
+	obj = bld(
+		features = ['cxx', 'cstaticlib'],
+		includes = '.',
+		export_incdirs = '.',
+		uselib = 'BUILDMODE GMEFLAGS',
+		target = 'gme',
+		name = 'gme'
+	)
+	obj.find_sources_in_dirs('gme')
+

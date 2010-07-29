@@ -78,6 +78,7 @@ def configure(conf):
 
 	# externals configured by waf
 	conf.recurse('extern/dumb-0.9.3')
+	conf.recurse('extern/Game_Music_Emu-0.5.2')
 
 	# sources
 	conf.recurse('src/backend')
@@ -129,6 +130,7 @@ def clean_external():
 def build(bld):
 	# externals built by waf
 	bld.recurse('extern/dumb-0.9.3')
+	bld.recurse('extern/Game_Music_Emu-0.5.2')
 	bld.recurse('extern/jsoncpp')
 
 	bld.recurse('src/backend')
