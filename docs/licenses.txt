@@ -1,0 +1,19 @@
+externals:
+==========
+
+jsoncpp 0.5.0                - Public Domain (according to http://jsoncpp.sourceforge.net/)
+dumb 0.9.3                   - DUMB license (similar to zlib)
+adplug 2.2.1                 - LGPL v2.1
+mpg123 1.12.3                - LGPL v2.1
+Game Music Emulator 0.5.2    - LGPL v2.1
+uade 2.13                    - GPL v2
+
+With the exception of jsoncpp, these externals are all used for respective plugins, and ultimately are NOT essential parts of ion.
+
+
+main code:
+==========
+
+This is a TODO. the directory structure needs to be cleaned up a bit to differ between libraries, plugins, and programs. Programs would get GPLed,
+libraries would use MIT/zlib/libpng/BSD/Boost licensing, most plugins would use the same as libraries (with the exception of the uade plugin, which
+is GPLed).
