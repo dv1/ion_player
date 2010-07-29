@@ -45,6 +45,9 @@ void frontend_io::parse_incoming_line(std::string const &line)
 }
 
 
+// TODO: install exception handlers for invalid_uri exceptions
+
+
 void frontend_io::play(uri const &uri_)
 {
 	params_t play_params = boost::assign::list_of(uri_.get_full());
@@ -61,6 +64,7 @@ void frontend_io::play(uri const &uri_)
 		uri_optional_t new_next_uri = current_playlist->get_succeeding_uri(uri_);
 		if (new_next_uri)
 		{
+			play_params.push_back(new_next_uri->get_full());
 			metadata_optional_t next_uri_metadata = current_playlist->get_metadata_for(*new_next_uri);
 			if (next_uri_metadata)
 				play_params.push_back(get_metadata_string(*next_uri_metadata));
