@@ -3,7 +3,7 @@
 top = '.'
 out = 'build'
 
-import Options
+import Options, os, subprocess
 
 
 
@@ -44,6 +44,22 @@ def set_options(opt):
 	opt.recurse('src/frontend')
 
 
+def get_num_jobs():
+	if Options.options.jobs:
+		return Options.options.jobs
+	else:
+		return Options.default_jobs
+
+
+
+def run_cmd(cmd, dir_):
+	print "====> Executing: %s    in directory: %s" % (cmd, dir_)
+	olddir = os.getcwd()
+	os.chdir(dir_)
+	os.waitpid(subprocess.Popen(cmd, shell=True).pid, 0)
+	os.chdir(olddir)
+
+
 
 def configure(conf):
 	conf.check_tool('compiler_cc compiler_cxx gas')
@@ -60,9 +76,10 @@ def configure(conf):
 	if not Options.options.enable_extra_warnings:
 		add_compiler_flags(conf, conf.env, ['-Wno-missing-field-initializers', '-Wno-long-long', '-Wno-empty-body', '-Wno-unused-parameter', '-Wno-ignored-qualifiers', '-Wno-strict-aliasing'], 'CXX', 'STRICT')
 
-	# externals
+	# externals configured by waf
 	conf.recurse('extern/dumb-0.9.3')
 
+	# sources
 	conf.recurse('src/backend')
 	conf.recurse('src/common')
 	conf.recurse('src/frontend')
@@ -87,9 +104,15 @@ def configure(conf):
 
 
 
-def build(bld):
+def external(ctx):
+	# mpg123
+	run_cmd("./configure --enable-static --disable-shared", 'extern/mpg123-1.12.3')
+	run_cmd("make -j%d" % get_num_jobs(), 'extern/mpg123-1.12.3')
 
-	# externals
+
+
+def build(bld):
+	# externals built by waf
 	bld.recurse('extern/dumb-0.9.3')
 	bld.recurse('extern/jsoncpp')
 
@@ -147,4 +170,9 @@ def build(bld):
 	# add post-build function to show the unit test result summary
 	import unittestw
 	bld.add_post_fun(unittestw.summary)
+
+
+def distclean(ctx):
+	# externals distcleaned by their own build scripts
+	run_cmd("make distclean", 'extern/mpg123-1.12.3')
 
