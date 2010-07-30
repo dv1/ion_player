@@ -1,4 +1,4 @@
-SUBDIRS = src doc adplugdb test
+SUBDIRS = src
 
 EXTRA_DIST = adplug.spec adplug.qpg BUGS adplug.pc.in
 
