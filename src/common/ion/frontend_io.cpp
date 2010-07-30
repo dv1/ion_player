@@ -32,7 +32,7 @@ void frontend_io::parse_incoming_line(std::string const &line)
 		transition(event_params[0], event_params[1]);
 	else if (event_command_name == "started")
 	{
-		if (event_params.size() >= 2)
+		if (event_params.size() >= 2 && !event_params[1].empty())
 			started(uri(event_params[0]), uri(event_params[1]));
 		else if (event_params.size() >= 1)
 			started(uri(event_params[0]), boost::none);
