@@ -251,7 +251,6 @@ protected:
 				{
 					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
-					//unsigned int num_samples_written = current_decoder->update(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write);
 					unsigned int num_samples_written = (*resampler_)(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write, *current_decoder);
 					if (num_samples_written < num_samples_to_write) // less samples were written than expected -> adjust offset and num samples to write, and try the next song
 					{
