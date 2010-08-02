@@ -24,6 +24,7 @@ protected slots:
 
 protected:
 	void print_backend_line(std::string const &line);
+	void current_uri_changed(ion::uri_optional_t const &new_uri);
 
 
 	QProcess backend_process;

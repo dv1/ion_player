@@ -17,6 +17,7 @@ testclass::testclass():
 	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), ion::metadata_t("{}")));
 	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
 
+	frontend_io_->get_current_uri_changed_signal().connect(boost::lambda::bind(&testclass::current_uri_changed, this, boost::lambda::_1));
 	frontend_io_->set_current_playlist(simple_playlist_);
 
 	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));
@@ -87,6 +88,15 @@ void testclass::print_backend_line(std::string const &line)
 {
 	std::cerr << "stdin> " << line << std::endl;
 	backend_process.write((line + "\n").c_str());
+}
+
+
+void testclass::current_uri_changed(ion::uri_optional_t const &new_uri)
+{
+	if (new_uri)
+		std::cerr << "Current URI changed to " << new_uri->get_full() << std::endl;
+	else
+		std::cerr << "Current URI cleared" << std::endl;
 }
 
 
