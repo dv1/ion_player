@@ -23,8 +23,8 @@ testclass::testclass():
 	connect(&backend_process, SIGNAL(readyReadStandardOutput()), this, SLOT(try_read_stdout_line()));
 	connect(&backend_process, SIGNAL(readyReadStandardError()), this, SLOT(try_read_stderr_line()));
 	connect(&backend_process, SIGNAL(started()), this, SLOT(started()));
-	connect(&backend_process, SIGNAL(error()), QCoreApplication::instance(), SLOT(quit()));
-	connect(&backend_process, SIGNAL(finished()), QCoreApplication::instance(), SLOT(quit()));
+	connect(&backend_process, SIGNAL(error(QProcess::ProcessError)), QCoreApplication::instance(), SLOT(quit()));
+	connect(&backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), QCoreApplication::instance(), SLOT(quit()));
 	backend_process.setReadChannel(QProcess::StandardOutput);
 	backend_process.setProcessChannelMode(QProcess::SeparateChannels);
 
@@ -65,31 +65,27 @@ void testclass::started()
 
 void testclass::try_read_stdout_line()
 {
-	if (!backend_process.canReadLine())
-		return;
+	while (backend_process.canReadLine())
+	{
+		QString line = backend_process.readLine().trimmed();
+		std::cerr << "stdout> " << line.toStdString() << std::endl;
+		frontend_io_->parse_incoming_line(line.toStdString());
 
-	QString line = backend_process.readLine().trimmed();
-	std::cout << "stdout> " << line.toStdString() << std::endl;
-	frontend_io_->parse_incoming_line(line.toStdString());
+		if (line.startsWith("resource_finished"))
+			print_backend_line("quit");
+	}
 
-	if (line.startsWith("resource_finished"))
-		print_backend_line("quit");
 }
 
 
 void testclass::try_read_stderr_line()
 {
-	if (!backend_process.canReadLine())
-		return;
-
-	QString line = backend_process.readLine();
-	std::cout << "stderr> " << line.toStdString() << std::endl;
 }
 
 
 void testclass::print_backend_line(std::string const &line)
 {
-	std::cout << "stdin> " << line << std::endl;
+	std::cerr << "stdin> " << line << std::endl;
 	backend_process.write((line + "\n").c_str());
 }
 
