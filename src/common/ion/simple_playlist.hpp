@@ -12,8 +12,6 @@
 #include <ion/metadata.hpp>
 #include <ion/uri.hpp>
 
-#include "playlist.hpp"
-
 
 namespace ion
 {
@@ -57,8 +55,8 @@ public:
 	inline resource_event_signal_t & get_resource_added_signal() { return resource_added_signal; }
 	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }
 
-	metadata_optional_t get_metadata_for(uri const &uri_);
-	uri_optional_t get_succeeding_uri(uri const &uri_);
+	metadata_optional_t get_metadata_for(uri const &uri_) const;
+	uri_optional_t get_succeeding_uri(uri const &uri_) const;
 	void mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type);
 
 	void add_entry(entry const &entry_);
@@ -66,9 +64,18 @@ public:
 
 
 protected:
+	entries_t entries;
 	current_uri_changed_callback_t current_uri_changed_callback;
 	resource_event_signal_t resource_added_signal, resource_removed_signal;
 };
+
+
+simple_playlist::current_uri_changed_callback_t & get_current_uri_changed_callback(simple_playlist &playlist);
+simple_playlist::resource_event_signal_t & get_resource_added_signal(simple_playlist &playlist);
+simple_playlist::resource_event_signal_t & get_resource_removed_signal(simple_playlist &playlist);
+metadata_optional_t get_metadata_for(simple_playlist const &playlist, uri const &uri_);
+uri_optional_t get_succeeding_uri(simple_playlist const &playlist, uri const &uri_);
+void mark_backend_resource_incompatibility(simple_playlist &playlist, uri const &uri_, std::string const &backend_type);
 
 
 }

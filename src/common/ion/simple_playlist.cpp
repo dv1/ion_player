@@ -5,13 +5,13 @@ namespace ion
 {
 
 
-metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_)
+metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_) const
 {
 	return metadata_t(Json::objectValue);
 }
 
 
-uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_)
+uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_) const
 {
 	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
 	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
@@ -58,6 +58,44 @@ void simple_playlist::remove_entry(entry const &entry_)
 	entries_by_uri.erase(uri_tag_iter);
 
 	resource_removed_signal(uri_);
+}
+
+
+
+
+simple_playlist::current_uri_changed_callback_t & get_current_uri_changed_callback(simple_playlist &playlist)
+{
+	return playlist.get_current_uri_changed_callback();
+}
+
+
+simple_playlist::resource_event_signal_t & get_resource_added_signal(simple_playlist &playlist)
+{
+	return playlist.get_resource_added_signal();
+}
+
+
+simple_playlist::resource_event_signal_t & get_resource_removed_signal(simple_playlist &playlist)
+{
+	return playlist.get_resource_removed_signal();
+}
+
+
+metadata_optional_t get_metadata_for(simple_playlist const &playlist, uri const &uri_)
+{
+	return playlist.get_metadata_for(uri_);
+}
+
+
+uri_optional_t get_succeeding_uri(simple_playlist const &playlist, uri const &uri_)
+{
+	return playlist.get_succeeding_uri(uri_);
+}
+
+
+void mark_backend_resource_incompatibility(simple_playlist &playlist, uri const &uri_, std::string const &backend_type)
+{
+	playlist.mark_backend_resource_incompatibility(uri_, backend_type);
 }
 
 

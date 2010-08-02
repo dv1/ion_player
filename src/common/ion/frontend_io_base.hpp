@@ -52,8 +52,8 @@ public:
 
 
 	explicit frontend_io_base(send_line_to_backend_callback_t const &send_line_to_backend_callback):
-		current_playlist(0),
-		send_line_to_backend_callback(send_line_to_backend_callback)
+		send_line_to_backend_callback(send_line_to_backend_callback),
+		current_playlist(0)
 	{
 	}
 
@@ -143,7 +143,7 @@ protected:
 		if (uri_ == added_uri) // the added uri is right after the current uri, meaning that it just became the next uri
 		{
 			next_uri = added_uri;
-			send_line_to_backend(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 		}
 	}
 
@@ -156,7 +156,7 @@ protected:
 		// the current uri was removed -> trigger a transition to the next resource
 		if (removed_uri == current_uri)
 		{
-			send_line_to_backend("trigger_transition");
+			send_line_to_backend_callback("trigger_transition");
 			return;
 		}
 
@@ -164,7 +164,7 @@ protected:
 		if (current_uri && next_uri && (removed_uri == *next_uri))
 		{
 			next_uri = get_succeeding_uri(*current_playlist, *current_uri);
-			send_line_to_backend(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 		}
 	}
 
@@ -188,7 +188,7 @@ protected:
 		{
 			next_uri = get_succeeding_uri(*current_playlist, new_uri);
 			if (next_uri)
-				send_line_to_backend(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 		}
 		current_uri_changed_signal(current_uri);
 	}

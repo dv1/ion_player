@@ -3,7 +3,7 @@
 
 
 #include <QProcess>
-#include <ion/frontend_io.hpp>
+#include <ion/frontend_io_base.hpp>
 #include <ion/simple_playlist.hpp>
 
 
@@ -27,7 +27,7 @@ protected:
 
 
 	QProcess backend_process;
-	typedef ion::frontend_io < ion::simple_playlist > frontend_io_t;
+	typedef ion::frontend_io_base < ion::simple_playlist > frontend_io_t;
 	frontend_io_t *frontend_io_;
 	ion::simple_playlist simple_playlist_;
 };
