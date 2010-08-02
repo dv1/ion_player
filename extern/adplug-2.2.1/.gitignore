@@ -1,0 +1,11 @@
+*.o
+*.lo
+Makefile
+adplug.pc
+adplugdb*
+config.log
+config.status
+libtool
+.deps
+.libs
+libadplug.la

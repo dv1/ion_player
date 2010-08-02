@@ -1,9 +1,10 @@
+build68k
+cpudefs.c
+cpuemu.c
+cpustbl.c
+cputbl.h
+gencpu
+uadecore
 *.o
-*.so
-uade.pc
 Makefile
-src/Makefile
-src/frontends/*/Makefile
-
-*~
-*#
+uade.pc
