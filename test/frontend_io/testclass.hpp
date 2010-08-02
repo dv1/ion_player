@@ -27,7 +27,8 @@ protected:
 
 
 	QProcess backend_process;
-	ion::frontend_io *frontend_io_;
+	typedef ion::frontend_io < ion::simple_playlist > frontend_io_t;
+	frontend_io_t *frontend_io_;
 	ion::simple_playlist simple_playlist_;
 };
 

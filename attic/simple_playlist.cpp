@@ -1,3 +1,7 @@
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <ion/uri.hpp>
+#include "frontend_io.hpp"
 #include "simple_playlist.hpp"
 
 
@@ -5,13 +9,7 @@ namespace ion
 {
 
 
-metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_)
-{
-	return metadata_t(Json::objectValue);
-}
-
-
-uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_)
+uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_) const
 {
 	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
 	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
@@ -32,8 +30,22 @@ uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_)
 }
 
 
-void simple_playlist::mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type)
+metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_) const
 {
+	return metadata_t(Json::objectValue);
+}
+
+
+void simple_playlist::backend_resource_incompatibility(std::string const &backend_type, uri const &uri_)
+{
+}
+
+
+void simple_playlist::add_to_frontend_io(frontend_io &frontend_io_)
+{
+	frontend_io_.set_current_playlist(*this);
+	resource_added_signal.connect(boost::lambda::bind(&frontend_io::resource_added, &frontend_io_, boost::lambda::_1));
+	resource_removed_signal.connect(boost::lambda::bind(&frontend_io::resource_removed, &frontend_io_, boost::lambda::_1));
 }
 
 

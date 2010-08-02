@@ -5,8 +5,6 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
 #include <boost/signals2/signal.hpp>
 
 #include <ion/metadata.hpp>
@@ -19,12 +17,14 @@ namespace ion
 {
 
 
-class simple_playlist
+class frontend_io;
+
+
+class simple_playlist:
+	public playlist
 {
 public:
 	typedef boost::signals2::signal < void(ion::uri const &uri_) > resource_event_signal_t;
-	typedef boost::function < void(uri_optional_t const &new_current_uri) > current_uri_changed_callback_t;
-
 
 	struct entry
 	{
@@ -50,23 +50,18 @@ public:
 	> entries_t;
 
 
+	virtual uri_optional_t get_succeeding_uri(uri const &uri_) const;
+	virtual metadata_optional_t get_metadata_for(uri const &uri_) const;
+	virtual void backend_resource_incompatibility(std::string const &backend_type, uri const &uri_);
 
-
-
-	inline current_uri_changed_callback_t & get_current_uri_changed_callback() { return current_uri_changed_callback; }
-	inline resource_event_signal_t & get_resource_added_signal() { return resource_added_signal; }
-	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }
-
-	metadata_optional_t get_metadata_for(uri const &uri_);
-	uri_optional_t get_succeeding_uri(uri const &uri_);
-	void mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type);
+	void add_to_frontend_io(frontend_io &frontend_io_);
 
 	void add_entry(entry const &entry_);
 	void remove_entry(entry const &entry_);
 
 
 protected:
-	current_uri_changed_callback_t current_uri_changed_callback;
+	entries_t entries;
 	resource_event_signal_t resource_added_signal, resource_removed_signal;
 };
 

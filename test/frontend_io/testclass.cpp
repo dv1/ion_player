@@ -10,7 +10,7 @@
 testclass::testclass():
 	frontend_io_(0)
 {
-	frontend_io_ = new ion::frontend_io(boost::lambda::bind(&testclass::print_backend_line, this, boost::lambda::_1));
+	frontend_io_ = new frontend_io_t(boost::lambda::bind(&testclass::print_backend_line, this, boost::lambda::_1));
 
 	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), ion::metadata_t("{}")));
 	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), ion::metadata_t("{}")));
