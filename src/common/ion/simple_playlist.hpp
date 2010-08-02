@@ -4,7 +4,7 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/random_access_index.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/signals2/signal.hpp>
@@ -38,7 +38,7 @@ public:
 	typedef boost::multi_index::multi_index_container <
 		entry,
 		boost::multi_index::indexed_by <
-			boost::multi_index::sequenced < boost::multi_index::tag < sequence_tag > >,
+			boost::multi_index::random_access < boost::multi_index::tag < sequence_tag > >,
 			boost::multi_index::ordered_unique <
 				boost::multi_index::tag < uri_tag >,
 				boost::multi_index::member < entry, ion::uri, &entry::uri_ >
@@ -59,6 +59,11 @@ public:
 
 	void add_entry(entry const &entry_);
 	void remove_entry(entry const &entry_);
+
+	uint64_t get_num_entries() const;
+	entry const * get_entry(uint64_t const nr) const;
+	entry const * get_entry(uri const &uri_) const;
+	boost::optional < uint64_t > get_entry_index(uri const &uri_) const;
 
 
 protected:

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "ui_main_bar.h"
+#include "playlist_qt_model.hpp"
 
 
 namespace ion
@@ -38,6 +39,9 @@ protected:
 	};
 
 	QRect geometries[2];
+
+	simple_playlist playlist_;
+	playlist_qt_model *playlist_qt_model_;
 };
 
 

@@ -1,6 +1,6 @@
 #include <QApplication>
 #include <QDesktopWidget>
-//#include <QListView>
+#include <QTreeView>
 #include "main_window.hpp"
 
 
@@ -34,14 +34,23 @@ main_window::main_window():
 	connect(main_bar_gen.open_playlist_button, SIGNAL(clicked()), this, SLOT(toggle_playlist()));
 	connect(main_bar_gen.quit_button, SIGNAL(clicked()), this, SLOT(close()));
 
-/*	QListView *list = new QListView(this);
+	playlist_qt_model_ = new playlist_qt_model(this, playlist_);
+
+	QTreeView *list = new QTreeView(this);
+	list->setModel(playlist_qt_model_);
 	list->setAlternatingRowColors(true);
-	main_bar_gen.playlist_tabs->addTab(list, "playlist1");*/
+	main_bar_gen.playlist_tabs->addTab(list, "playlist1");
+
+	playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), ion::metadata_t("{}")));
+	playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), ion::metadata_t("{}")));
+	playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), ion::metadata_t("{}")));
+	playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
 }
 
 
 main_window::~main_window()
 {
+	delete playlist_qt_model_;
 }
 
 

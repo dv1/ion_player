@@ -55,9 +55,58 @@ void simple_playlist::remove_entry(entry const &entry_)
 	if (uri_tag_iter == entries_by_uri.end())
 		return;
 
+	// NOTE: erase must happen before the signal is emitted, because otherwise a transition event may be handled incorrectly (it may still see the entry)
+	// TODO: to solve this, use a mutex
 	entries_by_uri.erase(uri_tag_iter);
-
 	resource_removed_signal(uri_);
+}
+
+
+uint64_t simple_playlist::get_num_entries() const
+{
+	return entries.size();
+}
+
+
+simple_playlist::entry const * simple_playlist::get_entry(uint64_t const nr) const
+{
+	if (nr >= get_num_entries())
+		return 0;
+
+	typedef entries_t::index < sequence_tag > ::type entries_sequence_t;
+	entries_sequence_t const &entries_sequence = entries.get < sequence_tag > ();
+	entries_sequence_t::const_iterator iter = entries_sequence.begin();
+	iter = iter + nr;
+	return &(*iter);
+}
+
+
+simple_playlist::entry const * simple_playlist::get_entry(uri const &uri_) const
+{
+	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
+	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
+	entries_by_uri_t::const_iterator iter = entries_by_uri.find(uri_);
+
+	if (iter != entries_by_uri.end())
+		return &(*iter);
+	else
+		return 0;
+}
+
+
+boost::optional < uint64_t > simple_playlist::get_entry_index(uri const &uri_) const
+{
+	typedef entries_t::index < sequence_tag > ::type entries_sequence_t;
+	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
+
+	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
+	entries_by_uri_t::const_iterator uri_iter = entries_by_uri.find(uri_);
+	if (uri_iter == entries_by_uri.end())
+		return boost::none;
+
+	entries_sequence_t const &entries_sequence = entries.get < sequence_tag > ();
+	entries_sequence_t::const_iterator sequence_iter = entries.project < sequence_tag > (uri_iter);
+	return uint64_t(sequence_iter - entries_sequence.begin());
 }
 
 

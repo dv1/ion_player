@@ -4,7 +4,7 @@
 #include <QAbstractListModel>
 #include <QVariant>
 #include <boost/signals2/connection.hpp>
-#include "playlist.hpp"
+#include <ion/simple_playlist.hpp>
 
 
 namespace ion
@@ -17,10 +17,11 @@ class playlist_qt_model:
 	public QAbstractListModel
 {
 public:
-	explicit playlist_qt_model(QObject *parent_, playlist &playlist_);
+	explicit playlist_qt_model(QObject *parent_, simple_playlist &playlist_);
 	~playlist_qt_model();
 
 
+	virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 	virtual int columnCount(QModelIndex const &parent) const;
 	virtual QVariant data(QModelIndex const &index, int role) const;
 	virtual QModelIndex parent(QModelIndex const &index) const;
@@ -28,11 +29,11 @@ public:
 
 
 protected:
-	void entry_added(playlist::resource_id_t const resource_id);
-	void entry_removed(playlist::resource_id_t const resource_id);
+	void entry_added(uri const uri_);
+	void entry_removed(uri const uri_);
 
 
-	playlist &playlist_;
+	simple_playlist &playlist_;
 	boost::signals2::connection
 		entry_added_signal_connection,
 		entry_removed_signal_connection;
