@@ -85,7 +85,6 @@ public:
 	{
 		stop();
 		current_playlist = &new_current_playlist;
-		current_uri_changed_signal_connection = current_uri_changed_signal.connect(get_current_uri_changed_callback(*current_playlist)/*boost::lambda::bind(&playlist_t::current_uri_changed, current_playlist, boost::lambda::_1)*/);
 		resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_added, this, boost::lambda::_1));
 		resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_removed, this, boost::lambda::_1));
 	}
@@ -126,6 +125,13 @@ public:
 	{
 		send_line_to_backend_callback("stop");
 	}
+
+
+	current_uri_changed_signal_t & get_current_uri_changed_signal()
+	{
+		return current_uri_changed_signal;
+	}
+
 
 
 
@@ -224,7 +230,7 @@ protected:
 	// Callback & signals
 	send_line_to_backend_callback_t send_line_to_backend_callback;
 	current_uri_changed_signal_t current_uri_changed_signal;
-	boost::signals2::connection current_uri_changed_signal_connection, resource_added_signal_connection, resource_removed_signal_connection;
+	boost::signals2::connection resource_added_signal_connection, resource_removed_signal_connection;
 
 	// URIs
 	uri_optional_t current_uri, next_uri;

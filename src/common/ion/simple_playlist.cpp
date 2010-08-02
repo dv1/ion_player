@@ -63,12 +63,6 @@ void simple_playlist::remove_entry(entry const &entry_)
 
 
 
-simple_playlist::current_uri_changed_callback_t & get_current_uri_changed_callback(simple_playlist &playlist)
-{
-	return playlist.get_current_uri_changed_callback();
-}
-
-
 simple_playlist::resource_event_signal_t & get_resource_added_signal(simple_playlist &playlist)
 {
 	return playlist.get_resource_added_signal();

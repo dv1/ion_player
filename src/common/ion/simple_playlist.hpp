@@ -21,7 +21,6 @@ class simple_playlist
 {
 public:
 	typedef boost::signals2::signal < void(ion::uri const &uri_) > resource_event_signal_t;
-	typedef boost::function < void(uri_optional_t const &new_current_uri) > current_uri_changed_callback_t;
 
 
 	struct entry
@@ -51,7 +50,6 @@ public:
 
 
 
-	inline current_uri_changed_callback_t & get_current_uri_changed_callback() { return current_uri_changed_callback; }
 	inline resource_event_signal_t & get_resource_added_signal() { return resource_added_signal; }
 	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }
 
@@ -65,12 +63,10 @@ public:
 
 protected:
 	entries_t entries;
-	current_uri_changed_callback_t current_uri_changed_callback;
 	resource_event_signal_t resource_added_signal, resource_removed_signal;
 };
 
 
-simple_playlist::current_uri_changed_callback_t & get_current_uri_changed_callback(simple_playlist &playlist);
 simple_playlist::resource_event_signal_t & get_resource_added_signal(simple_playlist &playlist);
 simple_playlist::resource_event_signal_t & get_resource_removed_signal(simple_playlist &playlist);
 metadata_optional_t get_metadata_for(simple_playlist const &playlist, uri const &uri_);
