@@ -52,6 +52,7 @@ public:
 
 	inline resource_event_signal_t & get_resource_added_signal() { return resource_added_signal; }
 	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }
+	inline resource_event_signal_t & get_resource_metadata_changed_signal() { return resource_metadata_changed_signal; }
 
 	metadata_optional_t get_metadata_for(uri const &uri_) const;
 	uri_optional_t get_succeeding_uri(uri const &uri_) const;
@@ -59,6 +60,7 @@ public:
 
 	void add_entry(entry const &entry_);
 	void remove_entry(entry const &entry_);
+	void set_resource_metadata(uri const &uri_, metadata_t const & new_metadata);
 
 	uint64_t get_num_entries() const;
 	entry const * get_entry(uint64_t const nr) const;
@@ -68,7 +70,7 @@ public:
 
 protected:
 	entries_t entries;
-	resource_event_signal_t resource_added_signal, resource_removed_signal;
+	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
 };
 
 

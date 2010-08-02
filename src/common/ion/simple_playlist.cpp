@@ -62,6 +62,26 @@ void simple_playlist::remove_entry(entry const &entry_)
 }
 
 
+void simple_playlist::set_resource_metadata(uri const &uri_, metadata_t const & new_metadata)
+{
+	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
+	entries_by_uri_t &entries_by_uri = entries.get < uri_tag > ();
+	entries_by_uri_t::iterator uri_tag_iter = entries_by_uri.find(uri_);
+
+	if (uri_tag_iter == entries_by_uri.end())
+		return;
+
+	simple_playlist::entry entry_ = *uri_tag_iter;
+
+	entries_by_uri.erase(uri_tag_iter);
+
+	entry_.metadata = new_metadata;
+	entries.push_back(entry_);
+
+	resource_metadata_changed_signal(uri_);
+}
+
+
 uint64_t simple_playlist::get_num_entries() const
 {
 	return entries.size();
