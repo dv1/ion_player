@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>main_window</class>
+ <widget class="QMainWindow" name="main_window">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>874</width>
+    <height>666</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ion</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="margin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="documentMode">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_play"/>
+   <addaction name="action_pause"/>
+   <addaction name="action_stop"/>
+   <addaction name="action_previous_song"/>
+   <addaction name="action_next_song"/>
+  </widget>
+  <action name="action_play">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/play</normaloff>:/icons/play</iconset>
+   </property>
+   <property name="text">
+    <string>play</string>
+   </property>
+  </action>
+  <action name="action_pause">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/pause</normaloff>:/icons/pause</iconset>
+   </property>
+   <property name="text">
+    <string>pause</string>
+   </property>
+  </action>
+  <action name="action_stop">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/stop</normaloff>:/icons/stop</iconset>
+   </property>
+   <property name="text">
+    <string>stop</string>
+   </property>
+  </action>
+  <action name="action_previous_song">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/previous</normaloff>:/icons/previous</iconset>
+   </property>
+   <property name="text">
+    <string>previous_song</string>
+   </property>
+   <property name="shortcut">
+    <string>Media Previous</string>
+   </property>
+  </action>
+  <action name="action_next_song">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/next</normaloff>:/icons/next</iconset>
+   </property>
+   <property name="text">
+    <string>next_song</string>
+   </property>
+   <property name="shortcut">
+    <string>Media Next</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
