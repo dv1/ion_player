@@ -52,6 +52,7 @@ class playlists:
 	public QObject
 {
 public:
+	// TODO: use a better structure (multi-index? map?) that allows for indexing by the view widget as well
 	typedef boost::ptr_vector < playlists_entry > entries_t;
 
 
@@ -61,6 +62,7 @@ public:
 	void remove_entry(QTreeView *entry_view_widget);
 
 	void set_active_entry(playlists_entry &new_active_entry);
+	playlists_entry *get_currently_visible_entry();
 
 	inline audio_frontend_io& get_audio_frontend_io() { return audio_frontend_io_; }
 	inline QTabWidget& get_tab_widget() { return tab_widget; }

@@ -125,6 +125,7 @@ void main_window::backend_filepath_filedialog()
 
 void main_window::create_new_playlist()
 {
+	playlists_->add_entry("New playlist");
 }
 
 

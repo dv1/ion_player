@@ -97,6 +97,19 @@ void playlists::set_active_entry(playlists_entry &new_active_entry)
 }
 
 
+playlists_entry* playlists::get_currently_visible_entry()
+{
+	QWidget *page_widget = tab_widget.currentWidget();
+	BOOST_FOREACH(playlists_entry &entry, entries)
+	{
+		if (entry.view_widget == page_widget)
+			return &entry;
+	}
+
+	return 0;
+}
+
+
 }
 }
 
