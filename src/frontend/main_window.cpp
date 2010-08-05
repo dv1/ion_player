@@ -22,12 +22,17 @@ main_window::main_window():
 	settings_dialog = new QDialog(this);
 	settings_dialog_ui.setupUi(settings_dialog);
 
-	connect(main_window_ui.action_play,          SIGNAL(triggered()), this, SLOT(play()));
-	connect(main_window_ui.action_pause,         SIGNAL(triggered()), this, SLOT(pause()));
-	connect(main_window_ui.action_stop,          SIGNAL(triggered()), this, SLOT(stop()));
-	connect(main_window_ui.action_previous_song, SIGNAL(triggered()), this, SLOT(previous_song()));
-	connect(main_window_ui.action_next_song,     SIGNAL(triggered()), this, SLOT(next_song()));
-	connect(main_window_ui.action_settings,      SIGNAL(triggered()), this, SLOT(show_settings()));
+	QToolButton *create_playlist_button = new QToolButton(this);
+	create_playlist_button->setDefaultAction(main_window_ui.action_create_new_playlist);
+	main_window_ui.playlist_tab_widget->setCornerWidget(create_playlist_button);
+
+	connect(main_window_ui.action_play,                SIGNAL(triggered()), this, SLOT(play()));
+	connect(main_window_ui.action_pause,               SIGNAL(triggered()), this, SLOT(pause()));
+	connect(main_window_ui.action_stop,                SIGNAL(triggered()), this, SLOT(stop()));
+	connect(main_window_ui.action_previous_song,       SIGNAL(triggered()), this, SLOT(previous_song()));
+	connect(main_window_ui.action_next_song,           SIGNAL(triggered()), this, SLOT(next_song()));
+	connect(main_window_ui.action_settings,            SIGNAL(triggered()), this, SLOT(show_settings()));
+	connect(main_window_ui.action_create_new_playlist, SIGNAL(triggered()), this, SLOT(create_new_playlist()));
 
 	position_volume_widget_ui.volume->setRange(ion::backend::decoder::min_volume(), ion::backend::decoder::max_volume()); // TODO: see above
 
@@ -100,6 +105,11 @@ void main_window::backend_filepath_filedialog()
 {
 	QString backend_filepath = QFileDialog::getOpenFileName(this, "Select backend", "");
 	settings_dialog_ui.backend_filepath->setText(backend_filepath);
+}
+
+
+void main_window::create_new_playlist()
+{
 }
 
 

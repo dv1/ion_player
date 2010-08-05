@@ -23,6 +23,12 @@
     </property>
     <item>
      <widget class="QStackedWidget" name="central_pages">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -37,6 +43,9 @@
         <item>
          <widget class="QTabWidget" name="playlist_tab_widget">
           <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <property name="tabsClosable">
            <bool>true</bool>
           </property>
          </widget>
@@ -91,6 +100,7 @@ Use the settings button above to open the dialog window.</string>
    <addaction name="action_stop"/>
    <addaction name="action_previous_song"/>
    <addaction name="action_next_song"/>
+   <addaction name="separator"/>
    <addaction name="action_settings"/>
   </widget>
   <widget class="QToolBar" name="sliders_toolbar">
@@ -162,6 +172,15 @@ Use the settings button above to open the dialog window.</string>
    </property>
    <property name="text">
     <string>settings</string>
+   </property>
+  </action>
+  <action name="action_create_new_playlist">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/new_tab</normaloff>:/icons/new_tab</iconset>
+   </property>
+   <property name="text">
+    <string>create_new_playlist</string>
    </property>
   </action>
  </widget>

@@ -39,6 +39,8 @@ protected slots:
 
 	void backend_filepath_filedialog();
 
+	void create_new_playlist();
+
 
 protected:
 	void start_backend();

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file alias="new_tab">resources/icons/tab-new.png</file>
     <file alias="settings">resources/icons/preferences-system.png</file>
     <file alias="pause">resources/icons/media-playback-pause.png</file>
     <file alias="play">resources/icons/media-playback-start.png</file>
