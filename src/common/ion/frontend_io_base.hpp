@@ -81,12 +81,22 @@ public:
 	}
 
 
-	void set_current_playlist(playlist_t &new_current_playlist)
+	void set_current_playlist(playlist_t *new_current_playlist)
 	{
+		if (current_playlist == new_current_playlist)
+			return;
+
 		stop();
-		current_playlist = &new_current_playlist;
-		resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_added, this, boost::lambda::_1));
-		resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_removed, this, boost::lambda::_1));
+		resource_added_signal_connection.disconnect();
+		resource_removed_signal_connection.disconnect();
+
+		current_playlist = new_current_playlist;
+
+		if (current_playlist != 0)
+		{
+			resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_added, this, boost::lambda::_1));
+			resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_removed, this, boost::lambda::_1));
+		}
 	}
 
 

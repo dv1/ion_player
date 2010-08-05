@@ -2,19 +2,21 @@
 #define ION_FRONTEND_QT4_MAIN_WINDOW_HPP
 
 #include <QMainWindow>
+#include <QProcess>
 #include "ui_main_window.h"
 #include "ui_position_volume_widget.h"
 #include "ui_settings.h"
 #include "settings.hpp"
-
-
-class QProcess;
+#include "audio_frontend_io.hpp"
 
 
 namespace ion
 {
 namespace frontend
 {
+
+
+class playlists;
 
 
 class main_window:
@@ -35,11 +37,16 @@ protected slots:
 	void show_settings();
 
 	void set_current_position(int new_position);
-	void set_current_voume(int new_volume);
+	void set_current_volume(int new_volume);
 
 	void backend_filepath_filedialog();
 
 	void create_new_playlist();
+
+	void try_read_stdout_line();
+	void backend_started();
+	void backend_error(QProcess::ProcessError process_error);
+	void backend_finished(int exit_code, QProcess::ExitStatus exit_status);
 
 
 protected:
@@ -51,9 +58,13 @@ protected:
 	void disable_gui();
 	void enable_gui();
 
+	void print_backend_line(std::string const &line);
 
+
+	typedef boost::shared_ptr < audio_frontend_io > frontend_io_ptr_t;
+	frontend_io_ptr_t audio_frontend_io_;
 	QProcess *backend_process;
-	//playlists playlists_;
+	playlists *playlists_;
 	settings *settings_;
 
 	QDialog *settings_dialog;

@@ -1,6 +1,9 @@
 #include <QFileDialog>
 #include <QProcess>
+#include <boost/lambda/bind.hpp>
+#include <boost/lambda/lambda.hpp>
 #include "main_window.hpp"
+#include "playlists.hpp"
 #include "../backend/decoder.hpp" // TODO: this is a hack - a way to access min_volume() and max_volume(); put these in common/ instead
 
 
@@ -37,12 +40,22 @@ main_window::main_window():
 	position_volume_widget_ui.volume->setRange(ion::backend::decoder::min_volume(), ion::backend::decoder::max_volume()); // TODO: see above
 
 	connect(position_volume_widget_ui.position, SIGNAL(sliderMoved(int)), this, SLOT(set_current_position(int)));
-	connect(position_volume_widget_ui.volume,   SIGNAL(sliderMoved(int)), this, SLOT(set_current_voume(int)));
+	connect(position_volume_widget_ui.volume,   SIGNAL(sliderMoved(int)), this, SLOT(set_current_volume(int)));
 
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(backend_filepath_filedialog())); // TODO: better naming of the button and the slot
 
 
+	audio_frontend_io_ = frontend_io_ptr_t(new audio_frontend_io(boost::lambda::bind(&main_window::print_backend_line, this, boost::lambda::_1)));
+
 	settings_ = new settings(*this, this);
+
+	playlists_ = new playlists(*main_window_ui.playlist_tab_widget, *audio_frontend_io_, this);
+	playlists_entry &playlists_entry_ = playlists_->add_entry("Default");
+	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), ion::metadata_t("{}")));
+	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), ion::metadata_t("{}")));
+	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), ion::metadata_t("{}")));
+	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
+
 	start_backend();
 }
 
@@ -50,7 +63,9 @@ main_window::main_window():
 main_window::~main_window()
 {
 	stop_backend();
+	delete playlists_;
 	delete settings_;
+	audio_frontend_io_ = frontend_io_ptr_t();
 }
 
 
@@ -96,7 +111,7 @@ void main_window::set_current_position(int new_position)
 }
 
 
-void main_window::set_current_voume(int new_volume)
+void main_window::set_current_volume(int new_volume)
 {
 }
 
@@ -109,6 +124,37 @@ void main_window::backend_filepath_filedialog()
 
 
 void main_window::create_new_playlist()
+{
+}
+
+
+void main_window::try_read_stdout_line()
+{
+	if (backend_process == 0)
+		return;
+	if (!audio_frontend_io_)
+		return;
+
+	while (backend_process->canReadLine())
+	{
+		QString line = backend_process->readLine().trimmed();
+		std::cerr << "stdout> " << line.toStdString() << std::endl;
+		audio_frontend_io_->parse_incoming_line(line.toStdString());
+	}
+}
+
+
+void main_window::backend_started()
+{
+}
+
+
+void main_window::backend_error(QProcess::ProcessError process_error)
+{
+}
+
+
+void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_status)
 {
 }
 
@@ -128,7 +174,16 @@ void main_window::start_backend()
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.backend_not_configured_page);
 	}
 	else
+	{
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
+
+		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
+		connect(backend_process, SIGNAL(started()),                           this, SLOT(backend_started()));
+		connect(backend_process, SIGNAL(error(QProcess::ProcessError)),       this, SLOT(backend_error(QProcess::ProcessError)));
+		connect(backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(backend_finished(int, QProcess::ExitStatus)));
+		backend_process->setReadChannel(QProcess::StandardOutput);
+		backend_process->setProcessChannelMode(QProcess::SeparateChannels);
+	}
 }
 
 
@@ -167,6 +222,23 @@ void main_window::change_backend()
 	stop_backend();
 	start_backend();
 	// TODO: resume playback
+}
+
+
+void main_window::disable_gui()
+{
+}
+
+
+void main_window::enable_gui()
+{
+}
+
+
+void main_window::print_backend_line(std::string const &line)
+{
+	if (backend_process != 0)
+		backend_process->write((line + "\n").c_str());
 }
 
 

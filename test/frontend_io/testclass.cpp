@@ -18,7 +18,7 @@ testclass::testclass():
 	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
 
 	frontend_io_->get_current_uri_changed_signal().connect(boost::lambda::bind(&testclass::current_uri_changed, this, boost::lambda::_1));
-	frontend_io_->set_current_playlist(simple_playlist_);
+	frontend_io_->set_current_playlist(&simple_playlist_);
 
 	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));
 	connect(&backend_process, SIGNAL(readyReadStandardOutput()), this, SLOT(try_read_stdout_line()));
