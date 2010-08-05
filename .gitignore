@@ -1,4 +1,4 @@
 .waf-*
 .lock-wscript
 boost_.pyc
-build
+build$
