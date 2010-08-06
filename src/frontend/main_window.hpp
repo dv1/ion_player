@@ -43,6 +43,11 @@ protected slots:
 
 	void create_new_playlist();
 
+	void add_file_to_playlist();
+	void add_folder_contents_to_playlist();
+	void add_url_to_playlist();
+	void remove_selected_from_playlist();
+
 	void try_read_stdout_line();
 	void backend_started();
 	void backend_error(QProcess::ProcessError process_error);

@@ -1,5 +1,6 @@
 #include <QFileDialog>
 #include <QProcess>
+#include <QMessageBox>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include "main_window.hpp"
@@ -36,6 +37,10 @@ main_window::main_window():
 	connect(main_window_ui.action_next_song,           SIGNAL(triggered()), this, SLOT(next_song()));
 	connect(main_window_ui.action_settings,            SIGNAL(triggered()), this, SLOT(show_settings()));
 	connect(main_window_ui.action_create_new_playlist, SIGNAL(triggered()), this, SLOT(create_new_playlist()));
+	connect(main_window_ui.action_add_file,            SIGNAL(triggered()), this, SLOT(add_file_to_playlist()));
+	connect(main_window_ui.action_add_folder_contents, SIGNAL(triggered()), this, SLOT(add_folder_contents_to_playlist()));
+	connect(main_window_ui.action_add_url,             SIGNAL(triggered()), this, SLOT(add_url_to_playlist()));
+	connect(main_window_ui.action_remove_selected,     SIGNAL(triggered()), this, SLOT(remove_selected_from_playlist()));
 
 	position_volume_widget_ui.volume->setRange(ion::backend::decoder::min_volume(), ion::backend::decoder::max_volume()); // TODO: see above
 
@@ -126,6 +131,39 @@ void main_window::backend_filepath_filedialog()
 void main_window::create_new_playlist()
 {
 	playlists_->add_entry("New playlist");
+}
+
+
+void main_window::add_file_to_playlist()
+{
+	playlists_entry *playlists_entry_ = playlists_->get_currently_visible_entry();
+	if (playlists_entry_ == 0)
+	{
+		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot add a file");
+		return;
+	}
+
+	QStringList song_filenames = QFileDialog::getOpenFileNames(this, QString("Add song to the playlist \"%1\"").arg(playlists_entry_->name), "");
+
+	BOOST_FOREACH(QString const &filename, song_filenames)
+	{
+		playlists_entry_->playlist_.add_entry(simple_playlist::entry(ion::uri(std::string("file://") + filename.toStdString()), metadata_t("{}")));
+	}
+}
+
+
+void main_window::add_folder_contents_to_playlist()
+{
+}
+
+
+void main_window::add_url_to_playlist()
+{
+}
+
+
+void main_window::remove_selected_from_playlist()
+{
 }
 
 

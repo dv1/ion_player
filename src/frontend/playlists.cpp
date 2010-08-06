@@ -21,6 +21,8 @@ playlists_entry::playlists_entry(playlists &playlists_, QString const &name):
 {
 	QTabWidget &tab_widget = playlists_.get_tab_widget();
 	view_widget = new QTreeView(&tab_widget);
+	view_widget->setRootIsDecorated(false);
+	view_widget->setAlternatingRowColors(true);
 	playlist_qt_model_ = new playlist_qt_model(&tab_widget, playlist_);
 	view_widget->setModel(playlist_qt_model_);
 	tab_widget.addTab(view_widget, name);
