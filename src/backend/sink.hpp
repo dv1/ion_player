@@ -102,6 +102,8 @@ public:
 	*/
 	virtual void set_next_decoder(decoder_ptr_t next_decoder_) = 0;
 
+	virtual void clear_next_decoder() = 0;
+
 	/**
 	* Sets the song finished callback.
 	* CAUTION: do NOT set this during playback, otherwise race conditions may occur!

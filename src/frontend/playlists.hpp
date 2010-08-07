@@ -8,6 +8,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
+#include <json/value.h>
+
 
 class QTabWidget;
 class QTreeView;
@@ -38,6 +40,8 @@ public:
 	explicit playlists_entry(playlists &playlists_, QString const &name);
 	~playlists_entry();
 
+	void remove_selected();
+
 
 protected slots:
 	void view_row_doubleclicked(QModelIndex const &index);
@@ -64,6 +68,8 @@ public:
 	void set_active_entry(playlists_entry &new_active_entry);
 	playlists_entry *get_currently_visible_entry();
 
+	inline entries_t const & get_entries() const { return entries; }
+
 	inline audio_frontend_io& get_audio_frontend_io() { return audio_frontend_io_; }
 	inline QTabWidget& get_tab_widget() { return tab_widget; }
 
@@ -74,6 +80,12 @@ protected:
 	entries_t entries;
 	playlists_entry *active_entry; // the active entry is connected to the backend process
 };
+
+
+
+
+void load_from(playlists &playlists_, Json::Value const &in_value);
+void save_to(playlists const &playlists_, Json::Value &out_value);
 
 
 }

@@ -108,6 +108,11 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 			set_next_resource(params);
 			response_command = "";
 		}
+		else if (command == "clear_next_resource")
+		{
+			clear_next_resource();
+			response_command = "";
+		}
 		else if (command == "get_modules")
 		{
 			generate_modules_list(response_command, response_params);
@@ -294,6 +299,18 @@ void backend::set_next_resource(params_t const &params)
 	// in case of failure, an exception is thrown inside set_next_decoder(), this function exits, and the next decoder isn't set
 	set_next_decoder(uri_str, decoder_type, metadata);
 	current_sink->set_next_decoder(next_decoder);
+}
+
+
+void backend::clear_next_resource()
+{
+	if (!current_sink)
+		throw std::runtime_error("no sink initialized");
+
+	boost::lock_guard < boost::mutex > lock(decoder_mutex);
+	next_decoder = decoder_ptr_t();
+
+	current_sink->clear_next_decoder();
 }
 
 

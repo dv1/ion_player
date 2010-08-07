@@ -68,12 +68,23 @@ public:
 	// this function does not set anything.
 	void set_next_resource(params_t const &params);
 
+	// Clears the next resource. If any playback is happening, its ending will not trigger a transition anymore; instead, resource_finished will be triggered,
+	// just as if the play command were invoked without a next uri set.
+	// pre: A valid sink must have been set before.
+	// post: if a next resource was set, it will be no more.
+	void clear_next_resource();
+
 	// Stops any current playback. See the stop command in audio.txt for details.
 	// pre: A valid sink must have been set before.
 	// post: If nothing is playing, this function does nothing. (Note: paused playback does not count as "no playback".)
 	// If something is playing, playback will cease, and the current decoder is uninitialized. If a next resource is set, its decoder too will be uninitialized.
 	void stop_playback();
 
+	// Forces a transition to happen right now, even if playback did not end yet. This command only works if playback is running.
+	// If this command is called with no next resource set, resource_finished will be triggered.
+	// pre: A valid sink must have been set before. Playback must be running. (The command is ignored if no playback is running.)
+	// post: A transition or a resource_finished event will happen, depending on whether or not the next resource is set. Either case, it will happen immediately.
+	// If no playback is running, nothing happens.
 	void trigger_transition();
 
 	// Sets the loop mode, putting the response in the two response_* arguments. See the set_loop_mode command for details.

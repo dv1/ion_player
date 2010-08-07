@@ -20,10 +20,11 @@ playlists_entry::playlists_entry(playlists &playlists_, QString const &name):
 	playlists_(playlists_)
 {
 	QTabWidget &tab_widget = playlists_.get_tab_widget();
+	playlist_qt_model_ = new playlist_qt_model(&tab_widget, playlist_);
 	view_widget = new QTreeView(&tab_widget);
 	view_widget->setRootIsDecorated(false);
 	view_widget->setAlternatingRowColors(true);
-	playlist_qt_model_ = new playlist_qt_model(&tab_widget, playlist_);
+	view_widget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	view_widget->setModel(playlist_qt_model_);
 	tab_widget.addTab(view_widget, name);
 
@@ -41,6 +42,24 @@ playlists_entry::~playlists_entry()
 	tab_widget.removeTab(index);
 	delete view_widget;
 	delete playlist_qt_model_;
+}
+
+
+void playlists_entry::remove_selected()
+{
+	std::vector < ion::uri > uris_to_be_removed;
+
+	QModelIndexList selected_rows = view_widget->selectionModel()->selectedRows();
+	BOOST_FOREACH(QModelIndex const &index, selected_rows)
+	{
+		simple_playlist::entry const *playlist_entry = playlist_.get_entry(index.row());
+		uris_to_be_removed.push_back(playlist_entry->uri_);
+	}
+
+	BOOST_FOREACH(ion::uri const &uri_, uris_to_be_removed)
+	{
+		playlist_.remove_entry(uri_);
+	}
 }
 
 
@@ -109,6 +128,40 @@ playlists_entry* playlists::get_currently_visible_entry()
 	}
 
 	return 0;
+}
+
+
+
+
+void load_from(playlists &playlists_, Json::Value const &in_value)
+{
+	// TODO: clear out existing playlists
+
+	for (unsigned int index = 0; index < in_value.size(); ++index)
+	{
+		Json::Value json_entry = in_value[index];
+
+		playlists_entry &playlists_entry_ = playlists_.add_entry(json_entry["name"].asCString());
+		load_from(playlists_entry_.playlist_, json_entry["playlist"]);
+	}
+}
+
+
+void save_to(playlists const &playlists_, Json::Value &out_value)
+{
+	out_value = Json::Value(Json::arrayValue);
+
+	BOOST_FOREACH(playlists_entry const &entry_, playlists_.get_entries())
+	{
+		Json::Value json_playlist;
+		save_to(entry_.playlist_, json_playlist);
+
+		Json::Value json_entry(Json::objectValue);
+		json_entry["name"] = entry_.name.toStdString();
+		json_entry["playlist"] = json_playlist;
+
+		out_value.append(json_entry);
+	}
 }
 
 

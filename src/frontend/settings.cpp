@@ -11,9 +11,11 @@ namespace frontend
 
 
 settings::settings(main_window &main_window_, QObject *parent):
-	QSettings(parent),
+	QSettings(QSettings::IniFormat, QSettings::UserScope, QCoreApplication::organizationName(), QCoreApplication::applicationName(), parent),
 	main_window_(main_window_)
 {
+	std::cout << "organization: " << QCoreApplication::organizationName().toStdString() << std::endl;
+	std::cout << "application:  " << QCoreApplication::applicationName().toStdString() << std::endl;
 	restore_geometry();
 }
 

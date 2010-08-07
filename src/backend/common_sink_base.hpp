@@ -163,6 +163,16 @@ public:
 	}
 
 
+	virtual void clear_next_decoder()
+	{
+		if (!get_derived().is_initialized())
+			return;
+
+		boost::lock_guard < boost::mutex > lock(mutex);
+		next_decoder = decoder_ptr_t(); // TODO: see deferred shutdown note at the beginning of this file for details
+	}
+
+
 	virtual void set_next_decoder(decoder_ptr_t next_decoder_)
 	{
 		if (!get_derived().is_initialized() || !current_decoder || !next_decoder_)

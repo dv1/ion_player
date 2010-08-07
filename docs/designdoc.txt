@@ -234,6 +234,11 @@ Sets the next resource to be played. This is typically used when the backend sen
 now the current one. If no resource is currently playing, this command behaves like a play command with no next resource given.
 
 
+--- clear_next_resource
+Clears the next resource to be played. Does not affect current playback; however, when said playback finishes, a transition will -not- happen, since this command
+effectively nulls the next resource, meaning that resource_finished will be sent instead.
+
+
 --- get_metadata
 Causes the backend to get send a metadata event containing the currently playing resource's metadata. If no resource is playing, this function does nothing
 (-> does not report an error).

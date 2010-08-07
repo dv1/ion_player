@@ -1,3 +1,4 @@
+#include <json/value.h>
 #include "simple_playlist.hpp"
 
 
@@ -37,17 +38,22 @@ void simple_playlist::mark_backend_resource_incompatibility(uri const &uri_, std
 }
 
 
-void simple_playlist::add_entry(entry const &entry_)
+void simple_playlist::add_entry(entry const &entry_, bool const emit_signal)
 {
 	entries.push_back(entry_);
-	resource_added_signal(entry_.uri_);
+	if (emit_signal)
+		resource_added_signal(entry_.uri_);
 }
 
 
-void simple_playlist::remove_entry(entry const &entry_)
+void simple_playlist::remove_entry(entry const &entry_, bool const emit_signal)
 {
-	ion::uri uri_ = entry_.uri_;
+	remove_entry(entry_.uri_, emit_signal);
+}
 
+
+void simple_playlist::remove_entry(uri const &uri_, bool const emit_signal)
+{
 	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
 	entries_by_uri_t &entries_by_uri = entries.get < uri_tag > ();
 	entries_by_uri_t::iterator uri_tag_iter = entries_by_uri.find(uri_);
@@ -58,7 +64,9 @@ void simple_playlist::remove_entry(entry const &entry_)
 	// NOTE: erase must happen before the signal is emitted, because otherwise a transition event may be handled incorrectly (it may still see the entry)
 	// TODO: to solve this, use a mutex
 	entries_by_uri.erase(uri_tag_iter);
-	resource_removed_signal(uri_);
+
+	if (emit_signal)
+		resource_removed_signal(uri_);
 }
 
 
@@ -127,6 +135,57 @@ boost::optional < uint64_t > simple_playlist::get_entry_index(uri const &uri_) c
 	entries_sequence_t const &entries_sequence = entries.get < sequence_tag > ();
 	entries_sequence_t::const_iterator sequence_iter = entries.project < sequence_tag > (uri_iter);
 	return uint64_t(sequence_iter - entries_sequence.begin());
+}
+
+
+simple_playlist::entry_range_t simple_playlist::get_entry_range() const
+{
+	typedef entries_t::index < sequence_tag > ::type entries_sequence_t;
+	entries_sequence_t const &entries_sequence = entries.get < sequence_tag > ();
+
+	return entry_range_t(entries_sequence.begin(), entries_sequence.end());
+}
+
+
+
+
+void load_from(simple_playlist &playlist_, Json::Value const &in_value)
+{
+	// TODO: clear existing contents from the playlist
+
+	for (unsigned int index = 0; index < in_value.size(); ++index)
+	{
+		Json::Value json_entry = in_value[index];
+
+		try
+		{
+			simple_playlist::entry entry_(ion::uri(json_entry["uri"].asString()), json_entry["metadata"]);
+			playlist_.add_entry(entry_, true);
+		}
+		catch (ion::uri::invalid_uri const &invalid_uri_)
+		{
+			std::cerr << "Detected invalid uri \"" << invalid_uri_.what() << '"' << std::endl;
+		}
+	}
+
+	// TODO: send a signal that the playlist's contents have changed entirely
+}
+
+
+void save_to(simple_playlist const &playlist_, Json::Value &out_value)
+{
+	out_value = Json::Value(Json::arrayValue);
+
+	simple_playlist::entry_range_t entry_range = playlist_.get_entry_range();
+	for (simple_playlist::entry_range_t::iterator iter = entry_range.begin(); iter != entry_range.end(); ++iter)
+	{
+		simple_playlist::entry const &entry_ = *iter;
+		Json::Value json_entry(Json::objectValue);
+		json_entry["uri"] = entry_.uri_.get_full();
+		json_entry["metadata"] = entry_.metadata;
+
+		out_value.append(json_entry);
+	}
 }
 
 

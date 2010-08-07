@@ -180,7 +180,10 @@ protected:
 		if (current_uri && next_uri && (removed_uri == *next_uri))
 		{
 			next_uri = get_succeeding_uri(*current_playlist, *current_uri);
-			send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			if (next_uri)
+				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			else
+				send_line_to_backend_callback("clear_next_resource");
 		}
 	}
 
@@ -213,7 +216,33 @@ protected:
 	void started(uri const &current_uri_, uri_optional_t const &next_uri_)
 	{
 		current_uri = current_uri_;
-		next_uri = next_uri_;
+
+		/*
+		There is the possibility that set_next_resource is sent right when a resource finished playing.
+		In chronological order:
+		1. set_next_resource is sent.
+		2. current resource finishes playing -before- set_next_resource arrives -> resource_finished is sent back.
+		3. frontend receives resource_finished, assumes playback stopped.
+		4. backend receives set_next_resource, which at this point behaves just like play, because the playback finished just before.
+		5. backend sends back a started event, with current_uri = the next_uri from that set_next_resource command, and next_uri set to null.
+		6. when this playback ends, no transition will happen, even though there might be a next resource in the playlist.
+
+		For example, one might have added five songs just when the current song finished playing. The case described above could happen then.
+		The first of the five songs would start playing just like in step (4), and the second one will not be started properly, because no next uri
+		is set in the backend.
+
+		The solution is: when next uri is not set, check if there is _really_ no next resource. If there is in fact one, use it as the next uri and
+		send set_next_resource.
+		*/
+		if (!next_uri_)
+		{
+			next_uri = get_succeeding_uri(*current_playlist, current_uri_);
+			if (next_uri)
+				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+		}
+		else
+			next_uri = next_uri_;
+
 		current_uri_changed_signal(current_uri);
 	}
 

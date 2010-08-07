@@ -65,6 +65,10 @@ protected:
 
 	void print_backend_line(std::string const &line);
 
+	std::string get_playlists_filename();
+	bool load_playlists();
+	void save_playlists();
+
 
 	typedef boost::shared_ptr < audio_frontend_io > frontend_io_ptr_t;
 	frontend_io_ptr_t audio_frontend_io_;

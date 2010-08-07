@@ -1,8 +1,12 @@
+#include <QFileInfo>
 #include <QFileDialog>
 #include <QProcess>
 #include <QMessageBox>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <fstream>
+#include <json/reader.h>
+#include <json/writer.h>
 #include "main_window.hpp"
 #include "playlists.hpp"
 #include "../backend/decoder.hpp" // TODO: this is a hack - a way to access min_volume() and max_volume(); put these in common/ instead
@@ -53,13 +57,11 @@ main_window::main_window():
 	audio_frontend_io_ = frontend_io_ptr_t(new audio_frontend_io(boost::lambda::bind(&main_window::print_backend_line, this, boost::lambda::_1)));
 
 	settings_ = new settings(*this, this);
+	std::cout << settings_->fileName().toStdString() << std::endl;
 
 	playlists_ = new playlists(*main_window_ui.playlist_tab_widget, *audio_frontend_io_, this);
-	playlists_entry &playlists_entry_ = playlists_->add_entry("Default");
-	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), ion::metadata_t("{}")));
-	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), ion::metadata_t("{}")));
-	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), ion::metadata_t("{}")));
-	playlists_entry_.playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
+	if (!load_playlists())
+		playlists_->add_entry("Default");
 
 	start_backend();
 }
@@ -68,6 +70,7 @@ main_window::main_window():
 main_window::~main_window()
 {
 	stop_backend();
+	save_playlists();
 	delete playlists_;
 	delete settings_;
 	audio_frontend_io_ = frontend_io_ptr_t();
@@ -147,7 +150,7 @@ void main_window::add_file_to_playlist()
 
 	BOOST_FOREACH(QString const &filename, song_filenames)
 	{
-		playlists_entry_->playlist_.add_entry(simple_playlist::entry(ion::uri(std::string("file://") + filename.toStdString()), metadata_t("{}")));
+		playlists_entry_->playlist_.add_entry(simple_playlist::entry(ion::uri(std::string("file://") + filename.toStdString()), metadata_t(Json::objectValue)));
 	}
 }
 
@@ -164,6 +167,14 @@ void main_window::add_url_to_playlist()
 
 void main_window::remove_selected_from_playlist()
 {
+	playlists_entry *playlists_entry_ = playlists_->get_currently_visible_entry();
+	if (playlists_entry_ == 0)
+	{
+		QMessageBox::warning(this, "Removing song(s) failed", "No playlist available - cannot remove anything");
+		return;
+	}
+
+	playlists_entry_->remove_selected();
 }
 
 
@@ -177,7 +188,7 @@ void main_window::try_read_stdout_line()
 	while (backend_process->canReadLine())
 	{
 		QString line = backend_process->readLine().trimmed();
-		std::cerr << "stdout> " << line.toStdString() << std::endl;
+		std::cerr << "backend stdout> " << line.toStdString() << std::endl;
 		audio_frontend_io_->parse_incoming_line(line.toStdString());
 	}
 }
@@ -205,7 +216,7 @@ void main_window::start_backend()
 	QString backend_filepath = settings_->get_backend_filepath();
 	backend_process = new QProcess(this);
 	backend_process->start(backend_filepath);
-	backend_process->waitForStarted();
+	backend_process->waitForStarted(30000);
 	if (backend_process->state() == QProcess::NotRunning)
 	{
 		delete backend_process;
@@ -214,6 +225,7 @@ void main_window::start_backend()
 	}
 	else
 	{
+		std::cerr << backend_process->pid() << std::endl;
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
 
 		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
@@ -231,13 +243,19 @@ void main_window::stop_backend()
 	if (backend_process == 0)
 		return;
 
-	backend_process->write("quit\n");
-	backend_process->waitForFinished(5);
+	print_backend_line("quit");
+	backend_process->waitForFinished(30000);
 	if (backend_process->state() != QProcess::NotRunning)
+	{
 		backend_process->terminate();
-	backend_process->waitForFinished(5);
+		std::cerr << "sending backend the TERM signal" << std::endl;
+	}
+	backend_process->waitForFinished(30000);
 	if (backend_process->state() != QProcess::NotRunning)
+	{
 		backend_process->kill();
+		std::cerr << "sending backend the KILL signal" << std::endl;
+	}
 
 	delete backend_process;
 	backend_process = 0;
@@ -274,10 +292,54 @@ void main_window::enable_gui()
 }
 
 
+std::string main_window::get_playlists_filename()
+{
+	return QFileInfo(settings_->fileName()).canonicalPath().toStdString() + "/playlists.json";
+}
+
+
+bool main_window::load_playlists()
+{
+	std::string playlists_filename = get_playlists_filename();
+	std::ifstream playlists_file(playlists_filename.c_str());
+
+	try
+	{
+		if (playlists_file.good())
+		{
+			Json::Value json_value;
+			playlists_file >> json_value;
+			load_from(*playlists_, json_value);
+			return true;
+		}
+	}
+	catch (std::runtime_error const &)
+	{
+	}
+
+	return false;
+}
+
+
+void main_window::save_playlists()
+{
+	Json::Value json_value;
+	save_to(*playlists_, json_value);
+
+	std::string playlists_filename = get_playlists_filename();
+
+	std::ofstream playlists_file(playlists_filename.c_str());
+	playlists_file << json_value;
+}
+
+
 void main_window::print_backend_line(std::string const &line)
 {
 	if (backend_process != 0)
+	{
+		std::cerr << "backend stdin> " << line << std::endl;
 		backend_process->write((line + "\n").c_str());
+	}
 }
 
 
