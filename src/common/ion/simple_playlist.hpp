@@ -62,6 +62,7 @@ public:
 	inline resource_event_signal_t & get_resource_metadata_changed_signal() { return resource_metadata_changed_signal; }
 
 	metadata_optional_t get_metadata_for(uri const &uri_) const;
+	uri_optional_t get_preceding_uri(uri const &uri_) const;
 	uri_optional_t get_succeeding_uri(uri const &uri_) const;
 	void mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type);
 
@@ -78,6 +79,10 @@ public:
 
 
 protected:
+	typedef entries_t::index < sequence_tag > ::type entry_sequence_t;
+	entry_sequence_t::const_iterator get_seq_iterator_for(uri const &uri_) const;
+
+
 	entries_t entries;
 	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
 };
@@ -90,6 +95,7 @@ void save_to(simple_playlist const &playlist_, Json::Value &out_value);
 simple_playlist::resource_event_signal_t & get_resource_added_signal(simple_playlist &playlist);
 simple_playlist::resource_event_signal_t & get_resource_removed_signal(simple_playlist &playlist);
 metadata_optional_t get_metadata_for(simple_playlist const &playlist, uri const &uri_);
+uri_optional_t get_preceding_uri(simple_playlist const &playlist, uri const &uri_);
 uri_optional_t get_succeeding_uri(simple_playlist const &playlist, uri const &uri_);
 void mark_backend_resource_incompatibility(simple_playlist &playlist, uri const &uri_, std::string const &backend_type);
 

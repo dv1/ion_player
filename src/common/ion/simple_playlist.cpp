@@ -12,24 +12,56 @@ metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_) const
 }
 
 
-uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_) const
+simple_playlist::entries_t::index < simple_playlist::sequence_tag > ::type::const_iterator simple_playlist::get_seq_iterator_for(uri const &uri_) const
 {
 	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
+
 	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
-	entries_by_uri_t::const_iterator uri_tag_iter = entries_by_uri.find(uri_);
-
-	if (uri_tag_iter == entries_by_uri.end())
-		return boost::none;
-
-	typedef entries_t::index < sequence_tag > ::type entry_sequence_t;
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
-	entry_sequence_t::const_iterator seq_iter = entries.project < sequence_tag > (uri_tag_iter);
-	++seq_iter;
+
+	entries_by_uri_t::const_iterator uri_tag_iter = entries_by_uri.find(uri_);
+	if (uri_tag_iter == entries_by_uri.end())
+		return entry_sequence.end();
+
+	return entries.project < sequence_tag > (uri_tag_iter);
+}
+
+
+uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_) const
+{
+	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
+	entry_sequence_t::const_iterator seq_iter = get_seq_iterator_for(uri_);
 
 	if (seq_iter == entry_sequence.end())
 		return boost::none;
 	else
-		return seq_iter->uri_;
+	{
+		++seq_iter;
+		if (seq_iter == entry_sequence.end())
+			return boost::none;
+		else
+			return seq_iter->uri_;
+	}
+}
+
+
+uri_optional_t simple_playlist::get_preceding_uri(uri const &uri_) const
+{
+	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
+	entry_sequence_t::const_iterator seq_iter = get_seq_iterator_for(uri_);
+
+	if (seq_iter == entry_sequence.end())
+		return boost::none;
+	else
+	{
+		if (seq_iter == entry_sequence.begin())
+			return boost::none;
+		else
+		{
+			--seq_iter;
+			return seq_iter->uri_;
+		}
+	}
 }
 
 
@@ -206,6 +238,12 @@ simple_playlist::resource_event_signal_t & get_resource_removed_signal(simple_pl
 metadata_optional_t get_metadata_for(simple_playlist const &playlist, uri const &uri_)
 {
 	return playlist.get_metadata_for(uri_);
+}
+
+
+uri_optional_t get_preceding_uri(simple_playlist const &playlist, uri const &uri_)
+{
+	return playlist.get_preceding_uri(uri_);
 }
 
 

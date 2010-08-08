@@ -253,11 +253,6 @@ to check whether or not the backend is still alive and reactive.
 Causes a backend_type event to be sent.
 
 
---- trigger_transition
-Tells the backend to perform a transition immediately, even if the currently playing resource is not finished yet. If no next resource is set, this will trigger
-resource_finished instead.
-
-
 
 3.3. Event list
 

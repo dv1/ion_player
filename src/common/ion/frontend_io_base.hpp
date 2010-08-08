@@ -62,22 +62,8 @@ public:
 	{
 		std::string event_command_name;
 		params_t event_params;
-
 		split_command_line(line, event_command_name, event_params);
-
-		if ((event_command_name == "transition") && (event_params.size() >= 2))
-			transition(event_params[0], event_params[1]);
-		else if (event_command_name == "started")
-		{
-			if (event_params.size() >= 2 && !event_params[1].empty())
-				started(uri(event_params[0]), uri(event_params[1]));
-			else if (event_params.size() >= 1)
-				started(uri(event_params[0]), boost::none);
-		}
-		else if ((event_command_name == "stopped") && (event_params.size() >= 1))
-			stopped(event_params[0]);
-		else if ((event_command_name == "resource_finished") && (event_params.size() >= 1))
-			resource_finished(event_params[0]);
+		parse_command(event_command_name, event_params);
 	}
 
 
@@ -86,7 +72,7 @@ public:
 		if (current_playlist == new_current_playlist)
 			return;
 
-		stop();
+		//stop(); // TODO: i do not think this call is really necessary. Verify.
 		resource_added_signal_connection.disconnect();
 		resource_removed_signal_connection.disconnect();
 
@@ -137,6 +123,32 @@ public:
 	}
 
 
+	void move_to_previous_resource()
+	{
+		if (current_playlist == 0)
+			return;
+		if (!current_uri)
+			return;
+
+		uri_optional_t uri_ = get_preceding_uri(*current_playlist, *current_uri);
+		if (uri_)
+			play(*uri_);
+	}
+
+
+	void move_to_next_resource()
+	{
+		if (current_playlist == 0)
+			return;
+		if (!current_uri)
+			return;
+
+		uri_optional_t uri_ = get_succeeding_uri(*current_playlist, *current_uri);
+		if (uri_)
+			play(*uri_);
+	}
+
+
 	current_uri_changed_signal_t & get_current_uri_changed_signal()
 	{
 		return current_uri_changed_signal;
@@ -146,6 +158,25 @@ public:
 
 
 protected:
+	void parse_command(std::string const &event_command_name, params_t const &event_params)
+	{
+		if ((event_command_name == "transition") && (event_params.size() >= 2))
+			transition(event_params[0], event_params[1]);
+		else if (event_command_name == "started")
+		{
+			if (event_params.size() >= 2 && !event_params[1].empty())
+				started(uri(event_params[0]), uri(event_params[1]));
+			else if (event_params.size() >= 1)
+				started(uri(event_params[0]), boost::none);
+		}
+		else if ((event_command_name == "stopped") && (event_params.size() >= 1))
+			stopped(event_params[0]);
+		else if ((event_command_name == "resource_finished") && (event_params.size() >= 1))
+			resource_finished(event_params[0]);
+	}
+
+
+
 	// Playlist event handlers
 
 	void resource_added(uri const &added_uri)
@@ -169,10 +200,13 @@ protected:
 		if (current_playlist == 0)
 			return;
 
-		// the current uri was removed -> trigger a transition to the next resource
+		// the current uri was removed -> playback next resource
 		if (removed_uri == current_uri)
 		{
-			send_line_to_backend_callback("trigger_transition");
+			if (next_uri)
+				play(*next_uri);
+			else
+				stop();
 			return;
 		}
 

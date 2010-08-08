@@ -79,26 +79,38 @@ main_window::~main_window()
 
 void main_window::play()
 {
+	playlists_entry *playlists_entry_ = playlists_->get_currently_visible_entry();
+	if (playlists_entry_ == 0)
+	{
+		QMessageBox::warning(this, "Cannot start playback", "No playlist available - cannot playback anything");
+		return;
+	}
+
+	playlists_entry_->play_selected();
 }
 
 
 void main_window::pause()
 {
+	audio_frontend_io_->pause(!audio_frontend_io_->is_paused());
 }
 
 
 void main_window::stop()
 {
+	audio_frontend_io_->stop();
 }
 
 
 void main_window::previous_song()
 {
+	audio_frontend_io_->move_to_previous_resource();
 }
 
 
 void main_window::next_song()
 {
+	audio_frontend_io_->move_to_next_resource();
 }
 
 

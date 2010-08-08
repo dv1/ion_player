@@ -28,7 +28,7 @@ playlists_entry::playlists_entry(playlists &playlists_, QString const &name):
 	view_widget->setModel(playlist_qt_model_);
 	tab_widget.addTab(view_widget, name);
 
-	connect(view_widget, SIGNAL(doubleClicked(QModelIndex const &)), this, SLOT(view_row_doubleclicked(QModelIndex const &)));
+	connect(view_widget, SIGNAL(doubleClicked(QModelIndex const &)), this, SLOT(play_song_in_row(QModelIndex const &)));
 }
 
 
@@ -42,6 +42,14 @@ playlists_entry::~playlists_entry()
 	tab_widget.removeTab(index);
 	delete view_widget;
 	delete playlist_qt_model_;
+}
+
+
+void playlists_entry::play_selected()
+{
+	QModelIndexList selected_rows = view_widget->selectionModel()->selectedRows();
+	if (!selected_rows.empty())
+		play_song_in_row(*selected_rows.begin());
 }
 
 
@@ -63,7 +71,7 @@ void playlists_entry::remove_selected()
 }
 
 
-void playlists_entry::view_row_doubleclicked(QModelIndex const &index)
+void playlists_entry::play_song_in_row(QModelIndex const &index)
 {
 	simple_playlist::entry const *playlist_entry = playlist_.get_entry(index.row());
 	playlists_.get_audio_frontend_io().set_current_playlist(&playlist_);

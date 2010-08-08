@@ -26,8 +26,14 @@ public:
 
 	explicit audio_frontend_io(send_line_to_backend_callback_t const &send_line_to_backend_callback);
 
+	void pause(bool const set);
+	bool is_paused() const;
+
 
 protected:
+	void parse_command(std::string const &event_command_name, params_t const &event_params);
+
+	bool paused;
 };
 
 

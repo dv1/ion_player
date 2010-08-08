@@ -40,11 +40,12 @@ public:
 	explicit playlists_entry(playlists &playlists_, QString const &name);
 	~playlists_entry();
 
+	void play_selected();
 	void remove_selected();
 
 
 protected slots:
-	void view_row_doubleclicked(QModelIndex const &index);
+	void play_song_in_row(QModelIndex const &index);
 
 
 protected:
