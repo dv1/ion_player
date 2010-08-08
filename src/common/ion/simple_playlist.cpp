@@ -19,7 +19,17 @@ simple_playlist::entries_t::index < simple_playlist::sequence_tag > ::type::cons
 	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
 
+// TODO: the < operator in uri seems to be broken - use find() when its fixed
+#if 1
+	entries_by_uri_t::const_iterator uri_tag_iter = entries_by_uri.begin();
+	for (; uri_tag_iter != entries_by_uri.end(); ++uri_tag_iter)
+	{
+		if (uri_tag_iter->uri_ == uri_)
+			break;
+	}
+#else
 	entries_by_uri_t::const_iterator uri_tag_iter = entries_by_uri.find(uri_);
+#endif
 	if (uri_tag_iter == entries_by_uri.end())
 		return entry_sequence.end();
 
@@ -70,8 +80,44 @@ void simple_playlist::mark_backend_resource_incompatibility(uri const &uri_, std
 }
 
 
-void simple_playlist::add_entry(entry const &entry_, bool const emit_signal)
+simple_playlist::unique_id_optional_t simple_playlist::get_uri_id(uri const &uri_)
 {
+	uri::options_t::const_iterator iter = uri_.get_options().find("id");
+	if (iter == uri_.get_options().end())
+		return boost::none;
+	else
+	{
+		try
+		{
+			return boost::lexical_cast < unique_ids_t::id_t > (iter->second);
+		}
+		catch (boost::bad_lexical_cast const &)
+		{
+			return boost::none;
+		}
+	}
+}
+
+
+void simple_playlist::set_uri_id(uri &uri_, unique_ids_t::id_t const &new_id, bool const check_for_old_id)
+{
+	if (check_for_old_id)
+	{
+		unique_id_optional_t old_id = get_uri_id(uri_);
+		if (old_id)
+			unique_ids_.erase(*old_id);
+	}
+
+	uri_.get_options()["id"] = boost::lexical_cast < std::string > (new_id);
+}
+
+
+void simple_playlist::add_entry(entry entry_, bool const emit_signal) // NOT using entry const &entry_ to allow uri modifications
+{
+	unique_id_optional_t old_id = get_uri_id(entry_.uri_);
+	if (!old_id)
+		set_uri_id(entry_.uri_, unique_ids_.create_new(), false);
+
 	entries.push_back(entry_);
 	if (emit_signal)
 		resource_added_signal(entry_.uri_);
@@ -80,6 +126,10 @@ void simple_playlist::add_entry(entry const &entry_, bool const emit_signal)
 
 void simple_playlist::remove_entry(entry const &entry_, bool const emit_signal)
 {
+	unique_id_optional_t id = get_uri_id(entry_.uri_);
+	if (id)
+		unique_ids_.erase(*id);
+
 	remove_entry(entry_.uri_, emit_signal);
 }
 

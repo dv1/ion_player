@@ -125,30 +125,34 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		else if (command == "set_current_position")
 		{
 			DECODER_GUARD;
-			exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_position, current_decoder.get(), boost::lambda::_1), params);
+			if (current_decoder)
+				exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_position, current_decoder.get(), boost::lambda::_1), params);
 		}
 		else if (command == "set_current_volume")
 		{
 			DECODER_GUARD;
-			exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_volume,   current_decoder.get(), boost::lambda::_1), params);
-			current_volume = current_decoder->get_current_volume();
+			if (current_decoder)
+			{
+				exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_volume,   current_decoder.get(), boost::lambda::_1), params);
+				current_volume = current_decoder->get_current_volume();
+			}
 		}
 		else if (command == "get_current_position")
 		{
 			DECODER_GUARD;
-			exec_command_get_value(current_decoder, "current_position", boost::lambda::bind(&decoder::get_current_position, current_decoder.get()), response_command, response_params);
+			if (current_decoder)
+				exec_command_get_value(current_decoder, "current_position", boost::lambda::bind(&decoder::get_current_position, current_decoder.get()), response_command, response_params);
 		}
 		else if (command == "get_current_volume")
 		{
 			response_command = "current_volume";
 			response_params.push_back(boost::lexical_cast < std::string > (current_volume));
-			//DECODER_GUARD;
-			//exec_command_get_value(current_decoder, "current_volume",   boost::lambda::bind(&decoder::get_current_volume,   current_decoder.get()), response_command, response_params);
 		}
 		else if (command == "get_metadata")
 		{
 			DECODER_GUARD;
-			exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_songinfo_str,   current_decoder.get(), true), response_command, response_params);
+			if (current_decoder)
+				exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_songinfo_str,   current_decoder.get(), true), response_command, response_params);
 		}
 		else
 		{

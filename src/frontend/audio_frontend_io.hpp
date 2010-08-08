@@ -29,6 +29,8 @@ public:
 	void pause(bool const set);
 	bool is_paused() const;
 
+	void set_current_volume(long const new_volume);
+
 
 protected:
 	void parse_command(std::string const &event_command_name, params_t const &event_params);

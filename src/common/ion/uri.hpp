@@ -149,6 +149,7 @@ public:
 	std::string const & get_type() const { return type; }
 	std::string const & get_path() const { return path; }
 	options_t const & get_options() const { return options; }
+	options_t & get_options() { return options; }
 
 	std::string get_full() const
 	{

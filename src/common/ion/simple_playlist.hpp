@@ -16,6 +16,7 @@
 
 #include <ion/metadata.hpp>
 #include <ion/uri.hpp>
+#include <ion/unique_ids.hpp>
 
 
 namespace ion
@@ -66,7 +67,7 @@ public:
 	uri_optional_t get_succeeding_uri(uri const &uri_) const;
 	void mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type);
 
-	void add_entry(entry const &entry_, bool const emit_signal = true);
+	void add_entry(entry entry_, bool const emit_signal = true);
 	void remove_entry(entry const &entry_, bool const emit_signal = true);
 	void remove_entry(uri const &uri_, bool const emit_signal = true);
 	void set_resource_metadata(uri const &uri_, metadata_t const & new_metadata);
@@ -79,12 +80,20 @@ public:
 
 
 protected:
+	typedef unique_ids < long > unique_ids_t;
+	typedef boost::optional < unique_ids_t::id_t > unique_id_optional_t;
+
+	unique_id_optional_t get_uri_id(uri const &uri_);
+	void set_uri_id(uri &uri_, unique_ids_t::id_t const &new_id, bool const check_for_old_id = true);
+
+
 	typedef entries_t::index < sequence_tag > ::type entry_sequence_t;
 	entry_sequence_t::const_iterator get_seq_iterator_for(uri const &uri_) const;
 
 
 	entries_t entries;
 	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
+	unique_ids_t unique_ids_;
 };
 
 

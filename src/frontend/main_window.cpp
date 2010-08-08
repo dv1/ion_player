@@ -133,6 +133,7 @@ void main_window::set_current_position(int new_position)
 
 void main_window::set_current_volume(int new_volume)
 {
+	audio_frontend_io_->set_current_volume(new_volume);
 }
 
 

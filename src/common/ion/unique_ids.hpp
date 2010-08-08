@@ -17,6 +17,9 @@ protected:
 
 
 public:
+	typedef T id_t;
+
+
 	T create_new()
 	{
 		T id = T(std::rand()); // TODO: use the type T's range, instead of just 0 - RAND_MAX
@@ -29,6 +32,12 @@ public:
 		while (iter != ids.end());
 
 		return id;
+	}
+
+
+	void insert(T const &id)
+	{
+		ids.insert(id);
 	}
 
 

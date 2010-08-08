@@ -31,6 +31,12 @@ bool audio_frontend_io::is_paused() const
 }
 
 
+void audio_frontend_io::set_current_volume(long const new_volume)
+{
+	send_line_to_backend_callback(recombine_command_line("set_current_volume", boost::assign::list_of(boost::lexical_cast < std::string > (new_volume))));
+}
+
+
 void audio_frontend_io::parse_command(std::string const &event_command_name, params_t const &event_params)
 {
 	if (event_command_name == "paused")
