@@ -111,6 +111,7 @@ protected:
 
 	decoder_ptr_t current_decoder, next_decoder;
 	sink_ptr_t current_sink;
+	long current_volume;
 
 	boost::mutex decoder_mutex;
 

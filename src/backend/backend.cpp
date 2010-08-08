@@ -15,6 +15,7 @@ namespace backend
 
 backend::backend(message_callback_t const &message_callback):
 	message_callback(message_callback),
+	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
 }
@@ -130,6 +131,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		{
 			DECODER_GUARD;
 			exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_volume,   current_decoder.get(), boost::lambda::_1), params);
+			current_volume = current_decoder->get_current_volume();
 		}
 		else if (command == "get_current_position")
 		{
@@ -138,8 +140,10 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		}
 		else if (command == "get_current_volume")
 		{
-			DECODER_GUARD;
-			exec_command_get_value(current_decoder, "current_volume",   boost::lambda::bind(&decoder::get_current_volume,   current_decoder.get()), response_command, response_params);
+			response_command = "current_volume";
+			response_params.push_back(boost::lexical_cast < std::string > (current_volume));
+			//DECODER_GUARD;
+			//exec_command_get_value(current_decoder, "current_volume",   boost::lambda::bind(&decoder::get_current_volume,   current_decoder.get()), response_command, response_params);
 		}
 		else if (command == "get_metadata")
 		{
@@ -236,7 +240,7 @@ void backend::start_playback(params_t const &params)
 	}
 
 	// this assignment happens -after- the set_next_decoder() call in case the function throws an exception
-	current_decoder = new_current_decoder; 
+	current_decoder = new_current_decoder;
 
 	try
 	{
@@ -509,6 +513,7 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 
 	if (new_decoder)
 	{
+		new_decoder->set_current_volume(current_volume);
 		new_decoder->set_loop_mode(loop_count);
 	}
 
