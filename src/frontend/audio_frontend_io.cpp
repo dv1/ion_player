@@ -37,6 +37,20 @@ void audio_frontend_io::set_current_volume(long const new_volume)
 }
 
 
+void audio_frontend_io::play(uri const &uri_)
+{
+	paused = false;
+	base_t::play(uri_);
+}
+
+
+void audio_frontend_io::stop()
+{
+	paused = false;
+	base_t::stop();
+}
+
+
 void audio_frontend_io::parse_command(std::string const &event_command_name, params_t const &event_params)
 {
 	if (event_command_name == "paused")
