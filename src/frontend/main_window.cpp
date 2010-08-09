@@ -88,6 +88,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		}
 
 		playlist_entry_iter->playlist_.add_entry(simple_playlist::entry(*command_line_uri, metadata_t(Json::objectValue)));
+
+		// TODO: start playback of this URI (switch to the playlist, that is, move the corresponding tab to front, and call play())
 	}
 }
 

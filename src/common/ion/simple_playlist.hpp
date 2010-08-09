@@ -69,6 +69,8 @@ public:
 	void mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type);
 
 	void add_entry(entry entry_, bool const emit_signal = true);
+	void insert_entry_before(entry const &entry_, uri const &insert_before_uri, bool const emit_signal = true);
+	void insert_entry_after(entry const &entry_, uri const &insert_before_uri, bool const emit_signal = true);
 	void remove_entry(entry const &entry_, bool const emit_signal = true);
 	void remove_entry(uri const &uri_, bool const emit_signal = true);
 	void set_resource_metadata(uri const &uri_, metadata_t const & new_metadata);
@@ -86,10 +88,12 @@ protected:
 
 	unique_id_optional_t get_uri_id(uri const &uri_);
 	void set_uri_id(uri &uri_, unique_ids_t::id_t const &new_id, bool const check_for_old_id = true);
-
+	
 
 	typedef entries_t::index < sequence_tag > ::type entry_sequence_t;
 	entry_sequence_t::const_iterator get_seq_iterator_for(uri const &uri_) const;
+	entry_sequence_t::iterator get_seq_iterator_for(uri const &uri_);
+	void insert_entry_before(entry entry_, entry_sequence_t::iterator insert_before_iter, bool const emit_signal = true);
 
 
 	entries_t entries;

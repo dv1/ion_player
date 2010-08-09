@@ -35,6 +35,21 @@ simple_playlist::entries_t::index < simple_playlist::sequence_tag > ::type::cons
 }
 
 
+simple_playlist::entries_t::index < simple_playlist::sequence_tag > ::type::iterator simple_playlist::get_seq_iterator_for(uri const &uri_)
+{
+	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
+
+	entries_by_uri_t &entries_by_uri = entries.get < uri_tag > ();
+	entry_sequence_t &entry_sequence = entries.get < sequence_tag > ();
+
+	entries_by_uri_t::iterator uri_tag_iter = entries_by_uri.find(uri_);
+	if (uri_tag_iter == entries_by_uri.end())
+		return entry_sequence.end();
+
+	return entries.project < sequence_tag > (uri_tag_iter);
+}
+
+
 uri_optional_t simple_playlist::get_succeeding_uri(uri const &uri_) const
 {
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
@@ -121,6 +136,40 @@ void simple_playlist::add_entry(entry entry_, bool const emit_signal) // NOT usi
 	entries.push_back(entry_);
 	if (emit_signal)
 		resource_added_signal(entry_.uri_);
+}
+
+
+void simple_playlist::insert_entry_before(entry entry_, entry_sequence_t::iterator insert_before_iter, bool const emit_signal)
+{
+	unique_id_optional_t old_id = get_uri_id(entry_.uri_);
+	if (old_id)
+		unique_ids_.insert(*old_id);
+	else
+		set_uri_id(entry_.uri_, unique_ids_.create_new(), false);
+
+	entry_sequence_t &entry_sequence = entries.get < sequence_tag > ();
+
+	std::pair < entry_sequence_t::iterator, bool > insert_result = entry_sequence.insert(insert_before_iter, entry_);
+	if (!insert_result.second)
+		std::cerr << "simple_playlist:insert_entry_before(): insertion was prevented" << std::endl;
+
+	if (emit_signal)
+		resource_added_signal(entry_.uri_);
+}
+
+
+void simple_playlist::insert_entry_before(entry const &entry_, uri const &insert_before_uri, bool const emit_signal)
+{
+	entry_sequence_t::iterator insert_before_iter = get_seq_iterator_for(insert_before_uri);
+	insert_entry_before(entry_, insert_before_iter, emit_signal);
+}
+
+
+void simple_playlist::insert_entry_after(entry const &entry_, uri const &insert_after_uri, bool const emit_signal)
+{
+	entry_sequence_t::iterator insert_before_iter = get_seq_iterator_for(insert_after_uri);
+	++insert_before_iter;
+	insert_entry_before(entry_, insert_before_iter, emit_signal);
 }
 
 
