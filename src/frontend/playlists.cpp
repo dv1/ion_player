@@ -160,6 +160,18 @@ playlists::entries_t::iterator playlists::get_entry(QTreeView *view_widget)
 }
 
 
+playlists::entries_t::iterator playlists::get_entry(QString const &name)
+{
+	for (entries_t::iterator iter = entries.begin(); iter != entries.end(); ++iter)
+	{
+		if (iter->name == name)
+			return iter;
+	}
+
+	return entries.end();
+}
+
+
 void playlists::set_active_entry(playlists_entry &new_active_entry)
 {
 	active_entry = &new_active_entry;

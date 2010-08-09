@@ -113,7 +113,9 @@ void simple_playlist::set_uri_id(uri &uri_, unique_ids_t::id_t const &new_id, bo
 void simple_playlist::add_entry(entry entry_, bool const emit_signal) // NOT using entry const &entry_ to allow uri modifications
 {
 	unique_id_optional_t old_id = get_uri_id(entry_.uri_);
-	if (!old_id)
+	if (old_id)
+		unique_ids_.insert(*old_id);
+	else
 		set_uri_id(entry_.uri_, unique_ids_.create_new(), false);
 
 	entries.push_back(entry_);

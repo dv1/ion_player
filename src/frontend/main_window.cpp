@@ -1,3 +1,5 @@
+#include <ctime>
+#include <cstdlib>
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -19,9 +21,11 @@ namespace frontend
 {
 
 
-main_window::main_window():
+main_window::main_window(uri_optional_t const &command_line_uri):
 	backend_process(0)
 {
+	std::srand(std::time(0));
+
 	main_window_ui.setupUi(this);
 
 	QWidget *sliders_widget = new QWidget(this);
@@ -70,6 +74,21 @@ main_window::main_window():
 		playlists_->add_entry("Default");
 
 	start_backend();
+
+
+	if (command_line_uri)
+	{
+		QString singleplay_playlist = settings_->get_singleplay_playlist();
+		playlists::entries_t::iterator playlist_entry_iter = playlists_->get_entry(singleplay_playlist);
+
+		if (playlist_entry_iter == playlists_->get_entries().end())
+		{
+			playlists_->add_entry(singleplay_playlist);
+			playlist_entry_iter = playlists_->get_entry(singleplay_playlist);
+		}
+
+		playlist_entry_iter->playlist_.add_entry(simple_playlist::entry(*command_line_uri, metadata_t(Json::objectValue)));
+	}
 }
 
 
@@ -124,10 +143,19 @@ void main_window::show_settings()
 {
 	settings_dialog_ui.backend_filepath->setText(settings_->get_backend_filepath());
 
+	settings_dialog_ui.singleplay_playlist->clear();
+	BOOST_FOREACH(playlists_entry const &entry, playlists_->get_entries())
+	{
+		settings_dialog_ui.singleplay_playlist->addItem(entry.name);
+	}
+	settings_dialog_ui.singleplay_playlist->setEditText(settings_->get_singleplay_playlist());
+
 	if (settings_dialog->exec() == QDialog::Rejected)
 		return;
 
 	settings_->set_backend_filepath(settings_dialog_ui.backend_filepath->text());
+	if (!settings_dialog_ui.singleplay_playlist->currentText().isNull() || !settings_dialog_ui.singleplay_playlist->currentText().isEmpty())
+		settings_->set_singleplay_playlist(settings_dialog_ui.singleplay_playlist->currentText());
 	change_backend();
 }
 

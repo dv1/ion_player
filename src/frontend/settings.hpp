@@ -21,7 +21,9 @@ public:
 	~settings();
 
 	QString get_backend_filepath() const;
+	QString get_singleplay_playlist() const;
 	void set_backend_filepath(QString const &new_filepath);
+	void set_singleplay_playlist(QString const &new_singleplay_playlist);
 
 
 protected:

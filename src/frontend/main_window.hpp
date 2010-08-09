@@ -24,7 +24,7 @@ class main_window:
 {
 	Q_OBJECT
 public:
-	explicit main_window();
+	explicit main_window(uri_optional_t const &command_line_uri = boost::none);
 	~main_window();
 
 

@@ -32,9 +32,21 @@ QString settings::get_backend_filepath() const
 }
 
 
+QString settings::get_singleplay_playlist() const
+{
+	return value("singleplay_playlist", QString("Default")).value < QString > ();
+}
+
+
 void settings::set_backend_filepath(QString const &new_filepath)
 {
 	setValue("backend_filepath", new_filepath);
+}
+
+
+void settings::set_singleplay_playlist(QString const &new_singleplay_playlist)
+{
+	setValue("singleplay_playlist", new_singleplay_playlist);
 }
 
 

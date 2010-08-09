@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QFileInfo>
 #include <QResource>
 #include <iostream>
 
@@ -20,7 +21,20 @@ int main(int argc, char **argv)
 		QApplication application(argc, argv);
 		application.setApplicationName("ion_player");
 
-		ion::frontend::main_window *main_window_ = new ion::frontend::main_window;
+		ion::uri_optional_t command_line_uri = boost::none;
+		if (argc >= 2)
+		{
+			try
+			{
+				QString filename = QString("file://") + QFileInfo(QString(argv[1])).canonicalFilePath();
+				command_line_uri = ion::uri(filename.toStdString());
+			}
+			catch (ion::uri::invalid_uri const &)
+			{
+			}
+		}
+
+		ion::frontend::main_window *main_window_ = new ion::frontend::main_window(command_line_uri);
 		main_window_->show();
 		return_value = application.exec();
 		delete main_window_;

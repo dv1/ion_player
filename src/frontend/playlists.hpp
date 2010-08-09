@@ -71,6 +71,7 @@ public:
 
 	entries_t::const_iterator get_entry(QTreeView *view_widget) const;
 	entries_t::iterator get_entry(QTreeView *view_widget);
+	entries_t::iterator get_entry(QString const &name);
 
 	void set_active_entry(playlists_entry &new_active_entry);
 	playlists_entry *get_currently_visible_entry();

@@ -22,14 +22,16 @@ public:
 
 	T create_new()
 	{
-		T id = T(std::rand()); // TODO: use the type T's range, instead of just 0 - RAND_MAX
-
+		T id;
 		typename ids_t::iterator iter;
 		do
 		{
+			id = T(std::rand()); // TODO: use the type T's range, instead of just 0 - RAND_MAX
 			iter = ids.find(id);
 		}
 		while (iter != ids.end());
+
+		ids.insert(id);
 
 		return id;
 	}
@@ -46,6 +48,12 @@ public:
 		typename ids_t::iterator iter = ids.find(id);
 		if (iter != ids.end())
 			ids.erase(iter);
+	}
+
+
+	ids_t const & get_used_ids() const
+	{
+		return ids;
 	}
 
 
