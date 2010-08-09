@@ -56,15 +56,21 @@ protected:
 class playlists:
 	public QObject
 {
+	Q_OBJECT
 public:
 	// TODO: use a better structure (multi-index? map?) that allows for indexing by the view widget as well
 	typedef boost::ptr_vector < playlists_entry > entries_t;
 
 
 	explicit playlists(QTabWidget &tab_widget, audio_frontend_io &audio_frontend_io_, QObject *parent);
+	~playlists();
 
 	playlists_entry& add_entry(QString const &playlist_name);
-	void remove_entry(QTreeView *entry_view_widget);
+	void rename_entry(playlists_entry const &entry_to_be_renamed, QString const &new_name);
+	void remove_entry(playlists_entry const &entry_to_be_removed);
+
+	entries_t::const_iterator get_entry(QTreeView *view_widget) const;
+	entries_t::iterator get_entry(QTreeView *view_widget);
 
 	void set_active_entry(playlists_entry &new_active_entry);
 	playlists_entry *get_currently_visible_entry();
@@ -73,6 +79,10 @@ public:
 
 	inline audio_frontend_io& get_audio_frontend_io() { return audio_frontend_io_; }
 	inline QTabWidget& get_tab_widget() { return tab_widget; }
+
+
+protected slots:
+	void close_current_playlist(int index);
 
 
 protected:

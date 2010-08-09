@@ -57,6 +57,7 @@ public:
 
 
 
+	~simple_playlist();
 
 	inline resource_event_signal_t & get_resource_added_signal() { return resource_added_signal; }
 	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }

@@ -1,5 +1,6 @@
 #include <QFileInfo>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QProcess>
 #include <QMessageBox>
 #include <boost/lambda/bind.hpp>
@@ -31,7 +32,7 @@ main_window::main_window():
 	settings_dialog_ui.setupUi(settings_dialog);
 
 	QToolButton *create_playlist_button = new QToolButton(this);
-	create_playlist_button->setDefaultAction(main_window_ui.action_create_new_playlist);
+	create_playlist_button->setDefaultAction(main_window_ui.action_create_new_tab);
 	main_window_ui.playlist_tab_widget->setCornerWidget(create_playlist_button);
 
 	connect(main_window_ui.action_play,                SIGNAL(triggered()), this, SLOT(play()));
@@ -40,13 +41,18 @@ main_window::main_window():
 	connect(main_window_ui.action_previous_song,       SIGNAL(triggered()), this, SLOT(previous_song()));
 	connect(main_window_ui.action_next_song,           SIGNAL(triggered()), this, SLOT(next_song()));
 	connect(main_window_ui.action_settings,            SIGNAL(triggered()), this, SLOT(show_settings()));
-	connect(main_window_ui.action_create_new_playlist, SIGNAL(triggered()), this, SLOT(create_new_playlist()));
+	connect(main_window_ui.action_create_new_tab,      SIGNAL(triggered()), this, SLOT(create_new_playlist()));
 	connect(main_window_ui.action_add_file,            SIGNAL(triggered()), this, SLOT(add_file_to_playlist()));
 	connect(main_window_ui.action_add_folder_contents, SIGNAL(triggered()), this, SLOT(add_folder_contents_to_playlist()));
 	connect(main_window_ui.action_add_url,             SIGNAL(triggered()), this, SLOT(add_url_to_playlist()));
 	connect(main_window_ui.action_remove_selected,     SIGNAL(triggered()), this, SLOT(remove_selected_from_playlist()));
 
+	connect(main_window_ui.action_new_playlist, SIGNAL(triggered()), this, SLOT(create_new_playlist()));
+	connect(main_window_ui.action_delete_playlist, SIGNAL(triggered()), this, SLOT(delete_playlist()));
+	connect(main_window_ui.action_rename_playlist, SIGNAL(triggered()), this, SLOT(rename_playlist()));
+
 	position_volume_widget_ui.volume->setRange(ion::backend::decoder::min_volume(), ion::backend::decoder::max_volume()); // TODO: see above
+	position_volume_widget_ui.volume->setSliderPosition(ion::backend::decoder::max_volume());
 
 	connect(position_volume_widget_ui.position, SIGNAL(sliderMoved(int)), this, SLOT(set_current_position(int)));
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderMoved(int)), this, SLOT(set_current_volume(int)));
@@ -147,6 +153,38 @@ void main_window::backend_filepath_filedialog()
 void main_window::create_new_playlist()
 {
 	playlists_->add_entry("New playlist");
+}
+
+
+void main_window::rename_playlist()
+{
+	playlists_entry *playlists_entry_ = playlists_->get_currently_visible_entry();
+	if (playlists_entry_ == 0)
+	{
+		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot rename");
+		return;
+	}
+
+	QString new_name = QInputDialog::getText(this, "New playlist name", QString("Type in new name for playlist \"%1\"").arg(playlists_entry_->name), QLineEdit::Normal, playlists_entry_->name);
+	if (!new_name.isNull())
+		playlists_->rename_entry(*playlists_entry_, new_name);
+}
+
+
+void main_window::delete_playlist()
+{
+	if (playlists_->get_tab_widget().count() <= 1)
+		return;
+
+
+	playlists_entry *playlists_entry_ = playlists_->get_currently_visible_entry();
+	if (playlists_entry_ == 0)
+	{
+		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot delete");
+		return;
+	}
+
+	playlists_->remove_entry(*playlists_entry_);
 }
 
 

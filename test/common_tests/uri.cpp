@@ -1,4 +1,6 @@
 #include "test.hpp"
+#include <boost/foreach.hpp>
+#include <set>
 #include <ion/uri.hpp>
 
 
@@ -50,6 +52,33 @@ int test_main(int, char **)
 
 		TEST_NO_EXCEPTION(uri_.set("http://localhost?&&&&&abc=5&&def=2&&"), "");
 		TEST_ASSERT(uri_.get_options().size() == 2, "got " << uri_.get_options().size());
+	}
+
+	{
+		ion::uri uri1, uri2, uri3, uri4;
+
+		TEST_NO_EXCEPTION(uri1.set("http://localhost?abc=5"), "");
+		TEST_NO_EXCEPTION(uri2.set("http://localhost?abc=4"), "");
+		TEST_NO_EXCEPTION(uri3.set("http://xxx?abc=15124"), "");
+		TEST_NO_EXCEPTION(uri4.set("http://localhost?abc=4"), "");
+		TEST_ASSERT(!(uri1 < uri2), "");
+		TEST_ASSERT(uri2 < uri1, "");
+		TEST_ASSERT(uri1 < uri3, "");
+		TEST_ASSERT(uri2 < uri3, "");
+		TEST_ASSERT(uri2 == uri4, "");
+	}
+
+	{
+		std::set < ion::uri > uris;
+		uris.insert(ion::uri("http://localhost?abc=5"));
+		uris.insert(ion::uri("http://localhost?abc=4"));
+		uris.insert(ion::uri("http://xxx?abc=15124"));
+		uris.insert(ion::uri("http://localhost?abc=4"));
+
+		BOOST_FOREACH(ion::uri const &uri_, uris)
+		{
+			TEST_ASSERT(uris.find(uri_) != uris.end(), "Unable to find URI " << uri_.get_full());
+		}
 	}
 
 	{

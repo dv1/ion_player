@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="icons">
+    <file alias="new_playlist">resources/icons/document-new.png</file>
+    <file alias="delete_playlist">resources/icons/edit-delete.png</file>
+    <file alias="rename_playlist">resources/icons/edit-select-all.png</file>
     <file alias="add_url">resources/icons/internet-web-browser.png</file>
     <file alias="add_folder_contents">resources/icons/folder.png</file>
     <file alias="add_file">resources/icons/list-add.png</file>

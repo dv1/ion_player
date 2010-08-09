@@ -42,6 +42,8 @@ protected slots:
 	void backend_filepath_filedialog();
 
 	void create_new_playlist();
+	void rename_playlist();
+	void delete_playlist();
 
 	void add_file_to_playlist();
 	void add_folder_contents_to_playlist();

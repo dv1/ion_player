@@ -1,9 +1,17 @@
+#include <iostream>
 #include <json/value.h>
 #include "simple_playlist.hpp"
 
 
 namespace ion
 {
+
+
+simple_playlist::~simple_playlist()
+{
+	// TODO: if an URI of this playlist is currently playing, send the stop command
+	std::cerr << "~simple_playlist" << std::endl;
+}
 
 
 metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_) const
@@ -19,17 +27,7 @@ simple_playlist::entries_t::index < simple_playlist::sequence_tag > ::type::cons
 	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
 
-// TODO: the < operator in uri seems to be broken - use find() when its fixed
-#if 1
-	entries_by_uri_t::const_iterator uri_tag_iter = entries_by_uri.begin();
-	for (; uri_tag_iter != entries_by_uri.end(); ++uri_tag_iter)
-	{
-		if (uri_tag_iter->uri_ == uri_)
-			break;
-	}
-#else
 	entries_by_uri_t::const_iterator uri_tag_iter = entries_by_uri.find(uri_);
-#endif
 	if (uri_tag_iter == entries_by_uri.end())
 		return entry_sequence.end();
 

@@ -135,14 +135,30 @@ public:
 
 	bool operator < (uri const &other) const
 	{
+		// this test takes equality into account, using the type, path, options values.
+		// If value < other.value, then return true, since this uri is definitely less than the other one.
+		// If value > other.value, then return false, since this uri is definitely greater than the other one.
+		// Otherwise, the values in question are equal, so move to the next value.
+		// If all three values are equal, return false - x < x is always false, after all.
+		// This is sort of a lexicographic compare: for instance, an abc < abd comparison would first see that the first letters are both a,
+		// then continue to the second letters, which are both b, and finally the third letters are c and d, where c<d holds -> return true.
+
 		if (type < other.type)
 			return true;
-		else if (path < other.path)
+		else if (type > other.type)
+			return false;
+
+		if (path < other.path)
 			return true;
+		else if (path > other.path)
+			return false;
+
 		else if (options < other.options)
 			return true;
-		else
+		else if (options > other.options)
 			return false;
+
+		return false;
 	}
 
 

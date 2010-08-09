@@ -31,11 +31,10 @@ QVariant playlist_qt_model::headerData(int section, Qt::Orientation orientation,
 	switch (section)
 	{
 		case 0: return "Status";
-		case 1: return "URI";
-		case 2: return "Artist";
-		case 3: return "Album";
-		case 4: return "Title";
-		case 5: return "Length";
+		case 1: return "Artist";
+		case 2: return "Album";
+		case 3: return "Title";
+		case 4: return "Length";
 		default: return QVariant();
 	}
 }
@@ -43,39 +42,77 @@ QVariant playlist_qt_model::headerData(int section, Qt::Orientation orientation,
 
 int playlist_qt_model::columnCount(QModelIndex const &parent) const
 {
-	// status, uri, artist, album, song title, song length
-	return 6;
+	// status, artist, album, song title, song length
+	return 5;
 }
 
 
 QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 {
-	if ((role != Qt::DisplayRole) || (index.column() >= 5) || (index.row() >= int(playlist_.get_num_entries())))
+	if ((index.column() >= 5) || (index.row() >= int(playlist_.get_num_entries())))
 		return QVariant();
+
 
 	simple_playlist::entry const *entry = playlist_.get_entry(index.row());
 
-	if (entry != 0)
+	if (entry == 0)
+		return QVariant();
+
+
+	switch (role)
 	{
-		switch (index.column())
+		case Qt::ToolTipRole:
 		{
-			case 0: return QVariant();
-			case 1: return QString(entry->uri_.get_full().c_str());
-			case 2: return QString(get_metadata_value < std::string > (entry->metadata, "artist", "").c_str());
-			case 3: return QString(get_metadata_value < std::string > (entry->metadata, "album", "").c_str());
-			case 4: return QString(get_metadata_value < std::string > (entry->metadata, "title", "").c_str());
-			case 5:
+			switch (index.column())
 			{
-				unsigned int num_ticks = get_metadata_value < unsigned int > (entry->metadata, "num_ticks", 0);
-				unsigned int num_ticks_per_second = get_metadata_value < unsigned int > (entry->metadata, "num_ticks_per_second", 1);
-				unsigned int length_in_seconds = num_ticks / num_ticks_per_second;
-				unsigned int minutes = length_in_seconds / 60;
-				unsigned int seconds = length_in_seconds % 60;
-				return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
+				case 3:
+					return QString(entry->uri_.get_full().c_str());
+				default:
+					break;
 			}
-			default: return QVariant();
+			break;
 		}
+
+
+		case Qt::DisplayRole:
+		{
+			switch (index.column())
+			{
+				case 0: return QVariant();
+				case 1: return QString(get_metadata_value < std::string > (entry->metadata, "artist", "").c_str());
+				case 2: return QString(get_metadata_value < std::string > (entry->metadata, "album", "").c_str());
+				case 3:
+				{
+					std::string title = get_metadata_value < std::string > (entry->metadata, "title", "");
+					if (title.empty())
+					{
+						std::string uri_path = entry->uri_.get_path();
+						std::string::size_type slash_pos = uri_path.find_last_of('/');
+						if (slash_pos != std::string::npos)
+							title = uri_path.substr(slash_pos + 1);
+					}
+
+					return QString(title.c_str());
+				}
+				case 4:
+				{
+					unsigned int num_ticks = get_metadata_value < unsigned int > (entry->metadata, "num_ticks", 0);
+					unsigned int num_ticks_per_second = get_metadata_value < unsigned int > (entry->metadata, "num_ticks_per_second", 1);
+					unsigned int length_in_seconds = num_ticks / num_ticks_per_second;
+					unsigned int minutes = length_in_seconds / 60;
+					unsigned int seconds = length_in_seconds % 60;
+					return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
+				}
+				default: return QVariant();
+			}
+
+			break;
+		}
+
+
+		default: break;
 	}
+
 
 	return QVariant();
 }

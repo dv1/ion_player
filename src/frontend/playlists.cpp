@@ -87,6 +87,13 @@ playlists::playlists(QTabWidget &tab_widget, audio_frontend_io &audio_frontend_i
 	tab_widget(tab_widget),
 	active_entry(0)
 {
+	connect(&tab_widget, SIGNAL(tabCloseRequested(int)), this, SLOT(close_current_playlist(int)));
+}
+
+
+playlists::~playlists()
+{
+	disconnect(&tab_widget, SIGNAL(tabCloseRequested(int)), this, SLOT(close_current_playlist(int)));
 }
 
 
@@ -100,22 +107,56 @@ playlists_entry& playlists::add_entry(QString const &playlist_name)
 }
 
 
-void playlists::remove_entry(QTreeView *entry_view_widget)
+void playlists::rename_entry(playlists_entry const &entry_to_be_renamed, QString const &new_name)
+{
+	entries_t::iterator iter = get_entry(entry_to_be_renamed.view_widget);
+	if (iter == entries.end())
+		return;
+
+	iter->name = new_name;
+	int tab_index = tab_widget.indexOf(iter->view_widget);
+	if (tab_index != -1)
+		tab_widget.setTabText(tab_index, new_name);
+}
+
+
+void playlists::remove_entry(playlists_entry const &entry_to_be_removed)
+{
+	entries_t::iterator iter = get_entry(entry_to_be_removed.view_widget);
+	if (iter == entries.end())
+		return;
+
+	if (&(*iter) == active_entry)
+	{
+		audio_frontend_io_.set_current_playlist(0);
+		active_entry = 0;
+	}
+
+	entries.erase(iter);
+}
+
+
+playlists::entries_t::const_iterator playlists::get_entry(QTreeView *view_widget) const
+{
+	for (entries_t::const_iterator iter = entries.begin(); iter != entries.end(); ++iter)
+	{
+		if (iter->view_widget == view_widget)
+			return iter;
+	}
+
+	return entries.end();
+}
+
+
+playlists::entries_t::iterator playlists::get_entry(QTreeView *view_widget)
 {
 	for (entries_t::iterator iter = entries.begin(); iter != entries.end(); ++iter)
 	{
-		if (iter->view_widget == entry_view_widget)
-		{
-			if (&(*iter) == active_entry)
-			{
-				audio_frontend_io_.set_current_playlist(0);
-				active_entry = 0;
-			}
-
-			entries.erase(iter);
-			break;
-		}
+		if (iter->view_widget == view_widget)
+			return iter;
 	}
+
+	return entries.end();
 }
 
 
@@ -136,6 +177,25 @@ playlists_entry* playlists::get_currently_visible_entry()
 	}
 
 	return 0;
+}
+
+
+void playlists::close_current_playlist(int index)
+{
+	if (index == -1)
+		return;
+	if (tab_widget.count() <= 1)
+		return;
+
+	QWidget *page_widget = tab_widget.widget(index);
+	BOOST_FOREACH(playlists_entry &entry, entries)
+	{
+		if (entry.view_widget == page_widget)
+		{
+			remove_entry(entry);
+			break;
+		}
+	}
 }
 
 
