@@ -97,7 +97,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 			playlist_entry_iter = playlists_->get_entry(singleplay_playlist);
 		}
 
-		playlist_entry_iter->playlist_.add_entry(simple_playlist::entry(*command_line_uri, metadata_t(Json::objectValue)));
+		scanner_->start_scan(playlist_entry_iter->playlist_, *command_line_uri);
+		//playlist_entry_iter->playlist_.add_entry(simple_playlist::entry(*command_line_uri, metadata_t(Json::objectValue)));
 
 		// TODO: start playback of this URI (switch to the playlist, that is, move the corresponding tab to front, and call play())
 	}
@@ -200,7 +201,7 @@ void main_window::apply_flags()
 	if (settings_->get_always_on_top_flag())
 		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
 	else
-		setWindowFlags(windowFlags() ^ Qt::WindowStaysOnTopHint);
+		setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
 	show(); // setWindowFlags() hides the window
 
 	// notification area icon

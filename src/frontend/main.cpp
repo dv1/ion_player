@@ -29,8 +29,9 @@ int main(int argc, char **argv)
 				QString filename = QString("file://") + QFileInfo(QString(argv[1])).canonicalFilePath();
 				command_line_uri = ion::uri(filename.toStdString());
 			}
-			catch (ion::uri::invalid_uri const &)
+			catch (ion::uri::invalid_uri const &e)
 			{
+				std::cerr << "The supplied URI \"" << e.what() << "\" is invalid" << std::endl;
 			}
 		}
 
