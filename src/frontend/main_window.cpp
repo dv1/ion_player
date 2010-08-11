@@ -18,6 +18,7 @@
 
 #include "main_window.hpp"
 #include "playlists.hpp"
+#include "scanner.hpp"
 #include "../backend/decoder.hpp" // TODO: this is a hack - a way to access min_volume() and max_volume(); put these in common/ instead
 
 
@@ -276,7 +277,9 @@ void main_window::add_file_to_playlist()
 
 	BOOST_FOREACH(QString const &filename, song_filenames)
 	{
-		playlists_entry_->playlist_.add_entry(simple_playlist::entry(ion::uri(std::string("file://") + filename.toStdString()), metadata_t(Json::objectValue)));
+		ion::uri uri_(std::string("file://") + filename.toStdString());
+		scanner_->start_scan(playlists_entry_->playlist_, uri_);
+	//	playlists_entry_->playlist_.add_entry(simple_playlist::entry(uri_, metadata_t(Json::objectValue)));
 	}
 }
 
@@ -340,6 +343,8 @@ void main_window::start_backend()
 	stop_backend();
 
 	QString backend_filepath = settings_->get_backend_filepath();
+
+	scanner_ = new scanner(this, backend_filepath);
 	backend_process = new QProcess(this);
 	backend_process->start(backend_filepath);
 	backend_process->waitForStarted(30000);
@@ -353,6 +358,7 @@ void main_window::start_backend()
 	{
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
 
+		connect(scanner_->get_scan_process(), SIGNAL(readyRead()),            this, SLOT(try_read_stdout_line()));
 		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
 		connect(backend_process, SIGNAL(started()),                           this, SLOT(backend_started()));
 		connect(backend_process, SIGNAL(error(QProcess::ProcessError)),       this, SLOT(backend_error(QProcess::ProcessError)));
@@ -383,7 +389,9 @@ void main_window::stop_backend()
 	}
 
 	delete backend_process;
+	delete scanner_;
 	backend_process = 0;
+	scanner_ = 0;
 }
 
 

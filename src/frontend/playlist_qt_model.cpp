@@ -85,12 +85,7 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 				{
 					std::string title = get_metadata_value < std::string > (entry->metadata, "title", "");
 					if (title.empty())
-					{
-						std::string uri_path = entry->uri_.get_path();
-						std::string::size_type slash_pos = uri_path.find_last_of('/');
-						if (slash_pos != std::string::npos)
-							title = uri_path.substr(slash_pos + 1);
-					}
+						title = entry->uri_.get_basename();
 
 					return QString(title.c_str());
 				}

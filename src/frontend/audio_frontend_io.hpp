@@ -34,8 +34,6 @@ public:
 	void play(uri const &uri_);
 	void stop();
 
-	//void get_metadata_for(uri const &uri_);
-
 
 protected:
 	void parse_command(std::string const &event_command_name, params_t const &event_params);

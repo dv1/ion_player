@@ -167,6 +167,15 @@ public:
 	options_t const & get_options() const { return options; }
 	options_t & get_options() { return options; }
 
+	std::string get_basename() const
+	{
+		std::string::size_type slash_pos = path.find_last_of('/');
+		if (slash_pos != std::string::npos)
+			return path.substr(slash_pos + 1);
+		else
+			return path;
+	}
+
 	std::string get_full() const
 	{
 		std::string result = type + "://" + path;

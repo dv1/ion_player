@@ -312,7 +312,7 @@ long mpg123_decoder::get_num_ticks() const
 
 long mpg123_decoder::get_num_ticks_per_second() const
 {
-	return playback_properties_.frequency;
+	return src_frequency;
 }
 
 

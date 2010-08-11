@@ -23,6 +23,7 @@ namespace frontend
 
 
 class playlists;
+class scanner;
 
 
 class main_window:
@@ -83,6 +84,7 @@ protected:
 	typedef boost::shared_ptr < audio_frontend_io > frontend_io_ptr_t;
 	frontend_io_ptr_t audio_frontend_io_;
 	QProcess *backend_process;
+	scanner *scanner_;
 	QMutex backend_stdin_mutex;
 	playlists *playlists_;
 	settings *settings_;

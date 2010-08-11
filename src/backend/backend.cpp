@@ -34,7 +34,7 @@ std::string backend::get_metadata(std::string const &uri_str)
 	if (temp_decoder)
 		return temp_decoder->get_songinfo_str();
 	else
-		return "";
+		return "{}";
 }
 
 

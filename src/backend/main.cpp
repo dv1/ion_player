@@ -81,9 +81,11 @@ int main(int argc, char **argv)
 		{
 			ion::backend::file_source_creator file_source_creator_;
 			ion::backend::dumb_decoder_creator dumb_decoder_creator_;
+			ion::backend::mpg123_decoder_creator mpg123_decoder_creator_;
 			ion::backend::backend backend_(send_message);
 			backend_.get_source_creators()["file"] = &file_source_creator_;
 			backend_.get_decoder_creators()["dumb"] = &dumb_decoder_creator_;
+			backend_.get_decoder_creators()["mpg123"] = &mpg123_decoder_creator_;
 
 			for (unsigned int i = 1; i < params.size(); ++i)
 			{

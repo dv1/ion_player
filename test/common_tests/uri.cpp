@@ -28,6 +28,15 @@ int test_main(int, char **)
 		TEST_EXCEPTION(ion::uri::invalid_uri, uri_.set("://"), "");
 		TEST_ASSERT(uri_.get_type() == "http", "");
 		TEST_ASSERT(uri_.get_path() == "localhost", "");
+		TEST_ASSERT(uri_.get_basename() == "localhost", "");
+	}
+
+	{
+		ion::uri uri_;
+		TEST_NO_EXCEPTION(uri_.set("http://localhost/abc/def/ghi.json?xxx=yyy"), "");
+		TEST_ASSERT(uri_.get_type() == "http", "");
+		TEST_ASSERT(uri_.get_path() == "localhost/abc/def/ghi.json", "");
+		TEST_ASSERT(uri_.get_basename() == "ghi.json", "");
 	}
 
 	{

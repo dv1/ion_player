@@ -16,7 +16,14 @@ simple_playlist::~simple_playlist()
 
 metadata_optional_t simple_playlist::get_metadata_for(uri const &uri_) const
 {
-	return metadata_t(Json::objectValue);
+	typedef entries_t::index < uri_tag > ::type entries_by_uri_t;
+	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
+	entries_by_uri_t::iterator uri_tag_iter = entries_by_uri.find(uri_);
+
+	if (uri_tag_iter == entries_by_uri.end())
+		return metadata_t(Json::objectValue);
+	else
+		return uri_tag_iter->metadata;
 }
 
 
