@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Ion</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/icons/ion</normaloff>:/icons/ion</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <property name="spacing">
@@ -159,6 +163,9 @@ Use the settings button above to open the dialog window.</string>
    </property>
    <property name="text">
     <string>pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Media Play</string>
    </property>
   </action>
   <action name="action_stop">

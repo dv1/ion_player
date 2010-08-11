@@ -38,6 +38,24 @@ QString settings::get_singleplay_playlist() const
 }
 
 
+bool settings::get_always_on_top_flag() const
+{
+	return value("always_on_top", false).value < bool > ();
+}
+
+
+bool settings::get_on_all_workspaces_flag() const
+{
+	return value("on_all_workspaces", false).value < bool > ();
+}
+
+
+bool settings::get_systray_icon_flag() const
+{
+	return value("systray_icon", false).value < bool > ();
+}
+
+
 void settings::set_backend_filepath(QString const &new_filepath)
 {
 	setValue("backend_filepath", new_filepath);
@@ -47,6 +65,24 @@ void settings::set_backend_filepath(QString const &new_filepath)
 void settings::set_singleplay_playlist(QString const &new_singleplay_playlist)
 {
 	setValue("singleplay_playlist", new_singleplay_playlist);
+}
+
+
+void settings::set_always_on_top_flag(bool const new_flag)
+{
+	setValue("always_on_top", new_flag);
+}
+
+
+void settings::set_on_all_workspaces_flag(bool const new_flag)
+{
+	setValue("on_all_workspaces", new_flag);
+}
+
+
+void settings::set_systray_icon_flag(bool const new_flag)
+{
+	setValue("systray_icon", new_flag);
 }
 
 

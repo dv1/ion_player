@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file alias="ion">resources/icons/ion.png</file>
     <file alias="new_playlist">resources/icons/document-new.png</file>
     <file alias="delete_playlist">resources/icons/edit-delete.png</file>
     <file alias="rename_playlist">resources/icons/edit-select-all.png</file>

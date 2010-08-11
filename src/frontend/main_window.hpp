@@ -3,11 +3,17 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QMutex>
+
 #include "ui_main_window.h"
 #include "ui_position_volume_widget.h"
 #include "ui_settings.h"
+
 #include "settings.hpp"
 #include "audio_frontend_io.hpp"
+
+
+class QSystemTrayIcon;
 
 
 namespace ion
@@ -71,14 +77,18 @@ protected:
 	bool load_playlists();
 	void save_playlists();
 
+	void apply_flags();
+
 
 	typedef boost::shared_ptr < audio_frontend_io > frontend_io_ptr_t;
 	frontend_io_ptr_t audio_frontend_io_;
 	QProcess *backend_process;
+	QMutex backend_stdin_mutex;
 	playlists *playlists_;
 	settings *settings_;
 
 	QDialog *settings_dialog;
+	QSystemTrayIcon *system_tray_icon;
 
 	Ui_main_window main_window_ui;
 	Ui_position_volume_widget position_volume_widget_ui;

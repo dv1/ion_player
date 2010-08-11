@@ -1,15 +1,21 @@
 #include <ctime>
 #include <cstdlib>
+#include <fstream>
+
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QProcess>
 #include <QMessageBox>
+#include <QSystemTrayIcon>
+#include <QMutexLocker>
+
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <fstream>
+
 #include <json/reader.h>
 #include <json/writer.h>
+
 #include "main_window.hpp"
 #include "playlists.hpp"
 #include "../backend/decoder.hpp" // TODO: this is a hack - a way to access min_volume() and max_volume(); put these in common/ instead
@@ -64,10 +70,13 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(backend_filepath_filedialog())); // TODO: better naming of the button and the slot
 
 
+	system_tray_icon = new QSystemTrayIcon(QIcon(QString::fromUtf8(":/icons/ion")), this);
+
+
 	audio_frontend_io_ = frontend_io_ptr_t(new audio_frontend_io(boost::lambda::bind(&main_window::print_backend_line, this, boost::lambda::_1)));
 
 	settings_ = new settings(*this, this);
-	std::cout << settings_->fileName().toStdString() << std::endl;
+	apply_flags();
 
 	playlists_ = new playlists(*main_window_ui.playlist_tab_widget, *audio_frontend_io_, this);
 	if (!load_playlists())
@@ -143,22 +152,58 @@ void main_window::next_song()
 
 void main_window::show_settings()
 {
+	// transfer settings from settings structure to dialog GUI
+	settings_dialog_ui.always_on_top->setCheckState(settings_->get_always_on_top_flag() ? Qt::Checked : Qt::Unchecked);
+	settings_dialog_ui.on_all_workspaces->setCheckState(settings_->get_on_all_workspaces_flag() ? Qt::Checked : Qt::Unchecked);
+	settings_dialog_ui.notification_area_icon->setCheckState(settings_->get_systray_icon_flag() ? Qt::Checked : Qt::Unchecked);
 	settings_dialog_ui.backend_filepath->setText(settings_->get_backend_filepath());
 
+	// in case of the singleplay playlist, fill the combobox with the playlist names
 	settings_dialog_ui.singleplay_playlist->clear();
 	BOOST_FOREACH(playlists_entry const &entry, playlists_->get_entries())
 	{
 		settings_dialog_ui.singleplay_playlist->addItem(entry.name);
 	}
-	settings_dialog_ui.singleplay_playlist->setEditText(settings_->get_singleplay_playlist());
+	settings_dialog_ui.singleplay_playlist->setEditText(settings_->get_singleplay_playlist()); // and set the current singleplay playlist namie
 
+
+	// if user rejected the dialog, stop processing
 	if (settings_dialog->exec() == QDialog::Rejected)
 		return;
 
-	settings_->set_backend_filepath(settings_dialog_ui.backend_filepath->text());
+
+	// update settings
+	settings_->set_always_on_top_flag(settings_dialog_ui.always_on_top->checkState() == Qt::Checked);
+	settings_->set_on_all_workspaces_flag(settings_dialog_ui.on_all_workspaces->checkState() == Qt::Checked);
+	settings_->set_systray_icon_flag(settings_dialog_ui.notification_area_icon->checkState() == Qt::Checked);
+
+	// flags
+	apply_flags();
+
+	// singleplay playlist
 	if (!settings_dialog_ui.singleplay_playlist->currentText().isNull() || !settings_dialog_ui.singleplay_playlist->currentText().isEmpty())
 		settings_->set_singleplay_playlist(settings_dialog_ui.singleplay_playlist->currentText());
-	change_backend();
+
+	// backend filepath
+	if (settings_dialog_ui.backend_filepath->text() != settings_->get_backend_filepath())
+	{
+		settings_->set_backend_filepath(settings_dialog_ui.backend_filepath->text());
+		change_backend();
+	}
+}
+
+
+void main_window::apply_flags()
+{
+	// always on top flag
+	if (settings_->get_always_on_top_flag())
+		setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
+	else
+		setWindowFlags(windowFlags() ^ Qt::WindowStaysOnTopHint);
+	show(); // setWindowFlags() hides the window
+
+	// notification area icon
+	system_tray_icon->setVisible(settings_->get_systray_icon_flag());
 }
 
 
@@ -306,7 +351,6 @@ void main_window::start_backend()
 	}
 	else
 	{
-		std::cerr << backend_process->pid() << std::endl;
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
 
 		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
@@ -418,6 +462,7 @@ void main_window::print_backend_line(std::string const &line)
 {
 	if (backend_process != 0)
 	{
+		QMutexLocker locker(&backend_stdin_mutex); // necessary, since the background metadata scanning processes might send commands from their own threads
 		std::cerr << "backend stdin> " << line << std::endl;
 		backend_process->write((line + "\n").c_str());
 	}
