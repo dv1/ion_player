@@ -47,6 +47,7 @@ public:
 	typedef Playlist playlist_t;
 	typedef boost::function < void(std::string const &line) > send_line_to_backend_callback_t;
 	typedef boost::signals2::signal < void(uri_optional_t const &new_current_uri) > current_uri_changed_signal_t;
+	typedef boost::signals2::signal < void(metadata_optional_t const &new_metadata) > current_metadata_changed_signal_t;
 	typedef frontend_io_base < Playlist > self_t;
 
 
@@ -54,6 +55,10 @@ public:
 	explicit frontend_io_base(send_line_to_backend_callback_t const &send_line_to_backend_callback):
 		send_line_to_backend_callback(send_line_to_backend_callback),
 		current_playlist(0)
+	{
+	}
+
+	virtual ~frontend_io_base()
 	{
 	}
 
@@ -95,9 +100,9 @@ public:
 		params_t play_params = boost::assign::list_of(uri_.get_full());
 
 		{
-			metadata_optional_t current_uri_metadata = get_metadata_for(*current_playlist, uri_);
-			if (current_uri_metadata)
-				play_params.push_back(get_metadata_string(*current_uri_metadata));
+			metadata_optional_t metadata_ = get_metadata_for(*current_playlist, uri_);
+			if (metadata_)
+				play_params.push_back(get_metadata_string(*metadata_));
 			else
 				play_params.push_back("{}");
 		}
@@ -107,9 +112,9 @@ public:
 			if (new_next_uri)
 			{
 				play_params.push_back(new_next_uri->get_full());
-				metadata_optional_t next_uri_metadata = get_metadata_for(*current_playlist, *new_next_uri);
-				if (next_uri_metadata)
-					play_params.push_back(get_metadata_string(*next_uri_metadata));
+				metadata_optional_t metadata_ = get_metadata_for(*current_playlist, *new_next_uri);
+				if (metadata_)
+					play_params.push_back(get_metadata_string(*metadata_));
 			}
 		}
 
@@ -149,16 +154,24 @@ public:
 	}
 
 
-	current_uri_changed_signal_t & get_current_uri_changed_signal()
+	current_uri_changed_signal_t & get_current_uri_changed_signal() { return current_uri_changed_signal; }
+	current_metadata_changed_signal_t & get_current_metadata_changed_signal() { return current_metadata_changed_signal; }
+
+
+	uri_optional_t const & get_current_uri() const { return current_uri; }
+	metadata_optional_t const & get_current_metadata() const { return current_metadata; }
+
+	void set_current_metadata(metadata_optional_t const &metadata)
 	{
-		return current_uri_changed_signal;
+		current_metadata = metadata;
+		current_metadata_changed_signal(current_metadata);
 	}
 
 
 
 
 protected:
-	void parse_command(std::string const &event_command_name, params_t const &event_params)
+	virtual void parse_command(std::string const &event_command_name, params_t const &event_params)
 	{
 		if ((event_command_name == "transition") && (event_params.size() >= 2))
 			transition(event_params[0], event_params[1]);
@@ -249,6 +262,9 @@ protected:
 
 	void started(uri const &current_uri_, uri_optional_t const &next_uri_)
 	{
+		if (current_playlist == 0)
+			return;
+
 		current_uri = current_uri_;
 
 		/*
@@ -277,7 +293,9 @@ protected:
 		else
 			next_uri = next_uri_;
 
+		current_metadata = get_metadata_for(*current_playlist, current_uri_);
 		current_uri_changed_signal(current_uri);
+		current_metadata_changed_signal(current_metadata);
 	}
 
 
@@ -285,7 +303,9 @@ protected:
 	{
 		current_uri = boost::none;
 		next_uri = boost::none;
+		current_metadata = boost::none;
 		current_uri_changed_signal(current_uri);
+		current_metadata_changed_signal(current_metadata);
 	}
 
 
@@ -293,7 +313,9 @@ protected:
 	{
 		current_uri = boost::none;
 		next_uri = boost::none;
+		current_metadata = boost::none;
 		current_uri_changed_signal(current_uri);
+		current_metadata_changed_signal(current_metadata);
 	}
 
 
@@ -303,6 +325,7 @@ protected:
 	// Callback & signals
 	send_line_to_backend_callback_t send_line_to_backend_callback;
 	current_uri_changed_signal_t current_uri_changed_signal;
+	current_metadata_changed_signal_t current_metadata_changed_signal;
 	boost::signals2::connection resource_added_signal_connection, resource_removed_signal_connection;
 
 	// URIs
@@ -310,6 +333,9 @@ protected:
 
 	// The playlist
 	playlist_t *current_playlist;
+
+	// Misc
+	metadata_optional_t current_metadata;
 };
 
 

@@ -27,6 +27,8 @@ public:
 	virtual QModelIndex parent(QModelIndex const &index) const;
 	virtual int rowCount(QModelIndex const &parent) const;
 
+	void current_uri_changed(uri_optional_t const &new_current_uri);
+
 
 protected:
 	void entry_added(uri const uri_);
@@ -37,6 +39,7 @@ protected:
 	boost::signals2::connection
 		entry_added_signal_connection,
 		entry_removed_signal_connection;
+	uri_optional_t current_uri;
 };
 
 

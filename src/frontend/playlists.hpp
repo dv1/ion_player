@@ -81,6 +81,8 @@ public:
 	inline audio_frontend_io& get_audio_frontend_io() { return audio_frontend_io_; }
 	inline QTabWidget& get_tab_widget() { return tab_widget; }
 
+	void current_uri_changed(uri_optional_t const &new_current_uri);
+
 
 protected slots:
 	void close_current_playlist(int index);

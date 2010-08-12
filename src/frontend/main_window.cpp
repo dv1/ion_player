@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <fstream>
 
+#include <QTimer>
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QInputDialog>
@@ -65,8 +66,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	position_volume_widget_ui.volume->setRange(ion::backend::decoder::min_volume(), ion::backend::decoder::max_volume()); // TODO: see above
 	position_volume_widget_ui.volume->setSliderPosition(ion::backend::decoder::max_volume());
 
-	connect(position_volume_widget_ui.position, SIGNAL(sliderMoved(int)), this, SLOT(set_current_position(int)));
-	connect(position_volume_widget_ui.volume,   SIGNAL(sliderMoved(int)), this, SLOT(set_current_volume(int)));
+	connect(position_volume_widget_ui.position, SIGNAL(sliderReleased()), this, SLOT(set_current_position()));
+	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
 
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(backend_filepath_filedialog())); // TODO: better naming of the button and the slot
 
@@ -74,12 +75,20 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	system_tray_icon = new QSystemTrayIcon(QIcon(QString::fromUtf8(":/icons/ion")), this);
 
 
+	get_current_position_timer = new QTimer(this);
+	get_current_position_timer->setInterval(1000);
+	connect(get_current_position_timer, SIGNAL(timeout()), this, SLOT(get_current_playback_position()));
+
+
 	audio_frontend_io_ = frontend_io_ptr_t(new audio_frontend_io(boost::lambda::bind(&main_window::print_backend_line, this, boost::lambda::_1)));
+	audio_frontend_io_->get_current_uri_changed_signal().connect(boost::lambda::bind(&main_window::current_uri_changed, this, boost::lambda::_1));
+	audio_frontend_io_->get_current_metadata_changed_signal().connect(boost::lambda::bind(&main_window::current_metadata_changed, this, boost::lambda::_1));
 
 	settings_ = new settings(*this, this);
 	apply_flags();
 
 	playlists_ = new playlists(*main_window_ui.playlist_tab_widget, *audio_frontend_io_, this);
+	audio_frontend_io_->get_current_uri_changed_signal().connect(boost::lambda::bind(&playlists::current_uri_changed, playlists_, boost::lambda::_1));
 	if (!load_playlists())
 		playlists_->add_entry("Default");
 
@@ -98,7 +107,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		}
 
 		scanner_->start_scan(playlist_entry_iter->playlist_, *command_line_uri);
-		//playlist_entry_iter->playlist_.add_entry(simple_playlist::entry(*command_line_uri, metadata_t(Json::objectValue)));
 
 		// TODO: start playback of this URI (switch to the playlist, that is, move the corresponding tab to front, and call play())
 	}
@@ -209,13 +217,44 @@ void main_window::apply_flags()
 }
 
 
-void main_window::set_current_position(int new_position)
+void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 {
+	if (new_current_uri)
+		get_current_position_timer->start();
+	else
+		get_current_position_timer->stop();
+	position_volume_widget_ui.position->setValue(0);
 }
 
 
-void main_window::set_current_volume(int new_volume)
+void main_window::current_metadata_changed(metadata_optional_t const &new_metadata)
 {
+	if (new_metadata)
+	{
+		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
+
+		if (num_ticks)
+		{
+			position_volume_widget_ui.position->setEnabled(true);
+			position_volume_widget_ui.position->setRange(0, num_ticks);
+			return;
+		}
+	}
+
+	position_volume_widget_ui.position->setEnabled(false);
+}
+
+
+void main_window::set_current_position()
+{
+	int new_position = position_volume_widget_ui.position->value();
+	audio_frontend_io_->set_current_position(new_position);
+}
+
+
+void main_window::set_current_volume()
+{
+	int new_volume = position_volume_widget_ui.volume->value();
 	audio_frontend_io_->set_current_volume(new_volume);
 }
 
@@ -280,7 +319,6 @@ void main_window::add_file_to_playlist()
 	{
 		ion::uri uri_(std::string("file://") + filename.toStdString());
 		scanner_->start_scan(playlists_entry_->playlist_, uri_);
-	//	playlists_entry_->playlist_.add_entry(simple_playlist::entry(uri_, metadata_t(Json::objectValue)));
 	}
 }
 
@@ -336,6 +374,14 @@ void main_window::backend_error(QProcess::ProcessError process_error)
 
 void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_status)
 {
+}
+
+
+void main_window::get_current_playback_position()
+{
+	audio_frontend_io_->issue_get_position_command();
+	unsigned int current_position = audio_frontend_io_->get_current_position();
+	position_volume_widget_ui.position->setValue(current_position);
 }
 
 

@@ -1,3 +1,4 @@
+#include <QIcon>
 #include "playlist_qt_model.hpp"
 
 
@@ -30,11 +31,10 @@ QVariant playlist_qt_model::headerData(int section, Qt::Orientation orientation,
 
 	switch (section)
 	{
-		case 0: return "Status";
-		case 1: return "Artist";
-		case 2: return "Album";
-		case 3: return "Title";
-		case 4: return "Length";
+		case 0: return "Artist";
+		case 1: return "Album";
+		case 2: return "Title";
+		case 3: return "Length";
 		default: return QVariant();
 	}
 }
@@ -42,14 +42,14 @@ QVariant playlist_qt_model::headerData(int section, Qt::Orientation orientation,
 
 int playlist_qt_model::columnCount(QModelIndex const &parent) const
 {
-	// status, artist, album, song title, song length
-	return 5;
+	// artist, album, song title, song length
+	return 4;
 }
 
 
 QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 {
-	if ((index.column() >= 5) || (index.row() >= int(playlist_.get_num_entries())))
+	if ((index.column() >= 4) || (index.row() >= int(playlist_.get_num_entries())))
 		return QVariant();
 
 
@@ -65,7 +65,7 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 		{
 			switch (index.column())
 			{
-				case 3:
+				case 2:
 					return QString(entry->uri_.get_full().c_str());
 				default:
 					break;
@@ -74,14 +74,34 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 		}
 
 
+		case Qt::DecorationRole:
+		{
+			switch (index.column())
+			{
+				case 0:
+				{
+					if (current_uri)
+					{
+						if (entry->uri_ == *current_uri)
+							return QIcon(":/icons/play");
+					}
+
+					return QVariant();
+				}
+				default: return QVariant();
+			}
+
+			break;
+		}
+
+
 		case Qt::DisplayRole:
 		{
 			switch (index.column())
 			{
-				case 0: return QVariant();
-				case 1: return QString(get_metadata_value < std::string > (entry->metadata, "artist", "").c_str());
-				case 2: return QString(get_metadata_value < std::string > (entry->metadata, "album", "").c_str());
-				case 3:
+				case 0: return QString(get_metadata_value < std::string > (entry->metadata, "artist", "").c_str());
+				case 1: return QString(get_metadata_value < std::string > (entry->metadata, "album", "").c_str());
+				case 2:
 				{
 					std::string title = get_metadata_value < std::string > (entry->metadata, "title", "");
 					if (title.empty())
@@ -89,7 +109,7 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 
 					return QString(title.c_str());
 				}
-				case 4:
+				case 3:
 				{
 					unsigned int num_ticks = get_metadata_value < unsigned int > (entry->metadata, "num_ticks", 0);
 					unsigned int num_ticks_per_second = get_metadata_value < unsigned int > (entry->metadata, "num_ticks_per_second", 1);
@@ -122,6 +142,20 @@ QModelIndex playlist_qt_model::parent(QModelIndex const &index) const
 int playlist_qt_model::rowCount(QModelIndex const &parent) const
 {
 	return playlist_.get_num_entries();
+}
+
+
+void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_uri)
+{
+/*	boost::optional < uint64_t > old_uri_index, new_uri_index;
+
+	if (current_uri)
+		old_uri_index = playlist_.get_entry_index(*current_uri);
+	if (new_current_uri)
+		new_uri_index = playlist_.get_entry_index(*new_current_uri);*/
+
+	current_uri = new_current_uri;
+	reset();
 }
 
 

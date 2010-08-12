@@ -13,6 +13,7 @@
 #include "audio_frontend_io.hpp"
 
 
+class QTimer;
 class QSystemTrayIcon;
 
 
@@ -43,8 +44,8 @@ protected slots:
 	void next_song();
 	void show_settings();
 
-	void set_current_position(int new_position);
-	void set_current_volume(int new_volume);
+	void set_current_position();
+	void set_current_volume();
 
 	void backend_filepath_filedialog();
 
@@ -61,6 +62,8 @@ protected slots:
 	void backend_started();
 	void backend_error(QProcess::ProcessError process_error);
 	void backend_finished(int exit_code, QProcess::ExitStatus exit_status);
+
+	void get_current_playback_position();
 
 
 protected:
@@ -80,6 +83,9 @@ protected:
 
 	void apply_flags();
 
+	void current_uri_changed(uri_optional_t const &new_current_uri);
+	void current_metadata_changed(metadata_optional_t const &new_metadata);
+
 
 	typedef boost::shared_ptr < audio_frontend_io > frontend_io_ptr_t;
 	frontend_io_ptr_t audio_frontend_io_;
@@ -91,6 +97,7 @@ protected:
 
 	QDialog *settings_dialog;
 	QSystemTrayIcon *system_tray_icon;
+	QTimer *get_current_position_timer;
 
 	Ui_main_window main_window_ui;
 	Ui_position_volume_widget position_volume_widget_ui;

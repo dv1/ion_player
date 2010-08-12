@@ -74,7 +74,8 @@ void playlists_entry::remove_selected()
 void playlists_entry::play_song_in_row(QModelIndex const &index)
 {
 	simple_playlist::entry const *playlist_entry = playlist_.get_entry(index.row());
-	playlists_.get_audio_frontend_io().set_current_playlist(&playlist_);
+	playlists_.set_active_entry(*this);
+	//playlists_.get_audio_frontend_io().set_current_playlist(&playlist_);
 	playlists_.get_audio_frontend_io().play(playlist_entry->uri_);
 }
 
@@ -189,6 +190,15 @@ playlists_entry* playlists::get_currently_visible_entry()
 	}
 
 	return 0;
+}
+
+
+void playlists::current_uri_changed(uri_optional_t const &new_current_uri)
+{
+	if (active_entry == 0)
+		return;
+
+	active_entry->playlist_qt_model_->current_uri_changed(new_current_uri);
 }
 
 
