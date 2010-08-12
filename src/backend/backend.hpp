@@ -4,7 +4,6 @@
 #include <boost/thread/mutex.hpp>
 
 #include <ion/uri.hpp>
-#include <ion/backend_base.hpp>
 #include <ion/metadata.hpp>
 
 #include "types.hpp"
@@ -19,8 +18,7 @@ namespace backend
 {
 
 
-class backend:
-	public backend_base
+class backend
 {
 public:
 	typedef decoder_creator::creators_t decoder_creators_t;
@@ -29,20 +27,20 @@ public:
 
 
 	explicit backend(message_callback_t const &message_callback);
-	virtual ~backend();
+	~backend();
 
 
 	// Retrieves a type identifier for this backend, this identifier being "ion_audio".
 	// pre: nothing.
 	// post: does not affect backend states.
-	virtual std::string get_type() const { return "ion_audio"; }
+	std::string get_type() const { return "ion_audio"; }
 
 	// Retrieves metadata for the given resource.
 	// pre: the given uri must be valid. It does not matter if the same resource is currently being played.
 	// post: does not affect backend states.
 	std::string get_metadata(std::string const &uri_str);
 
-	virtual void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
+	void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
 
 
 	decoder_creators_t & get_decoder_creators() { return decoder_creators; }
@@ -117,6 +115,11 @@ protected:
 
 	int loop_count;
 };
+
+
+
+std::string get_backend_type(backend const &backend_);
+void execute_command(backend &backend_, std::string const &command, params_t const &parameters, std::string &response_command, params_t &response_parameters);
 
 
 }

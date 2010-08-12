@@ -9,8 +9,7 @@ int num_exec_command_calls = 0;
 std::stringstream in, out;
 
 
-class mock_backend:
-	public ion::backend_base
+class mock_backend
 {
 public:
 	virtual std::string get_type() const { return "mock_backend"; }
@@ -24,6 +23,19 @@ public:
 };
 
 
+std::string get_backend_type(mock_backend const &backend)
+{
+	return backend.get_type();
+}
+
+
+void execute_command(mock_backend &backend, std::string const &command, ion::params_t const &parameters, std::string &response_command, ion::params_t &response_parameters)
+{
+	backend.exec_command(command, parameters, response_command, response_parameters);
+}
+
+
+
 void message_cb(std::string const &command, ion::params_t const &params)
 {
 	out << ion::recombine_command_line(command, params) << std::endl;
@@ -35,7 +47,7 @@ int test_main(int, char **)
 {
 	mock_backend mb;
 
-	ion::backend_io io(in, mb, message_cb);
+	ion::backend_io < mock_backend > io(in, mb, message_cb);
 
 	std::string input_line = "foo \"abc\" \"d\\\"ef\"";
 	std::string expected_line = "foo_out \"abc\" \"d\\\"ef\"";

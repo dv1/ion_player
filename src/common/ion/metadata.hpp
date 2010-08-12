@@ -2,6 +2,7 @@
 #define ION_METADATA_HPP
 
 #include <boost/mpl/map.hpp>
+#include <boost/mpl/at.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 #include <json/value.h>
@@ -14,6 +15,8 @@ namespace ion
 typedef Json::Value metadata_t;
 typedef boost::optional < metadata_t > metadata_optional_t;
 
+metadata_t const & empty_metadata();
+bool is_valid(metadata_t const &metadata);
 metadata_optional_t parse_metadata(std::string const &metadata_str);
 std::string get_metadata_string(metadata_t const &metadata);
 

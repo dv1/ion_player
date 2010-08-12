@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 			backend_.create_sink("alsa");
 
 
-			ion::backend_io backend_io(std::cin, backend_, send_message);
+			ion::backend_io < ion::backend::backend > backend_io(std::cin, backend_, send_message);
 			backend_io.run();
 
 			break;

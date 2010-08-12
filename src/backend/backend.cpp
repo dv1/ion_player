@@ -4,6 +4,7 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/locks.hpp>
+#include <ion/resource_exceptions.hpp>
 #include "backend.hpp"
 
 
@@ -522,6 +523,19 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 	}
 
 	return new_decoder;
+}
+
+
+
+std::string get_backend_type(backend const &backend_)
+{
+	return backend_.get_type();
+}
+
+
+void execute_command(backend &backend_, std::string const &command, params_t const &parameters, std::string &response_command, params_t &response_parameters)
+{
+	backend_.exec_command(command, parameters, response_command, response_parameters);
 }
 
 

@@ -7,16 +7,29 @@ namespace ion
 {
 
 
+metadata_t const & empty_metadata()
+{
+	static metadata_t empty_metadata_(Json::objectValue);
+	return empty_metadata_;
+}
+
+
+bool is_valid(metadata_t const &metadata)
+{
+	return metadata.isObject();
+}
+
+
 metadata_optional_t parse_metadata(std::string const &metadata_str)
 {
 	if (metadata_str.empty())
-		return Json::Value(Json::objectValue);
+		return empty_metadata();
 
 	Json::Value value;
 	Json::Reader reader;
 	if (reader.parse(metadata_str, value))
 	{
-		if (value.isObject())
+		if (is_valid(value))
 			return value;
 	}
 
