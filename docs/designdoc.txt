@@ -150,7 +150,7 @@ and do not affect the current playback.
 2.5. Handling backend crashes
 
 Backend crashes are categorized according to their current status.
-- If the backend is currently playing, and crashes before the frontend ever recevied a resource_finished or stopped event, the frontend restarts the backend,
+- If the backend is currently playing, and crashes before the frontend ever received a resource_finished or stopped event, the frontend restarts the backend,
   and sends a play command with the current and next resource. If the backend then crashes immediately again, the current resource is marked as unplayable with
   this backend, and notifies the user about this. Specialized frontends may also try to restore states like a playback position.
 - If the backend was stopped, the frontend simply restarts it. If it crashes again, the frontend again restarts it. After five backend crashes, the frontend marks

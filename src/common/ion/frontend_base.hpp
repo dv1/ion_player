@@ -40,7 +40,9 @@ public:
 	// Constructor; the parameter is a callback that sends a line to the backend process' stdin.
 	explicit frontend_base(send_line_to_backend_callback_t const &send_line_to_backend_callback):
 		send_line_to_backend_callback(send_line_to_backend_callback),
-		current_playlist(0)
+		current_playlist(0),
+		crash_count(0),
+		backend_broken(false)
 	{
 	}
 
@@ -102,6 +104,9 @@ public:
 
 	void play(uri const &uri_)
 	{
+		if (backend_broken)
+			return;
+
 		params_t play_params = boost::assign::list_of(uri_.get_full());
 
 		{
@@ -129,6 +134,9 @@ public:
 
 	void stop()
 	{
+		if (backend_broken)
+			return;
+
 		send_line_to_backend_callback("stop");
 	}
 
@@ -170,6 +178,62 @@ public:
 	{
 		current_metadata = metadata;
 		current_metadata_changed_signal(current_metadata);
+	}
+
+
+	// Backend start/termination event handlers
+
+	// Backend just started; depending on the number of crashes, either restart playback, or mark the resource as incompatible with the backend and move
+	// to the next one.
+	void backend_started(std::string const &backend_type)
+	{
+		if (backend_type != current_backend_type)
+		{
+			crash_count = 0;
+			backend_broken = false;
+			backend_type = current_backend_type;
+		}
+
+		if (current_uri)
+		{
+			if (crash_count < 2)
+			{
+				uri current_uri_ = *current_uri;
+				play(current_uri_);
+			}
+			else
+			{
+				crash_count = 0;
+				if (current_playlist != 0)
+					mark_backend_resource_incompatibility(*current_playlist, *current_uri, backend_type);
+				move_to_next_resource();
+			}
+		}
+	}
+
+
+	// not to be called if the backend exists normally
+	// returnvalue true => restart backend, false => do not restart backend
+	// If playback is running (= current_uri is valid), just return true. Otherwise, if there were 5 crashes or more, mark the backend as broken, and
+	// tell the caller not to restart this backend. Otherwise, tell the caller to restart it.
+	bool backend_terminated()
+	{
+		++crash_count;
+
+		if (current_uri)
+		{
+			return true;
+		}
+		else
+		{
+			if (crash_count >= 5)
+			{
+				backend_broken = true;
+				return false;
+			}
+			else
+				return true;
+		}
 	}
 
 
@@ -237,18 +301,6 @@ protected:
 			else
 				send_line_to_backend_callback("clear_next_resource");
 		}
-	}
-
-
-	// Backend start/termination event handlers
-
-	void backend_started(std::string const &backend_type)
-	{
-	}
-
-
-	void backend_terminated() // not to be called if the backend exists normally
-	{
 	}
 
 
@@ -341,6 +393,9 @@ protected:
 
 	// Misc
 	metadata_optional_t current_metadata;
+	unsigned int crash_count;
+	bool backend_broken;
+	std::string current_backend_type;
 };
 
 
