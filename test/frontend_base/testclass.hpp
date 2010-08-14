@@ -3,8 +3,8 @@
 
 
 #include <QProcess>
-#include <ion/frontend_io_base.hpp>
-#include <ion/simple_playlist.hpp>
+#include <ion/frontend_base.hpp>
+#include "../frontend/simple_playlist.hpp"
 
 
 class testclass:
@@ -28,9 +28,9 @@ protected:
 
 
 	QProcess backend_process;
-	typedef ion::frontend_io_base < ion::simple_playlist > frontend_io_t;
-	frontend_io_t *frontend_io_;
-	ion::simple_playlist simple_playlist_;
+	typedef ion::frontend_base < ion::frontend::simple_playlist > frontend_t;
+	frontend_t *frontend_;
+	ion::frontend::simple_playlist simple_playlist_;
 };
 
 

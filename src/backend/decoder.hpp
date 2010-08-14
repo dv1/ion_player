@@ -11,7 +11,7 @@
 #include <json/value.h>
 #include <json/writer.h>
 
-#include <ion/message_callback.hpp>
+#include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 
 #include "types.hpp"
@@ -200,10 +200,10 @@ public:
 
 
 	/**
-	* Returns the message callback set for this decoder.
-	* @return The message callback this decoder is using
+	* Returns the send command callback set for this decoder.
+	* @return The send command callback this decoder is using
 	*/
-	message_callback_t get_message_callback() const { return message_callback; }
+	send_command_callback_t get_send_command_callback() const { return send_command_callback; }
 
 
 	/**
@@ -234,13 +234,13 @@ public:
 
 
 protected:
-	explicit decoder(message_callback_t const &message_callback):
-		message_callback(message_callback)
+	explicit decoder(send_command_callback_t const &send_command_callback):
+		send_command_callback(send_command_callback)
 	{
 	}
 
 
-	message_callback_t message_callback;
+	send_command_callback_t send_command_callback;
 };
 
 

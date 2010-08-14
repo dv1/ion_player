@@ -3,12 +3,13 @@
 
 #include <QObject>
 
-#include <ion/simple_playlist.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <json/value.h>
+
+#include "simple_playlist.hpp"
 
 
 class QTabWidget;

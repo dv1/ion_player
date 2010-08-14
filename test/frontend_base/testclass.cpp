@@ -8,17 +8,17 @@
 
 
 testclass::testclass():
-	frontend_io_(0)
+	frontend_(0)
 {
-	frontend_io_ = new frontend_io_t(boost::lambda::bind(&testclass::print_backend_line, this, boost::lambda::_1));
+	frontend_ = new frontend_t(boost::lambda::bind(&testclass::print_backend_line, this, boost::lambda::_1));
 
-	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), ion::metadata_t("{}")));
-	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), ion::metadata_t("{}")));
-	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), ion::metadata_t("{}")));
-	simple_playlist_.add_entry(ion::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), ion::metadata_t("{}")));
+	simple_playlist_.add_entry(ion::frontend::simple_playlist::entry(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), ion::metadata_t("{}")));
 
-	frontend_io_->get_current_uri_changed_signal().connect(boost::lambda::bind(&testclass::current_uri_changed, this, boost::lambda::_1));
-	frontend_io_->set_current_playlist(&simple_playlist_);
+	frontend_->get_current_uri_changed_signal().connect(boost::lambda::bind(&testclass::current_uri_changed, this, boost::lambda::_1));
+	frontend_->set_current_playlist(&simple_playlist_);
 
 	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));
 	connect(&backend_process, SIGNAL(readyReadStandardOutput()), this, SLOT(try_read_stdout_line()));
@@ -53,14 +53,13 @@ testclass::testclass():
 
 testclass::~testclass()
 {
-	delete frontend_io_;
+	delete frontend_;
 }
 
 
 void testclass::started()
 {
-	frontend_io_->play(ion::uri("file://test/sound_samples/mods/test.xm?id=1"));
-//	backend_process.write("get_backend_type\n");
+	frontend_->play(ion::uri("file://test/sound_samples/mods/test.xm?id=1"));
 }
 
 
@@ -70,7 +69,7 @@ void testclass::try_read_stdout_line()
 	{
 		QString line = backend_process.readLine().trimmed();
 		std::cerr << "stdout> " << line.toStdString() << std::endl;
-		frontend_io_->parse_incoming_line(line.toStdString());
+		frontend_->parse_incoming_line(line.toStdString());
 
 		if (line.startsWith("resource_finished"))
 			print_backend_line("quit");

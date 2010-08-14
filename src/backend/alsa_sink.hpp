@@ -17,7 +17,7 @@ class alsa_sink:
 	public common_sink_base < alsa_sink >
 {
 public:
-	explicit alsa_sink(message_callback_t const &message_callback);
+	explicit alsa_sink(send_command_callback_t const &send_command_callback);
 
 
 	bool is_initialized() const;
@@ -44,7 +44,7 @@ class alsa_sink_creator:
 	public sink_creator
 {
 public:
-	virtual sink_ptr_t create(message_callback_t const &message_callback);
+	virtual sink_ptr_t create(send_command_callback_t const &send_command_callback);
 	virtual std::string get_type() const { return "alsa"; }
 };
 

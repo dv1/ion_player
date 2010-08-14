@@ -9,8 +9,15 @@ namespace ion
 
 metadata_t const & empty_metadata()
 {
-	static metadata_t empty_metadata_(Json::objectValue);
+	static metadata_t const empty_metadata_(Json::objectValue);
 	return empty_metadata_;
+}
+
+
+std::string const & empty_metadata_string()
+{
+	static std::string const str("{}");
+	return str;
 }
 
 

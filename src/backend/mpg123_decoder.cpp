@@ -38,8 +38,8 @@ void mpg123_decrement()
 }
 
 
-mpg123_decoder::mpg123_decoder(message_callback_t const message_callback, source_ptr_t source_):
-	decoder(message_callback),
+mpg123_decoder::mpg123_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
+	decoder(send_command_callback),
 	source_(source_),
 	mpg123_handle_(0),
 	current_volume(16777215),
@@ -408,9 +408,9 @@ unsigned int mpg123_decoder::update(void *dest, unsigned int const num_samples_t
 
 
 
-decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback)
+decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
-	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(message_callback, source_);
+	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(send_command_callback, source_);
 	if (!mpg123_decoder_->is_initialized())
 	{
 		delete mpg123_decoder_;

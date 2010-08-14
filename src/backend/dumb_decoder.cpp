@@ -85,8 +85,8 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 
 
 
-dumb_decoder::dumb_decoder(message_callback_t const message_callback, source_ptr_t source_, long const filesize):
-	decoder(message_callback),
+dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize):
+	decoder(send_command_callback),
 	duh(0),
 	duh_sigrenderer(0),
 	module_type_(module_type_unknown),
@@ -394,7 +394,7 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 
 
 
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
 	long filesize = source_->get_size();
@@ -402,7 +402,7 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 		return decoder_ptr_t();
 
 	// TODO: use metadata to determine the format (MOD/S3M/XM/IT/...)
-	dumb_decoder *dumb_decoder_ = new dumb_decoder(message_callback, source_, filesize);
+	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize);
 	if (!dumb_decoder_->is_initialized())
 	{
 		delete dumb_decoder_;

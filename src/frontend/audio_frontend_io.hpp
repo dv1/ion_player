@@ -3,8 +3,8 @@
 
 #include <QObject>
 
-#include <ion/frontend_io_base.hpp>
-#include <ion/simple_playlist.hpp>
+#include <ion/frontend_base.hpp>
+#include "simple_playlist.hpp"
 
 
 class QTabWidget;
@@ -18,10 +18,10 @@ namespace frontend
 
 
 class audio_frontend_io:
-	public frontend_io_base < simple_playlist >
+	public frontend_base < simple_playlist >
 {
 public:
-	typedef frontend_io_base < simple_playlist > base_t;
+	typedef frontend_base < simple_playlist > base_t;
 
 
 	explicit audio_frontend_io(send_line_to_backend_callback_t const &send_line_to_backend_callback);

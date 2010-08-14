@@ -5,6 +5,8 @@
 
 namespace ion
 {
+namespace frontend
+{
 
 
 simple_playlist::~simple_playlist()
@@ -365,5 +367,6 @@ void mark_backend_resource_incompatibility(simple_playlist &playlist, uri const 
 }
 
 
+}
 }
 

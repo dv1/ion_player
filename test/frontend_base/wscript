@@ -12,8 +12,8 @@ def build(bld):
 	obj = bld(
 		features = ['cxx', 'cprogram'],
 		uselib = 'QTCORE BUILDMODE STRICT',
-		target = 'frontend_io_test',
-		uselib_local = 'ionplayer_common',
+		target = 'frontend_base_test',
+		uselib_local = 'ionplayer_frontend ionplayer_common',
 		includes = '.'
 	)
 	obj.find_sources_in_dirs('.')

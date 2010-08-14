@@ -1,5 +1,5 @@
-#ifndef ION_SIMPLE_PLAYLIST_HPP
-#define ION_SIMPLE_PLAYLIST_HPP
+#ifndef ION_FRONTEND_SIMPLE_PLAYLIST_HPP
+#define ION_FRONTEND_SIMPLE_PLAYLIST_HPP
 
 #include <iostream>
 
@@ -20,6 +20,8 @@
 
 
 namespace ion
+{
+namespace frontend
 {
 
 
@@ -114,6 +116,7 @@ uri_optional_t get_succeeding_uri(simple_playlist const &playlist, uri const &ur
 void mark_backend_resource_incompatibility(simple_playlist &playlist, uri const &uri_, std::string const &backend_type);
 
 
+}
 }
 
 #endif

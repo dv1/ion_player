@@ -28,7 +28,7 @@ scanner::~scanner()
 }
 
 
-void scanner::start_scan(ion::simple_playlist &playlist, ion::uri const &uri_to_be_scanned)
+void scanner::start_scan(simple_playlist &playlist, ion::uri const &uri_to_be_scanned)
 {
 	scan_queue.push_back(scan_entry_t(&playlist, uri_to_be_scanned));
 	if (scan_process->state() != QProcess::Running)

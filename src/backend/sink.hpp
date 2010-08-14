@@ -5,7 +5,7 @@
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <ion/message_callback.hpp>
+#include <ion/send_command_callback.hpp>
 
 #include "decoder.hpp"
 
@@ -20,7 +20,7 @@ class sink:
 	private boost::noncopyable
 {
 public:
-	enum message_type
+	enum command_type
 	{
 		resource_finished, // sent when the decoder signalizes and end-of-data via a "false" returnvalue from decoder::update(); the only way to get playback again is to call start()
 		stopped, // sent when the playback is stopped by other means (by calling stop() for instance); the only way to get playback again is to call start()
@@ -65,7 +65,7 @@ public:
 	* This call does _not_ affect the decoder in any way; it does not change position, volume, it does not even pause it.
 	* The backend requires this for internal sink handovers, in case the user wants to change the sink while playback is running.
 	*
-	* @param do_notify If set to true, this function will use the message callback to send a response that notifies about the stop
+	* @param do_notify If set to true, this function will use the send command callback to send a response that notifies about the stop
 	* @pre the sink must be operational
 	* @post current and next decoder will be reset (e.g. set to decoder_ptr_t(), which equals a null pointer). This may trigger a decoder shutdown if no one else had a shared pointer
 	* to these decoders. If no playback was running, this function does nothing. Paused playback will be stopped as well.
@@ -75,7 +75,7 @@ public:
 	/**
 	* Pauses playback. Repeated calls will be ignored. This function does NOT have to uninitialize anything internally, and is in fact preferred to not do so.
 	*
-	* @param do_notify If set to true, this function will use the message callback to send a response that notifies about the pause
+	* @param do_notify If set to true, this function will use the send command callback to send a response that notifies about the pause
 	* @pre Playback must be present (e.g. start() must have been called earlier) and unpaused; the sink must be operational
 	* @post The playback will be paused if the preconditions were met, otherwise this function does nothing
 	*/
@@ -84,7 +84,7 @@ public:
 	/**
 	* Resumes playback. Repeated calls will be ignored. This function does NOT have to reinitialize anything internally, and is in fact preferred to not do so.
 	*
-	* @param do_notify If set to true, this function will use the message callback to send a response that notifies about the resume
+	* @param do_notify If set to true, this function will use the send command callback to send a response that notifies about the resume
 	* @pre Playback must be present (e.g. start() must have been called earlier) and paused; the sink must be operational
 	* @post The playback will be resumed if the preconditions were met, otherwise this function does nothing
 	*/
@@ -119,35 +119,35 @@ public:
 
 
 protected:
-	explicit sink(message_callback_t const &message_callback):
-		message_callback(message_callback)
+	explicit sink(send_command_callback_t const &send_command_callback):
+		send_command_callback(send_command_callback)
 	{
 	}
 
 
-	// Convenience function to define and send common response messages
-	void send_message(message_type const message, params_t const &custom_params = params_t())
+	// Convenience function to define and send common response event commands
+	void send_event_command(command_type const command, params_t const &custom_params = params_t())
 	{
-		if (!message_callback)
+		if (!send_command_callback)
 		{
-			std::cerr << "Trying to send message \"" << message << "\" without a callback" << std::endl;
+			std::cerr << "Trying to send command \"" << command << "\" without a callback" << std::endl;
 			return;
 		}
 
-		switch (message)
+		switch (command)
 		{
-			case resource_finished: message_callback("resource_finished", custom_params); break;
-			case stopped: message_callback("stopped", custom_params); break;
-			case started: message_callback("started", custom_params); break;
-			case paused: message_callback("paused", custom_params); break;
-			case resumed: message_callback("resumed", custom_params); break;
-			case transition: message_callback("transition", custom_params); break;
+			case resource_finished: send_command_callback("resource_finished", custom_params); break;
+			case stopped: send_command_callback("stopped", custom_params); break;
+			case started: send_command_callback("started", custom_params); break;
+			case paused: send_command_callback("paused", custom_params); break;
+			case resumed: send_command_callback("resumed", custom_params); break;
+			case transition: send_command_callback("transition", custom_params); break;
 			default: break;
 		}
 	}
 
 
-	message_callback_t message_callback;
+	send_command_callback_t send_command_callback;
 	resource_finished_callback_t resource_finished_callback;
 };
 

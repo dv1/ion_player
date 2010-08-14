@@ -1,7 +1,8 @@
 #include "test.hpp"
 #include <sstream>
 #include <ion/command_line_tools.hpp>
-#include <ion/backend_io.hpp>
+#include <ion/backend_main_loop.hpp>
+#include <ion/send_command_callback.hpp>
 
 
 
@@ -20,7 +21,16 @@ public:
 		response_command = command + "_out";
 		response_params = params;
 	}
+
+
+	ion::send_command_callback_t cb;
 };
+
+
+void set_send_command_callback(mock_backend &backend_, ion::send_command_callback_t const &new_send_command_callback)
+{
+	backend_.cb = new_send_command_callback;
+}
 
 
 std::string get_backend_type(mock_backend const &backend)
@@ -36,25 +46,18 @@ void execute_command(mock_backend &backend, std::string const &command, ion::par
 
 
 
-void message_cb(std::string const &command, ion::params_t const &params)
-{
-	out << ion::recombine_command_line(command, params) << std::endl;
-}
-
-
-
 int test_main(int, char **)
 {
 	mock_backend mb;
 
-	ion::backend_io < mock_backend > io(in, mb, message_cb);
+	ion::backend_main_loop < mock_backend > mainloop(in, out, mb);
 
 	std::string input_line = "foo \"abc\" \"d\\\"ef\"";
 	std::string expected_line = "foo_out \"abc\" \"d\\\"ef\"";
 
 	{
 		in << input_line << std::endl;
-		io.iterate();
+		mainloop.iterate();
 		std::string actual_line;
 		std::getline(out, actual_line);
 		TEST_ASSERT(actual_line == expected_line, "Expected [[" << expected_line << "]] got [[" << actual_line << "]]");
@@ -63,7 +66,7 @@ int test_main(int, char **)
 
 	{
 		in << "ping" << std::endl;
-		io.iterate();
+		mainloop.iterate();
 		std::string response;
 		std::getline(out, response);
 		TEST_ASSERT(response == "pong", "response is [[" << response << "]]");
@@ -72,7 +75,7 @@ int test_main(int, char **)
 
 	{
 		in << "ping \"112515\"" << std::endl;
-		io.iterate();
+		mainloop.iterate();
 		std::string response;
 		std::getline(out, response);
 		TEST_ASSERT(response == "pong \"112515\"", "response is [[" << response << "]]");
@@ -81,7 +84,7 @@ int test_main(int, char **)
 
 	{
 		in << "get_backend_type" << std::endl;
-		io.iterate();
+		mainloop.iterate();
 		std::string response;
 		std::getline(out, response);
 		TEST_ASSERT(response == "backend_type \"mock_backend\"", "response is [[" << response << "]]");

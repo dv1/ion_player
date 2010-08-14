@@ -3,7 +3,7 @@
 
 #include <string>
 #include <json/value.h>
-#include <ion/message_callback.hpp>
+#include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 #include <ion/metadata.hpp>
 #include "component_creator.hpp"
@@ -21,7 +21,7 @@ class decoder_creator:
 	public component_creator < decoder_creator >
 {
 public:
-	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, message_callback_t const &message_callback) = 0;
+	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback) = 0;
 };
 
 

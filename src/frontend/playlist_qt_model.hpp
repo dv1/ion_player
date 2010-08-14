@@ -4,7 +4,7 @@
 #include <QAbstractListModel>
 #include <QVariant>
 #include <boost/signals2/connection.hpp>
-#include <ion/simple_playlist.hpp>
+#include "simple_playlist.hpp"
 
 
 namespace ion

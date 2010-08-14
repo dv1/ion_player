@@ -1,7 +1,7 @@
 #ifndef ION_BACKEND_SOURCE_CREATOR_HPP
 #define ION_BACKEND_SOURCE_CREATOR_HPP
 
-#include <ion/message_callback.hpp>
+#include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 #include "component_creator.hpp"
 #include "source.hpp"

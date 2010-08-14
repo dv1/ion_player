@@ -14,8 +14,15 @@ namespace backend
 {
 
 
-backend::backend(message_callback_t const &message_callback):
-	message_callback(message_callback),
+backend::backend():
+	current_volume(decoder::max_volume()),
+	loop_count(-1)
+{
+}
+
+
+backend::backend(send_command_callback_t const &send_command_callback):
+	send_command_callback(send_command_callback),
 	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
@@ -26,6 +33,12 @@ backend::~backend()
 {
 	if (current_sink)
 		current_sink->stop();
+}
+
+
+void backend::set_send_command_callback(send_command_callback_t const &new_send_command_callback)
+{
+	send_command_callback = new_send_command_callback;
 }
 
 
@@ -227,7 +240,7 @@ void backend::start_playback(params_t const &params)
 	}
 	catch (resource_not_found const &exc)
 	{
-		message_callback("resource_not_found", boost::assign::list_of(uri_str[1]));
+		send_command_callback("resource_not_found", boost::assign::list_of(uri_str[1]));
 	}
 	catch (std::runtime_error const &exc)
 	{
@@ -241,7 +254,7 @@ void backend::start_playback(params_t const &params)
 			response_params.push_back(param);
 		}
 
-		message_callback("error", response_params);
+		send_command_callback("error", response_params);
 	}
 
 	// this assignment happens -after- the set_next_decoder() call in case the function throws an exception
@@ -265,7 +278,7 @@ void backend::set_next_decoder(std::string const &uri_str, std::string const &de
 	decoder_ptr_t new_next_decoder;
 	if (uri_str.empty())
 	{
-		message_callback("info", boost::assign::list_of("no next decoder given -> not setting a next decoder"));
+		send_command_callback("info", boost::assign::list_of("no next decoder given -> not setting a next decoder"));
 	}
 	else
 		new_next_decoder = create_new_decoder(uri_str, decoder_type, metadata);
@@ -387,7 +400,7 @@ void backend::create_sink(std::string const &type)
 	if (current_sink)
 		current_sink->pause(false); // false means no notification
 
-	sink_ptr_t new_sink = iter->second->create(message_callback);
+	sink_ptr_t new_sink = iter->second->create(send_command_callback);
 	if (new_sink)
 	{
 		/* If control reaches this scope, then the new sink was successfully created, and the
@@ -408,7 +421,7 @@ void backend::create_sink(std::string const &type)
 		// remove it.
 		if (next_decoder && !current_decoder)
 		{
-			message_callback("info", boost::assign::list_of("encountered a nil current decoder and a non-nil next decoder - compensating"));
+			send_command_callback("info", boost::assign::list_of("encountered a nil current decoder and a non-nil next decoder - compensating"));
 
 			current_decoder = next_decoder;
 			next_decoder = decoder_ptr_t();
@@ -492,7 +505,7 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 		decoder_creators_t::iterator iter = decoder_creators.find(decoder_type);
 		if (iter != decoder_creators.end())
 		{
-			new_decoder = iter->second->create(new_source, metadata, message_callback);
+			new_decoder = iter->second->create(new_source, metadata, send_command_callback);
 		}
 	}
 
@@ -505,7 +518,7 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 			{
 				new_source->reset();
 
-				new_decoder = decoder_creator_pair.second->create(new_source, metadata, message_callback);
+				new_decoder = decoder_creator_pair.second->create(new_source, metadata, send_command_callback);
 				if (new_decoder)
 					break;
 			}
@@ -525,6 +538,12 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 	return new_decoder;
 }
 
+
+
+void set_send_command_callback(backend &backend_, send_command_callback_t const &new_send_command_callback)
+{
+	backend_.set_send_command_callback(new_send_command_callback);
+}
 
 
 std::string get_backend_type(backend const &backend_)

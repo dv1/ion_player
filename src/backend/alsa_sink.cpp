@@ -7,8 +7,8 @@ namespace backend
 {
 
 
-alsa_sink::alsa_sink(message_callback_t const &message_callback):
-	common_sink_base < alsa_sink > (message_callback),
+alsa_sink::alsa_sink(send_command_callback_t const &send_command_callback):
+	common_sink_base < alsa_sink > (send_command_callback),
 	pcm_handle(0),
 	hw_params(0)
 {
@@ -167,9 +167,9 @@ bool alsa_sink::render_samples(unsigned int const num_samples_to_render)
 
 
 
-sink_ptr_t alsa_sink_creator::create(message_callback_t const &message_callback)
+sink_ptr_t alsa_sink_creator::create(send_command_callback_t const &send_command_callback)
 {
-	return sink_ptr_t(new alsa_sink(message_callback));
+	return sink_ptr_t(new alsa_sink(send_command_callback));
 }
 
 

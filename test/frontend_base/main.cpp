@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 
 	{
 		QCoreApplication application(argc, argv);
-		application.setApplicationName("frontend_io_test");
+		application.setApplicationName("frontend_base_test");
 
 		testclass testclass_;
 

@@ -9,6 +9,8 @@ namespace ion
 {
 
 
+// Utility class to make use of RAII with function objects. A supplied start function is called in the constructor, a stop function in the destructor.
+
 class scope_guard:
 	public boost::noncopyable
 {

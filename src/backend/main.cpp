@@ -1,4 +1,5 @@
-#include <ion/backend_io.hpp>
+#include <boost/shared_ptr.hpp>
+#include <ion/backend_main_loop.hpp>
 #include "backend.hpp"
 #include "alsa_sink.hpp"
 #include "file_source.hpp"
@@ -6,10 +7,36 @@
 #include "mpg123_decoder.hpp"
 
 
-void send_message(std::string const &command, ion::params_t const &params)
+/*
+The backend can be called in three ways:
+1. Without arguments: the backend starts normally, listens to stdin for command lines, and outputs events to stdout
+2. With the -id argument: the backend outputs its type ID to stdout (this is *not* the C++ typeid, but the get_backend_type() result!)
+3. With the -info argument and one or more URIs: the backend then scans each URI for metadata, and outputs said metadata to stdout, formatted like a metadata event
+*/
+
+// TODO: right now, the modules (decoders, sinks ..) are hardcoded in here. This is not the way it shall work in the
+// final version; instead, these are to be present as plugins.
+
+
+struct creators
 {
-	std::cout << ion::recombine_command_line(command, params) << std::endl;
-}
+	ion::backend::alsa_sink_creator alsa_sink_creator_;
+	ion::backend::file_source_creator file_source_creator_;
+	ion::backend::dumb_decoder_creator dumb_decoder_creator_;
+	ion::backend::mpg123_decoder_creator mpg123_decoder_creator_;
+
+
+	explicit creators(ion::backend::backend &backend_)
+	{
+		backend_.get_sink_creators()["alsa"] = &alsa_sink_creator_;
+		backend_.get_decoder_creators()["dumb"] = &dumb_decoder_creator_;
+		backend_.get_decoder_creators()["mpg123"] = &mpg123_decoder_creator_;
+		backend_.get_source_creators()["file"] = &file_source_creator_;
+	}
+};
+
+typedef boost::shared_ptr < creators > creators_ptr_t;
+
 
 
 
@@ -43,27 +70,20 @@ int main(int argc, char **argv)
 		return -1;
 
 
+	ion::backend::backend backend_;
+	creators_ptr_t creators_;
+
+
 	switch (run_mode)
 	{
 		case default_run_mode:
 		{
-			ion::backend::alsa_sink_creator alsa_sink_creator_;
-			ion::backend::file_source_creator file_source_creator_;
-			ion::backend::dumb_decoder_creator dumb_decoder_creator_;
-			ion::backend::mpg123_decoder_creator mpg123_decoder_creator_;
 
-			ion::backend::backend backend_(send_message);
+			ion::backend_main_loop < ion::backend::backend > backend_main_loop(std::cin, std::cout, backend_);
+			creators_ = creators_ptr_t(new creators(backend_));
+			backend_.create_sink("alsa"); // Use the alsa sink for sound output (TODO: this is platform specific; on Windows, one would use Waveout, on OSX it would be CoreAudio etc.)
 
-			backend_.get_sink_creators()["alsa"] = &alsa_sink_creator_;
-			backend_.get_decoder_creators()["dumb"] = &dumb_decoder_creator_;
-			backend_.get_decoder_creators()["mpg123"] = &mpg123_decoder_creator_;
-			backend_.get_source_creators()["file"] = &file_source_creator_;
-
-			backend_.create_sink("alsa");
-
-
-			ion::backend_io < ion::backend::backend > backend_io(std::cin, backend_, send_message);
-			backend_io.run();
+			backend_main_loop.run();
 
 			break;
 		}
@@ -71,7 +91,7 @@ int main(int argc, char **argv)
 
 		case print_id_mode:
 		{
-			ion::backend::backend backend_(send_message);
+			// The id mode does not need any creator
 			std::cout << backend_.get_type() << std::endl;
 			break;
 		}
@@ -79,13 +99,7 @@ int main(int argc, char **argv)
 
 		case get_resource_info_mode:
 		{
-			ion::backend::file_source_creator file_source_creator_;
-			ion::backend::dumb_decoder_creator dumb_decoder_creator_;
-			ion::backend::mpg123_decoder_creator mpg123_decoder_creator_;
-			ion::backend::backend backend_(send_message);
-			backend_.get_source_creators()["file"] = &file_source_creator_;
-			backend_.get_decoder_creators()["dumb"] = &dumb_decoder_creator_;
-			backend_.get_decoder_creators()["mpg123"] = &mpg123_decoder_creator_;
+			creators_ = creators_ptr_t(new creators(backend_));
 
 			for (unsigned int i = 1; i < params.size(); ++i)
 			{

@@ -13,6 +13,28 @@ namespace ion
 {
 
 
+/*
+This class parses and stores URIs. A URI (Uniform Resource Identifier) is the way Ion points to a resource and passes options to it in a persistent manner.
+The format of a URI is:    <type>://<path>?<param_name_1>=<param_value_1>&<param_name_2>=<param_value_2>&....
+Note that this URI format is not the same as what is named "URI" by the W3C.
+
+type and path must exist in a URI. The options are optional. The ? symbol denotes the ending of the path and beginning of the options list. If no options exist in the URI,
+the ? symbol is omitted.
+
+The URI can store a list of options. Each option has a name and a value.
+The options are separated with the & symbol; the last option omits the trailing & symbol.
+
+Examples:
+
+sometype://somepath -> type = "sometype", path = "somepath", no options
+sometype://somepath&a=b -> type = "sometype", path = "somepath", one option "a" with value "b"
+sometype://somepath&a=b&c=d -> type = "sometype", path = "somepath", two options, one option "a" with value "b", and a second option "c" with value "d"
+sometype://somepath&a=b&c=d&e=f -> type = "sometype", path = "somepath", three options
+
+The symbols in option names and values are escaped if necessary.
+*/
+
+
 class uri
 {
 public:
@@ -27,6 +49,8 @@ public:
 	};
 
 
+
+
 	typedef std::map < std::string, std::string > options_t;
 
 
@@ -34,12 +58,18 @@ public:
 	{
 	}
 
+	// Convenience constructor calling set() internally
 	uri(std::string const &full_uri)
 	{
 		set(full_uri);
 	}
 
 
+	// Sets the URI. The given string gets parsed. If the string does not contain a valid URI, an invalid_uri exception is thrown.
+	//
+	// @param full_uri A string to be parsed, containing a full URI
+	// @post This class' states will be set to the ones described in the URI string if parsing was successful; if the string is found to be invalid,
+	// an invalid_uri exception is thrown, and no state is changed
 	void set(std::string const &full_uri)
 	{
 		std::size_t delimiter_pos = full_uri.find("://");
@@ -135,13 +165,15 @@ public:
 
 	bool operator < (uri const &other) const
 	{
-		// this test takes equality into account, using the type, path, options values.
-		// If value < other.value, then return true, since this uri is definitely less than the other one.
-		// If value > other.value, then return false, since this uri is definitely greater than the other one.
-		// Otherwise, the values in question are equal, so move to the next value.
-		// If all three values are equal, return false - x < x is always false, after all.
-		// This is sort of a lexicographic compare: for instance, an abc < abd comparison would first see that the first letters are both a,
-		// then continue to the second letters, which are both b, and finally the third letters are c and d, where c<d holds -> return true.
+		/*
+		this test takes equality into account, using the type, path, options values.
+		If value < other.value, then return true, since this uri is definitely less than the other one.
+		If value > other.value, then return false, since this uri is definitely greater than the other one.
+		Otherwise, the values in question are equal, so move to the next value.
+		If all three values are equal, return false - x < x is always false, after all.
+		This is sort of a lexicographic compare: for instance, an abc < abd comparison would first see that the first letters are both a,
+		then continue to the second letters, which are both b, and finally the third letters are c and d, where c<d holds -> return true.
+		*/
 
 		if (type < other.type)
 			return true;
@@ -162,11 +194,36 @@ public:
 	}
 
 
-	std::string const & get_type() const { return type; }
-	std::string const & get_path() const { return path; }
-	options_t const & get_options() const { return options; }
-	options_t & get_options() { return options; }
+	// Returns the URI type
+	std::string const & get_type() const
+	{
+		return type;
+	}
 
+
+	// Returns the URI path
+	std::string const & get_path() const
+	{
+		return path;
+	}
+
+
+	// Returns the URI options as a STL map, key = option name, value = option value
+	options_t const & get_options() const
+	{
+		return options;
+	}
+
+
+	// Returns the URI options as a STL map, key = option name, value = option value
+	options_t & get_options()
+	{
+		return options;
+	}
+
+
+	// Returns the URI basename. The basename is the last segment of a path. For instance, in a filepath, this corresponds to the filename without path.
+	// Example: sometype://this/is/a/path/to/something?a=b -> basename is "something"
 	std::string get_basename() const
 	{
 		std::string::size_type slash_pos = path.find_last_of('/');
@@ -176,6 +233,9 @@ public:
 			return path;
 	}
 
+
+	// Reconstruct a full URI string from the internal states
+	// @return A full URI string describing the resource
 	std::string get_full() const
 	{
 		std::string result = type + "://" + path;
@@ -187,7 +247,6 @@ public:
 		}
 
 		return result;
-	//	return type + "://" + path;
 	}
 
 

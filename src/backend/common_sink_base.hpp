@@ -70,7 +70,7 @@ public:
 		{
 			if (!get_derived().initialize_audio_device())
 			{
-				message_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
+				send_command_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
 				return;
 			}
 
@@ -93,7 +93,7 @@ public:
 						next_decoder = next_decoder_;
 					else
 					{
-						message_callback("error", boost::assign::list_of("given next decoder cannot playback"));
+						send_command_callback("error", boost::assign::list_of("given next decoder cannot playback"));
 						next_decoder = decoder_ptr_t();
 					}
 				}
@@ -101,7 +101,7 @@ public:
 					next_decoder = decoder_ptr_t();
 			}
 			else
-				message_callback("error", boost::assign::list_of("given current decoder cannot playback"));
+				send_command_callback("error", boost::assign::list_of("given current decoder cannot playback"));
 		}
 
 		std::string current_uri = current_decoder->get_uri().get_full();
@@ -118,7 +118,7 @@ public:
 			playback_thread = boost::thread(boost::lambda::bind(&self_t::playback_loop, this));
 		}
 
-		send_message(started, boost::assign::list_of(current_uri)(next_uri));
+		send_event_command(started, boost::assign::list_of(current_uri)(next_uri));
 	}
 
 
@@ -139,7 +139,7 @@ public:
 				return;
 			is_paused = true;
 			if (do_notify)
-				send_message(paused);
+				send_event_command(paused);
 		}
 
 		current_decoder->pause();
@@ -157,7 +157,7 @@ public:
 				return;
 			is_paused = false;
 			if (do_notify)
-				send_message(resumed);
+				send_event_command(resumed);
 		}
 
 		current_decoder->resume();
@@ -183,7 +183,7 @@ public:
 
 		if (!next_decoder_->can_playback())
 		{
-			message_callback("error", boost::assign::list_of("given next decoder cannot playback"));
+			send_command_callback("error", boost::assign::list_of("given next decoder cannot playback"));
 			return;
 		}
 
@@ -197,15 +197,15 @@ protected:
 	derived_t const & get_derived() const { return *(static_cast < derived_t const * > (this)); }
 
 
-	explicit common_sink_base(message_callback_t const &message_callback):
-		sink(message_callback),
+	explicit common_sink_base(send_command_callback_t const &send_command_callback):
+		sink(send_command_callback),
 		run_playback_loop(false),
 		is_paused(false)
 	{
 	}
 
 
-	virtual void stop_impl(bool const do_notify, message_type const message_type_)
+	virtual void stop_impl(bool const do_notify, command_type const command_type_)
 	{
 		if (!get_derived().is_initialized())
 			return;
@@ -222,7 +222,7 @@ protected:
 		get_derived().shutdown_audio_device();
 
 		if (do_notify)
-			send_message(message_type_, boost::assign::list_of(current_decoder->get_uri().get_full()));
+			send_event_command(command_type_, boost::assign::list_of(current_decoder->get_uri().get_full()));
 
 		current_decoder = decoder_ptr_t();
 		next_decoder = decoder_ptr_t();
@@ -282,13 +282,13 @@ protected:
 							resource_finished_callback();
 
 						if (!next_uri.empty())
-							send_message(transition,
+							send_event_command(transition,
 								boost::assign::list_of
 									(current_uri)
 									(next_uri)
 							);
 						else
-							send_message(resource_finished, boost::assign::list_of(current_uri));
+							send_event_command(resource_finished, boost::assign::list_of(current_uri));
 
 						if (!current_decoder)
 							do_shutdown = true;

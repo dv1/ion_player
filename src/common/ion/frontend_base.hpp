@@ -1,5 +1,5 @@
-#ifndef ION_FRONTEND_IO_HPP
-#define ION_FRONTEND_IO_HPP
+#ifndef ION_FRONTEND_BASE_HPP
+#define ION_FRONTEND_BASE_HPP
 
 #include <string>
 
@@ -24,23 +24,9 @@ namespace ion
 // TODO: install exception handlers for invalid_uri exceptions
 
 
-/*
-
-Playlist concept:
-
-<unspecified function object type (uri_optional_t)> get_current_uri_changed_callback(Playlist const &playlist)
-<boost signals2 compatible type> get_resource_added_signal(Playlist const &playlist)
-<boost signals2 compatible type> get_resource_removed_signal(Playlist const &playlist)
-metadata_optional_t get_metadata_for(Playlist const &playlist, uri const &uri_)
-uri_optional_t get_succeeding_uri(Playlist const &playlist, uri const &uri_)
-void mark_backend_resource_incompatibility(Playlist const &playlist, uri const &uri_, std::string const &backend_type)
-
-
-*/
-
-
+// See Playlist concept in docs/concepts.txt
 template < typename Playlist >
-class frontend_io_base:
+class frontend_base:
 	private boost::noncopyable
 {
 public:
@@ -48,21 +34,29 @@ public:
 	typedef boost::function < void(std::string const &line) > send_line_to_backend_callback_t;
 	typedef boost::signals2::signal < void(uri_optional_t const &new_current_uri) > current_uri_changed_signal_t;
 	typedef boost::signals2::signal < void(metadata_optional_t const &new_metadata) > current_metadata_changed_signal_t;
-	typedef frontend_io_base < Playlist > self_t;
+	typedef frontend_base < Playlist > self_t;
 
 
-
-	explicit frontend_io_base(send_line_to_backend_callback_t const &send_line_to_backend_callback):
+	// Constructor; the parameter is a callback that sends a line to the backend process' stdin.
+	explicit frontend_base(send_line_to_backend_callback_t const &send_line_to_backend_callback):
 		send_line_to_backend_callback(send_line_to_backend_callback),
 		current_playlist(0)
 	{
 	}
 
-	virtual ~frontend_io_base()
+	virtual ~frontend_base()
 	{
 	}
 
 
+	/*
+	This function is called when the backend process' stdout sent a complete line.
+	These lines are events sent by the backend to the frontend. This function splits the line into event command name and parameters,
+	and then parses these using parse_command().
+
+	@pre The line must be a valid command line.
+	@post If parsing is successful (and the command is known), the respective handler is invoked, otherwise nothing happens.
+	*/
 	void parse_incoming_line(std::string const &line)
 	{
 		std::string event_command_name;
@@ -72,12 +66,23 @@ public:
 	}
 
 
+	/*
+	Sets the current playlist. The current playlist is the one that is queried for URIs. For instance, when a transition happens, the transition() event handler in this class
+	queries this playlist for a next URI.
+	Also, the current playlist's signals are connected to handlers from this class. This is necessary to handle special cases when a resource is added/removed.
+	If another playlist was previously set as the current playlist, it is replaced, its signals get disconnected.
+	This function does nothing if the same playlist is already set as the current one.
+
+	@param new_current_playlist The new current playlist to use. If this is zero, and another playlist was previously set, its signals get disconnected, and the current playlist is set to null.
+	Otherwise, this function does nothing when this parameter is zero.
+	@post If the same playlist was previously set, this function does nothing (this includes duplicate calls with nullpointers). Otherwise, the given playlist becomes the current one, and its
+	resource_added/removed signals are connected to the resource_added()/removed() handlers. Any previously set playlist is replaced, its signals disconnected.
+	*/
 	void set_current_playlist(playlist_t *new_current_playlist)
 	{
 		if (current_playlist == new_current_playlist)
 			return;
 
-		//stop(); // TODO: i do not think this call is really necessary. Verify.
 		resource_added_signal_connection.disconnect();
 		resource_removed_signal_connection.disconnect();
 
@@ -104,7 +109,7 @@ public:
 			if (metadata_)
 				play_params.push_back(get_metadata_string(*metadata_));
 			else
-				play_params.push_back("{}");
+				play_params.push_back(empty_metadata_string());
 		}
 
 		{
