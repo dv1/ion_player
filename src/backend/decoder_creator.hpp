@@ -2,7 +2,6 @@
 #define ION_BACKEND_DECODER_CREATOR_HPP
 
 #include <string>
-#include <json/value.h>
 #include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 #include <ion/metadata.hpp>

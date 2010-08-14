@@ -284,10 +284,10 @@ long mpg123_decoder::get_current_volume() const
 }
 
 
-Json::Value mpg123_decoder::get_songinfo() const
+metadata_t mpg123_decoder::get_metadata() const
 {
 	// TODO
-	return Json::Value();
+	return empty_metadata();
 }
 
 

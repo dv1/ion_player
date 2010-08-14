@@ -187,20 +187,20 @@ long dumb_decoder::get_current_volume() const
 }
 
 
-Json::Value dumb_decoder::get_songinfo() const
+metadata_t dumb_decoder::get_metadata() const
 {
-	if (!is_initialized()) // NOTE: not using can_playback() here, since it is valid to call get_songinfo() without any playback going on
-		return Json::Value();
+	metadata_t metadata_ = empty_metadata();
 
-	Json::Value songinfo;
+	if (!is_initialized()) // NOTE: not using can_playback() here, since it is valid to call get_songinfo() without any playback going on
+		return metadata_;
 
 	char const *title = duh_get_tag(duh, "TITLE");
 	if (title != 0)
-		songinfo["title"] = title;
+		set_metadata_value(metadata_, "title", title);
 	else
-		songinfo["title"] = "";
+		set_metadata_value(metadata_, "title", "");
 
-	return songinfo;
+	return metadata_;
 }
 
 

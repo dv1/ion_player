@@ -45,7 +45,7 @@ public:
 	virtual long set_current_volume(long const new_volume);
 	virtual long get_current_volume() const;
 
-	virtual Json::Value get_songinfo() const;
+	virtual metadata_t get_metadata() const;
 
 	virtual std::string get_type() const;
 

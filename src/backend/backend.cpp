@@ -4,6 +4,7 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/locks.hpp>
+#include <ion/metadata.hpp>
 #include <ion/resource_exceptions.hpp>
 #include "backend.hpp"
 
@@ -46,9 +47,9 @@ std::string backend::get_metadata(std::string const &uri_str)
 {
 	decoder_ptr_t temp_decoder = create_new_decoder(uri_str, "", "");
 	if (temp_decoder)
-		return temp_decoder->get_songinfo_str();
+		return temp_decoder->get_metadata_str();
 	else
-		return "{}";
+		return empty_metadata_string();
 }
 
 
@@ -166,7 +167,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		{
 			DECODER_GUARD;
 			if (current_decoder)
-				exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_songinfo_str,   current_decoder.get(), true), response_command, response_params);
+				exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_metadata_str,   current_decoder.get(), true), response_command, response_params);
 		}
 		else
 		{
