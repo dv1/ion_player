@@ -1,7 +1,8 @@
-#ifndef ION_SCANNER_HPP
-#define ION_SCANNER_HPP
+#ifndef ION_SCANNER_BASE_HPP
+#define ION_SCANNER_BASE_HPP
 
 #include <deque>
+#include <iostream>
 #include <boost/noncopyable.hpp>
 #include <ion/command_line_tools.hpp>
 #include <ion/metadata.hpp>
@@ -40,7 +41,7 @@ Crashes & scan failures:
 
 
 template < typename Derived, typename Playlist >
-class scanner:
+class scanner_base:
 	private boost::noncopyable
 {
 public:
@@ -48,13 +49,13 @@ public:
 	typedef Playlist playlist_t;
 
 
-	explicit scanner():
+	explicit scanner_base():
 		current_playlist(0)
 	{
 	}
 
 
-	~scanner()
+	~scanner_base()
 	{
 	}
 
@@ -85,8 +86,6 @@ protected:
 	{
 		if (current_playlist == 0)
 			return;
-
-		std::cerr << "scanner stdout> " << line << std::endl;
 
 		std::string event_command_name;
 		params_t event_params;

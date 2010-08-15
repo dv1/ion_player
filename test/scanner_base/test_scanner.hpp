@@ -2,12 +2,12 @@
 #define TESTCLASS_HPP_______
 
 #include <QProcess>
-#include <ion/scanner.hpp>
+#include <ion/scanner_base.hpp>
 
 
 class test_scanner:
         public QObject,
-	public ion::scanner < test_scanner, int >
+	public ion::scanner_base < test_scanner, int >
 {
         Q_OBJECT
 public:
