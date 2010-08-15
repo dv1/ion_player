@@ -170,7 +170,7 @@ def build(bld):
 
 
 	# non-trivial tests
-	#bld.recurse('test/frontend_base')
+	bld.recurse('test/scanner')
 
 
 	# get the list of variants
