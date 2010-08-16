@@ -4,6 +4,7 @@ Playlist concept:
 <boost signals2 compatible type> get_resource_added_signal(Playlist const &playlist)
 <boost signals2 compatible type> get_resource_removed_signal(Playlist const &playlist)
 metadata_optional_t get_metadata_for(Playlist const &playlist, uri const &uri_)
+uri_optional_t get_preceding_uri(Playlist const &playlist, uri const &uri_)
 uri_optional_t get_succeeding_uri(Playlist const &playlist, uri const &uri_)
 void mark_backend_resource_incompatibility(Playlist const &playlist, uri const &uri_, std::string const &backend_type)
 
