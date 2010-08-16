@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>main_window</class>
+ <widget class="QMainWindow" name="main_window">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>874</width>
+    <height>666</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Ion</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/icons/ion</normaloff>:/icons/ion</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="margin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QStackedWidget" name="central_pages">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tabs_page">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QTabWidget" name="playlist_tab_widget">
+          <property name="documentMode">
+           <bool>true</bool>
+          </property>
+          <property name="tabsClosable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="backend_not_configured_page">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>The backend is not configured properly.
+Please check if the backend filename is set correctly.
+Use the settings button above to open the dialog window.</string>
+          </property>
+          <property name="scaledContents">
+           <bool>false</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="main_toolbar">
+   <property name="windowTitle">
+    <string>Main</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_play"/>
+   <addaction name="action_pause"/>
+   <addaction name="action_stop"/>
+   <addaction name="action_previous_song"/>
+   <addaction name="action_next_song"/>
+   <addaction name="separator"/>
+   <addaction name="action_settings"/>
+  </widget>
+  <widget class="QToolBar" name="edit_playlist_toolbar">
+   <property name="windowTitle">
+    <string>Playlist editing actions</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_add_file"/>
+   <addaction name="action_add_folder_contents"/>
+   <addaction name="action_add_url"/>
+   <addaction name="action_remove_selected"/>
+  </widget>
+  <widget class="QToolBar" name="playlist_toolbar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="action_new_playlist"/>
+   <addaction name="action_rename_playlist"/>
+   <addaction name="action_delete_playlist"/>
+  </widget>
+  <widget class="QToolBar" name="sliders_toolbar">
+   <property name="windowTitle">
+    <string>Sliders</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <action name="action_play">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/play</normaloff>:/icons/play</iconset>
+   </property>
+   <property name="text">
+    <string>play</string>
+   </property>
+  </action>
+  <action name="action_pause">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/pause</normaloff>:/icons/pause</iconset>
+   </property>
+   <property name="text">
+    <string>pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Media Play</string>
+   </property>
+  </action>
+  <action name="action_stop">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/stop</normaloff>:/icons/stop</iconset>
+   </property>
+   <property name="text">
+    <string>stop</string>
+   </property>
+  </action>
+  <action name="action_previous_song">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/previous</normaloff>:/icons/previous</iconset>
+   </property>
+   <property name="text">
+    <string>previous_song</string>
+   </property>
+   <property name="shortcut">
+    <string>Media Previous</string>
+   </property>
+  </action>
+  <action name="action_next_song">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/next</normaloff>:/icons/next</iconset>
+   </property>
+   <property name="text">
+    <string>next_song</string>
+   </property>
+   <property name="shortcut">
+    <string>Media Next</string>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/settings</normaloff>:/icons/settings</iconset>
+   </property>
+   <property name="text">
+    <string>settings</string>
+   </property>
+  </action>
+  <action name="action_create_new_tab">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/new_tab</normaloff>:/icons/new_tab</iconset>
+   </property>
+   <property name="text">
+    <string>create_new_tab</string>
+   </property>
+   <property name="toolTip">
+    <string>create_new_tab</string>
+   </property>
+  </action>
+  <action name="action_add_folder_contents">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/add_folder_contents</normaloff>:/icons/add_folder_contents</iconset>
+   </property>
+   <property name="text">
+    <string>add_folder_contents</string>
+   </property>
+   <property name="toolTip">
+    <string>add_folder_contents</string>
+   </property>
+  </action>
+  <action name="action_add_file">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/add_file</normaloff>:/icons/add_file</iconset>
+   </property>
+   <property name="text">
+    <string>add_file</string>
+   </property>
+  </action>
+  <action name="action_add_url">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/add_url</normaloff>:/icons/add_url</iconset>
+   </property>
+   <property name="text">
+    <string>add_url</string>
+   </property>
+  </action>
+  <action name="action_remove_selected">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/remove_selected</normaloff>:/icons/remove_selected</iconset>
+   </property>
+   <property name="text">
+    <string>remove_selected</string>
+   </property>
+  </action>
+  <action name="action_new_playlist">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/new_playlist</normaloff>:/icons/new_playlist</iconset>
+   </property>
+   <property name="text">
+    <string>new_playlist</string>
+   </property>
+  </action>
+  <action name="action_delete_playlist">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/delete_playlist</normaloff>:/icons/delete_playlist</iconset>
+   </property>
+   <property name="text">
+    <string>delete_playlist</string>
+   </property>
+  </action>
+  <action name="action_rename_playlist">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/rename_playlist</normaloff>:/icons/rename_playlist</iconset>
+   </property>
+   <property name="text">
+    <string>rename_playlist</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

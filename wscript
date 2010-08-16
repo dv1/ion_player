@@ -136,6 +136,7 @@ def build(bld):
 	bld.recurse('src/backend')
 	bld.recurse('src/common')
 	bld.recurse('src/frontend')
+	bld.recurse('src/frontend2')
 
 
 	# unit test utility functions

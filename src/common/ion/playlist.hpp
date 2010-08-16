@@ -47,45 +47,54 @@ protected:
 };
 
 
-playlist::resource_event_signal_t & get_resource_added_signal(playlist &playlist_)
+
+
+namespace
+{
+
+
+inline playlist::resource_event_signal_t & get_resource_added_signal(playlist &playlist_)
 {
 	return playlist_.get_resource_added_signal();
 }
 
 
-playlist::resource_event_signal_t & get_resource_removed_signal(playlist &playlist_)
+inline playlist::resource_event_signal_t & get_resource_removed_signal(playlist &playlist_)
 {
 	return playlist_.get_resource_removed_signal();
 }
 
 
-playlist::resource_event_signal_t & get_resource_metadata_changed_signal(playlist &playlist_)
+inline playlist::resource_event_signal_t & get_resource_metadata_changed_signal(playlist &playlist_)
 {
 	return playlist_.get_resource_metadata_changed_signal();
 }
 
 
-metadata_optional_t get_metadata_for(playlist const &playlist_, uri const &uri_)
+inline metadata_optional_t get_metadata_for(playlist const &playlist_, uri const &uri_)
 {
 	return playlist_.get_metadata_for(uri_);
 }
 
 
-uri_optional_t get_preceding_uri(playlist const &playlist_, uri const &uri_)
+inline uri_optional_t get_preceding_uri(playlist const &playlist_, uri const &uri_)
 {
 	return playlist_.get_preceding_uri(uri_);
 }
 
 
-uri_optional_t get_succeeding_uri(playlist const &playlist_, uri const &uri_)
+inline uri_optional_t get_succeeding_uri(playlist const &playlist_, uri const &uri_)
 {
 	return playlist_.get_succeeding_uri(uri_);
 }
 
 
-void mark_backend_resource_incompatibility(playlist &playlist_, uri const &uri_, std::string const &backend_type)
+inline void mark_backend_resource_incompatibility(playlist &playlist_, uri const &uri_, std::string const &backend_type)
 {
 	playlist_.mark_backend_resource_incompatibility(uri_, backend_type);
+}
+
+
 }
 
 
