@@ -1,7 +1,6 @@
 #ifndef ION_PLAYLIST_HPP
 #define ION_PLAYLIST_HPP
 
-#include <set>
 #include <stdint.h>
 #include <string>
 
@@ -20,7 +19,6 @@ namespace ion
 class playlist
 {
 public:
-	typedef std::set < ion::uri > uri_set_t;
 	typedef boost::signals2::signal < void(uri_set_t const &uris) > resource_event_signal_t;
 	typedef boost::fusion::vector2 < ion::uri, metadata_t > entry_t;
 	typedef boost::optional < uint64_t > index_optional_t;

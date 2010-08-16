@@ -31,8 +31,8 @@ public:
 
 
 protected:
-	void entry_added(uri const uri_);
-	void entry_removed(uri const uri_);
+	void entry_added(uri_set_t const uri_);
+	void entry_removed(uri_set_t const uri_);
 
 
 	simple_playlist &playlist_;

@@ -28,7 +28,7 @@ namespace frontend
 class simple_playlist
 {
 public:
-	typedef boost::signals2::signal < void(ion::uri const &uri_) > resource_event_signal_t;
+	typedef boost::signals2::signal < void(uri_set_t const &uri_) > resource_event_signal_t;
 
 
 	struct entry

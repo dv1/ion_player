@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/assign/list_of.hpp>
 #include <json/value.h>
 #include "simple_playlist.hpp"
 
@@ -144,7 +145,7 @@ void simple_playlist::add_entry(entry entry_, bool const emit_signal) // NOT usi
 
 	entries.push_back(entry_);
 	if (emit_signal)
-		resource_added_signal(entry_.uri_);
+		resource_added_signal(boost::assign::list_of(entry_.uri_));
 }
 
 
@@ -163,7 +164,7 @@ void simple_playlist::insert_entry_before(entry entry_, entry_sequence_t::iterat
 		std::cerr << "simple_playlist:insert_entry_before(): insertion was prevented" << std::endl;
 
 	if (emit_signal)
-		resource_added_signal(entry_.uri_);
+		resource_added_signal(boost::assign::list_of(entry_.uri_));
 }
 
 
@@ -206,7 +207,7 @@ void simple_playlist::remove_entry(uri const &uri_, bool const emit_signal)
 	entries_by_uri.erase(uri_tag_iter);
 
 	if (emit_signal)
-		resource_removed_signal(uri_);
+		resource_removed_signal(boost::assign::list_of(uri_));
 }
 
 
@@ -226,7 +227,7 @@ void simple_playlist::set_resource_metadata(uri const &uri_, metadata_t const & 
 	entry_.metadata = new_metadata;
 	entries.push_back(entry_);
 
-	resource_metadata_changed_signal(uri_);
+	resource_metadata_changed_signal(boost::assign::list_of(uri_));
 }
 
 

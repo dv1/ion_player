@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <set>
 #include <map>
 #include <string>
 #include <boost/foreach.hpp>
@@ -295,6 +296,7 @@ protected:
 
 
 typedef boost::optional < uri > uri_optional_t;
+typedef std::set < ion::uri > uri_set_t;
 
 
 }

@@ -261,45 +261,79 @@ protected:
 
 	// Playlist event handlers
 
-	void resource_added(uri const &added_uri)
+	void resource_added(uri_set_t const &added_uris)
 	{
 		if (current_playlist == 0)
 			return;
 		if (!current_uri)
 			return;
 
-		uri_optional_t uri_ = get_succeeding_uri(*current_playlist, *current_uri);
-		if (uri_ == added_uri) // the added uri is right after the current uri, meaning that it just became the next uri
+		uri_optional_t actual_next_uri = get_succeeding_uri(*current_playlist, *current_uri);
+
+		/*
+		The added URIs may be located between the one contained in current_uri and the one contained in next_uri.
+		For example: in the playlist, there are URIs 1 and 2:   ... 1 2 ...
+		1 is the current one, 2 is the next one.
+		After adding, there are new URIs between the two:  .... 1 3 4 5 2 ...
+		Now, 2 is no longer the next URI, but next_uri still contains "2".
+		The code below rectifies this by testing if the *actual* next URI (retrieved by using get_succeeding_uri()) is one of the newly added ones.
+		If so, update next_uri, and notify the backend with the set_next_resource command that the next URI changed.
+		*/
+		if (actual_next_uri)
 		{
-			next_uri = added_uri;
-			send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			if (added_uris.find(*actual_next_uri) != added_uris.end())
+			{
+				next_uri = *actual_next_uri;
+				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			}
 		}
 	}
 
 
-	void resource_removed(uri const &removed_uri)
+	void resource_removed(uri_set_t const &removed_uris)
 	{
 		if (current_playlist == 0)
 			return;
-
-		// the current uri was removed -> playback next resource
-		if (removed_uri == current_uri)
-		{
-			if (next_uri)
-				play(*next_uri);
-			else
-				stop();
+		if (!current_uri)
 			return;
-		}
 
-		// the *next* uri was removed -> get a new next resource
-		if (current_uri && next_uri && (removed_uri == *next_uri))
+		/*
+		When URIs are removed, the currently playing one as well as the next one might have been removed as well. This requires extra handling.
+		This code tests for four possible cases:
+		- current URI removed, next URI removed: stop playback (it is unclear what URI to playback at this point)
+		- current URI removed, next URI not removed: set current URI = next URI if there is a next one, otherwise stop playback
+		- current URI not removed, next URI removed: determine the new next URI
+		- current URI not removed, next URI not removed: nothing needs to be done
+		*/
+
+		bool cur_removed = false, next_removed = false;
+		
+		cur_removed = removed_uris.find(*current_uri) != removed_uris.end();
+		if (next_uri)
+			next_removed = removed_uris.find(*next_uri) != removed_uris.end();
+
+		if (cur_removed)
 		{
-			next_uri = get_succeeding_uri(*current_playlist, *current_uri);
-			if (next_uri)
-				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			if (next_removed)
+				stop();
 			else
-				send_line_to_backend_callback("clear_next_resource");
+			{
+				if (next_uri)
+					play(*next_uri);
+				else
+					stop();
+			}
+		}
+		else
+		{
+			if (next_removed)
+			{
+				next_uri = get_succeeding_uri(*current_playlist, *current_uri);
+				if (next_uri)
+					send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+				else
+					send_line_to_backend_callback("clear_next_resource");
+			}
 		}
 	}
 
@@ -313,7 +347,9 @@ protected:
 			if (next_uri)
 				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 		}
+		current_metadata = get_metadata_for(*current_playlist, new_uri);
 		current_uri_changed_signal(current_uri);
+		current_metadata_changed_signal(current_metadata);
 	}
 
 

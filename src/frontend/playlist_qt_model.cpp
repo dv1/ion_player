@@ -159,13 +159,13 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 }
 
 
-void playlist_qt_model::entry_added(uri const uri_)
+void playlist_qt_model::entry_added(uri_set_t const uri_)
 {
 	reset(); // TODO: do something smarter than this
 }
 
 
-void playlist_qt_model::entry_removed(uri const uri_)
+void playlist_qt_model::entry_removed(uri_set_t const uri_)
 {
 	reset(); // TODO: do something smarter than this
 }
