@@ -32,7 +32,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cprogram'],
-		uselib = 'BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD BOOST BUILDMODE STRICT',
 		target = 'backend',
 		uselib_local = 'ionplayer_backend ionplayer_common',
 		includes = '.',

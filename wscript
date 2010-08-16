@@ -66,7 +66,7 @@ def configure(conf):
 	conf.check_tool('unittest')
 	conf.check_tool('boost_', '.')
 
-	conf.check_boost(lib='thread', mandatory=1)
+	conf.check_boost(lib='thread', mandatory=1, static='both')
 
 	conf.env['BUILD_VARIANTS'] = Options.options.build_variants.split(',')
 

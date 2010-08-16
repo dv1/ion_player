@@ -158,16 +158,16 @@ def find_boost_library(self,lib,kw):
 		lib_paths=Utils.to_list(kw['libpath'])
 	v=kw.get('env',self.env)
 	(libname,file)=(None,None)
-	if kw['static']in[STATIC_NOSTATIC,STATIC_BOTH]:
-		st_env_prefix='LIB'
-		files=libfiles(lib,v['shlib_PATTERN'],lib_paths)
-		(libname,file)=find_library_from_list(lib,files)
-	if libname is None and kw['static']in[STATIC_ONLYSTATIC,STATIC_BOTH]:
+	if kw['static']in[STATIC_ONLYSTATIC,STATIC_BOTH]:
 		st_env_prefix='STATICLIB'
 		staticLibPattern=v['staticlib_PATTERN']
 		if self.env['CC_NAME']=='msvc':
 			staticLibPattern='lib'+staticLibPattern
 		files=libfiles(lib,staticLibPattern,lib_paths)
+		(libname,file)=find_library_from_list(lib,files)
+	if libname is None and kw['static']in[STATIC_NOSTATIC,STATIC_BOTH]:
+		st_env_prefix='LIB'
+		files=libfiles(lib,v['shlib_PATTERN'],lib_paths)
 		(libname,file)=find_library_from_list(lib,files)
 	if libname is not None:
 		v['LIBPATH_BOOST_'+lib.upper()]=[os.path.split(file)[0]]
