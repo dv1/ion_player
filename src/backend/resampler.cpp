@@ -102,7 +102,6 @@ unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to
 	}
 
 
-#if 1
 	unsigned channel_sample_factor = internal_data_->num_channels * sizeof(spx_int16_t);
 	unsigned int num_samples_to_decode = static_cast < unsigned int > (float(num_samples_to_write) * float(internal_data_->input_frequency) / float(internal_data_->output_frequency) + 0.5f);
 
@@ -148,15 +147,7 @@ unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to
 			);
 
 
-			/*static std::ofstream dumpinf("dump_in.raw", std::ios::binary);
-			dumpinf.write((char const*)(src_ptr), channel_sample_factor * in_length);
-
-			static std::ofstream dumpoutf("dump_out.raw", std::ios::binary);
-			dumpoutf.write((char const*)(dst_ptr), channel_sample_factor * out_length);*/
-
-
 			unsigned int remaining_in = input_buffer.size() - in_length * channel_sample_factor;
-			//std::cout << input_buffer.size() << " " << remaining_in << std::endl;
 
 			if (remaining_in > 0)
 				std::memmove(&input_buffer[0], &input_buffer[in_length * channel_sample_factor], remaining_in);
@@ -167,9 +158,6 @@ unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to
 
 		if (output_buffer.size() >= (channel_sample_factor * num_samples_to_write))
 		{
-			/*static std::ofstream dumpf("dump3.raw", std::ios::binary);
-			dumpf.write((char const*)(&output_buffer[0]), channel_sample_factor * num_samples_to_write);*/
-
 			std::memcpy(dest, &output_buffer[0], channel_sample_factor * num_samples_to_write);
 			unsigned int remaining_out = output_buffer.size() - channel_sample_factor * num_samples_to_write;
 
@@ -183,43 +171,6 @@ unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to
 
 
 	return 0;
-#else
-
-	unsigned channel_sample_factor = internal_data_->num_channels * sizeof(spx_int16_t);
-	unsigned int num_samples_to_decode = static_cast < unsigned int > (float(num_samples_to_write) * float(internal_data_->input_frequency) / float(internal_data_->output_frequency) + 0.5f);
-	input_buffer.resize(channel_sample_factor * num_samples_to_decode);
-
-	assert(
-		(remaining_input_data + (num_samples_to_decode - ((remaining_input_data + sizeof(spx_int16_t) / 2) / sizeof(spx_int16_t))))
-		<=
-		input_buffer.size()
-	);
-
-	unsigned int num_samples_decoded = decoder_.update(
-		&input_buffer[remaining_input_data],
-		num_samples_to_decode - ((remaining_input_data + sizeof(spx_int16_t) / 2) / sizeof(spx_int16_t)) // the  + sizeof(spx_int16_t) / 2   is a trick to round up the number in case a fractional value would come out
-	);
-	remaining_input_data += num_samples_decoded * channel_sample_factor;
-
-	assert(remaining_input_data <= input_buffer.size());
-
-	if (remaining_input_data == 0)
-		return 0;
-
-	spx_uint32_t in_length = remaining_input_data / channel_sample_factor;
-	spx_uint32_t out_length = num_samples_to_write;
-
-	int err;
-	err = speex_resampler_process_interleaved_int(internal_data_->speex_resampler, reinterpret_cast < spx_int16_t const * > (&input_buffer[0]), &in_length, reinterpret_cast < spx_int16_t * > (dest), &out_length);
-	std::cout << input_buffer.size() << " " << in_length << " " << (num_samples_to_write * channel_sample_factor) << " " << out_length << std::endl;
-
-//	remaining_input_data -= in_length * channel_sample_factor;
-	remaining_input_data = 0;
-	if (remaining_input_data > 0)
-		std::memcpy(&input_buffer[0], &input_buffer[input_buffer.size() - remaining_input_data], remaining_input_data);
-
-	return num_samples_to_write * channel_sample_factor;
-#endif
 }
 
 

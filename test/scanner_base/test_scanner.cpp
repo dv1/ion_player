@@ -18,8 +18,20 @@ test_scanner::test_scanner(int const max_num_entries_added):
 
 test_scanner::~test_scanner()
 {
+	scan_queue.clear();
+
+	backend_process.waitForFinished(30000);
 	if (backend_process.state() != QProcess::NotRunning)
-		backend_process.waitForFinished();	
+	{
+		backend_process.terminate();
+		std::cerr << "sending scan backend the TERM signal" << std::endl;
+	}
+	backend_process.waitForFinished(30000);
+	if (backend_process.state() != QProcess::NotRunning)
+	{
+		backend_process.kill();
+		std::cerr << "sending scan backend the KILL signal" << std::endl;
+	}
 }
 
 
@@ -70,6 +82,11 @@ void test_scanner::try_read_stdout_line()
 
 		read_process_stdin_line(line.toStdString());
 	}
+
+	// Putting it here because the QProcess IODevice may still contain data in its buffer even after the process finished,
+	// meaning that the finished() slot may have been called before try_read_stdout_line()
+	if (num_entries_added <= 0)
+		QCoreApplication::instance()->quit();
 }
 
 
@@ -86,9 +103,6 @@ void test_scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
 		case QProcess::NormalExit: scanning_process_finished((num_entries_added > 0)); break;
 		case QProcess::CrashExit: scanning_process_terminated(); break;
 	};
-
-	if (num_entries_added <= 0)
-		QCoreApplication::instance()->quit();
 }
 
 

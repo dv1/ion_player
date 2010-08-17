@@ -23,8 +23,20 @@ scanner::scanner(QObject *parent, QString const &backend_filepath):
 
 scanner::~scanner()
 {
+	scan_queue.clear();
+
+	scan_process->waitForFinished(30000);
 	if (scan_process->state() != QProcess::NotRunning)
-		scan_process->waitForFinished();
+	{
+		scan_process->terminate();
+		std::cerr << "sending scan backend the TERM signal" << std::endl;
+	}
+	scan_process->waitForFinished(30000);
+	if (scan_process->state() != QProcess::NotRunning)
+	{
+		scan_process->kill();
+		std::cerr << "sending scan backend the KILL signal" << std::endl;
+	}
 }
 
 

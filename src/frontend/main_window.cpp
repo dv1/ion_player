@@ -435,9 +435,13 @@ void main_window::stop_backend()
 		std::cerr << "sending backend the KILL signal" << std::endl;
 	}
 
+	// NOTE: backend_process is deleted and then immediately set to 0. It is NOT set to 0 after scanner_ has been deleted.
+	// This avoids a bug where try_read_stdout_line() is called after the backend process has been deleted
+	// (try_read_stdout_line() is called afterwards because Qt signal-slot calls do not have to happen immediately; they may be marshaled to the main loop)
 	delete backend_process;
-	delete scanner_;
 	backend_process = 0;
+
+	delete scanner_;
 	scanner_ = 0;
 }
 

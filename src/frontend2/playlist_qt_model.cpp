@@ -16,7 +16,7 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists &playlists_, pl
 	QAbstractListModel(parent_),
 	playlist_(playlist_)
 {
-//	active_playlist = playlist_.get_active_playlist();
+	//active_playlist = playlists_.get_active_playlist();
 
 	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1));
 	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1));
