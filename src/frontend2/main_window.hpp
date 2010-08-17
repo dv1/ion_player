@@ -23,7 +23,7 @@ namespace frontend
 {
 
 
-class playlists;
+class playlists_ui;
 class scanner;
 
 
@@ -41,7 +41,7 @@ protected:
 	audio_frontend_ptr_t audio_frontend_;
 	QProcess *backend_process;
 	scanner *scanner_;
-	playlists *playlists_;
+	playlists_ui *playlists_ui_;
 	settings *settings_;
 
 	QDialog *settings_dialog;

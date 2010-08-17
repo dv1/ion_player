@@ -3,7 +3,7 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/fusion/sequence/intrinsic/at.hpp>
 #include "playlist_qt_model.hpp"
-#include "playlists.hpp"
+#include "playlists_ui.hpp"
 
 
 namespace ion
@@ -12,7 +12,7 @@ namespace frontend
 {
 
 
-playlist_qt_model::playlist_qt_model(QObject *parent_, playlists &playlists_, playlist &playlist_):
+playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_ui &playlists_ui_, playlist &playlist_):
 	QAbstractListModel(parent_),
 	playlist_(playlist_)
 {

@@ -7,8 +7,9 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/random_access_index.hpp>
-#include <boost/fusion/sequence/instrinsic/at.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/fusion/sequence/intrinsic/at.hpp>
 #include <boost/fusion/container/vector.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/shared_ptr.hpp>
@@ -37,41 +38,49 @@ public:
 	typedef boost::multi_index::multi_index_container <
 		playlist_entry_t,
 		boost::multi_index::indexed_by <
-			boost::multi_index::random_access < boost::multi_index::tag < sequence_tag > >,
-			boost::multi_index::ordered_unique < boost::multi_index::tag < ordered_tag > >
+			boost::multi_index::sequenced < boost::multi_index::tag < sequence_tag > >,
+			boost::multi_index::ordered_non_unique < boost::multi_index::tag < ordered_tag >, boost::multi_index::identity < playlist_entry_t > >
 		>
 	> playlist_entries_t;
 
-	typedef typename playlist_entries_t::index < sequence_tag > ::type sequenced_entries_t;
-	typedef typename playlist_entries_t::index < ordered_tag > ::type ordered_entries_t;
+	typedef typename playlist_entries_t::template index < sequence_tag > ::type sequenced_entries_t;
+	typedef typename playlist_entries_t::template index < ordered_tag > ::type ordered_entries_t;
 
 
 
 
-	playlist_entry& add_entry(std::string const &playlist_name, playlist_ptr_t playlist_ptr)
+	playlists():
+		active_entry(0)
 	{
-		std::unique_ptr < playlists_entry_t > new_entry(new playlists_entry_t(playlist_name, playlist_ptr));
+	}
+
+
+
+
+	playlist_entry_t& add_entry(std::string const &playlist_name, playlist_ptr_t playlist_ptr)
+	{
+		std::unique_ptr < playlist_entry_t > new_entry(new playlist_entry_t(playlist_name, playlist_ptr));
 		playlist_entries.push_back(new_entry.get());
-		playlists_entry &result = *new_entry;
+		playlist_entry_t &result = *new_entry;
 		new_entry.release();
-		playlist_entry_added_signal(*iter);
+		playlist_entry_added_signal(result);
 		return result;
 	}
 
 
-	void rename_entry(playlist_entry const &entry_to_be_renamed, std::string const &new_name)
+	void rename_entry(playlist_entry_t const &entry_to_be_renamed, std::string const &new_name)
 	{
-		ordered_entries_t &ordered_entries = playlist_entries.get < ordered_tag > ();
-		ordered_entries_t::iterator iter = ordered_entries.find(entry_to_be_removed);
+		ordered_entries_t &ordered_entries = playlist_entries.template get < ordered_tag > ();
+		typename ordered_entries_t::iterator iter = ordered_entries.find(entry_to_be_renamed);
 		boost::fusion::at_c < 0 > (*iter) = new_name;
 		playlist_entry_renamed_signal(*iter, new_name);
 	}
 
 
-	void remove_entry(playlist_entry const &entry_to_be_removed)
+	void remove_entry(playlist_entry_t const &entry_to_be_removed)
 	{
-		ordered_entries_t &ordered_entries = playlist_entries.get < ordered_tag > ();
-		ordered_entries_t::iterator iter = ordered_entries.find(entry_to_be_removed);
+		ordered_entries_t &ordered_entries = playlist_entries.template get < ordered_tag > ();
+		typename ordered_entries_t::iterator iter = ordered_entries.find(entry_to_be_removed);
 		playlist_entry_removed_signal(*iter);
 		ordered_entries.erase(iter);
 	}
@@ -83,13 +92,13 @@ public:
 	playlist_entry_event_signal_t & get_active_playlist_changed_signal() { return active_playlist_changed_signal; }
 
 
-	typename playlist_entry_t * get_active_entry()
+	playlist_entry_t * get_active_entry()
 	{
 		return active_entry;
 	}
 
 
-	void set_active_entry(playlist_entry &new_active_entry)
+	void set_active_entry(playlist_entry_t &new_active_entry)
 	{
 		active_entry = &new_active_entry;
 		active_playlist_changed_signal(*active_entry);
@@ -100,12 +109,6 @@ public:
 
 	
 protected:
-	playlist():
-		active_entry(0)
-	{
-	}
-
-
 	playlist_entry_event_signal_t
 		playlist_entry_added_signal,
 		playlist_entry_removed_signal,

@@ -13,14 +13,14 @@ namespace frontend
 {
 
 
-class playlists;
+class playlists_ui;
 
 
 class playlist_qt_model:
 	public QAbstractListModel
 {
 public:
-	explicit playlist_qt_model(QObject *parent_, playlists &playlists_, playlist &playlist_);
+	explicit playlist_qt_model(QObject *parent_, playlists_ui &playlists_ui_, playlist &playlist_);
 	~playlist_qt_model();
 
 
