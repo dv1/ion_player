@@ -18,8 +18,8 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_ui &playlists_u
 {
 	//active_playlist = playlists_.get_active_playlist();
 
-	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1));
-	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1));
+	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1, boost::lambda::_2));
+	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1, boost::lambda::_2));
 	//active_playlist_changed_connection = playlists_.get_active_playlist_changed_signal().connect(boost::lambda::bind(&playlist_qt_model::active_playlist_changed, this, boost::lambda::_1));
 }
 
@@ -158,25 +158,52 @@ int playlist_qt_model::rowCount(QModelIndex const &parent) const
 
 void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_uri)
 {
-/*	boost::optional < uint64_t > old_uri_index, new_uri_index;
+	playlist::index_optional_t old_uri_index, new_uri_index;
 
 	if (current_uri)
-		old_uri_index = playlist_.get_entry_index(*current_uri);
+		old_uri_index = get_uri_index(playlist_, *current_uri);
 	if (new_current_uri)
-		new_uri_index = playlist_.get_entry_index(*new_current_uri);*/
+		new_uri_index = get_uri_index(playlist_, *new_current_uri);
 
 	current_uri = new_current_uri;
-	reset();
+
+	if (old_uri_index)
+		dataChanged(createIndex(*old_uri_index, 0), createIndex(*old_uri_index, columnCount(QModelIndex()) - 1));
+	if (new_uri_index)
+		dataChanged(createIndex(*new_uri_index, 0), createIndex(*new_uri_index, columnCount(QModelIndex()) - 1));
 }
 
 
-void playlist_qt_model::entries_added(uri_set_t const uri_)
+void playlist_qt_model::entries_added(uri_set_t const uris, bool const before)
 {
+/*	playlist::index_optional_t min_index, max_index;
+	BOOST_FOREACH(uri const &uri_, uris)
+	{
+		playlist::index_optional_t uri_index = get_uri_index(playlist_, uri_);
+		if (uri_index)
+		{
+			if (min_index)
+				min_index = std::min(*min_index, *uri_index);
+			else
+				min_index = *uri_index;
+
+			if (max_index)
+				max_index = std::max(*max_index, *uri_index);
+			else
+				max_index = *uri_index;
+		}
+	}
+
+	if (min_index && max_index)
+	{
+		beginInsertRows(QModelIndex(), *min_index, *max_index);
+		endInsertRows();
+	}*/
 	reset(); // TODO: do something smarter than this
 }
 
 
-void playlist_qt_model::entries_removed(uri_set_t const uri_)
+void playlist_qt_model::entries_removed(uri_set_t const uris, bool const before)
 {
 	reset(); // TODO: do something smarter than this
 }
@@ -185,7 +212,15 @@ void playlist_qt_model::entries_removed(uri_set_t const uri_)
 void playlist_qt_model::active_playlist_changed(playlist *new_active_playlist)
 {
 	active_playlist = new_active_playlist;
-	reset();
+
+	if (!current_uri)
+		return;
+		
+	playlist::index_optional_t uri_index = get_uri_index(playlist_, *current_uri);
+	if (!uri_index)
+		return;
+
+	dataChanged(createIndex(*uri_index, 0), createIndex(*uri_index, columnCount(QModelIndex()) - 1));
 }
 
 

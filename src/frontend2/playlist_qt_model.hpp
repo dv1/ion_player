@@ -34,8 +34,8 @@ public:
 
 
 protected:
-	void entries_added(uri_set_t const uri_);
-	void entries_removed(uri_set_t const uri_);
+	void entries_added(uri_set_t const uri_, bool const before);
+	void entries_removed(uri_set_t const uri_, bool const before);
 	void active_playlist_changed(playlist *new_active_playlist);
 
 

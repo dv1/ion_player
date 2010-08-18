@@ -5,6 +5,7 @@
 #include <string>
 
 #include <boost/signals2/signal.hpp>
+#include <boost/function.hpp>
 #include <boost/fusion/container/vector.hpp>
 #include <boost/optional.hpp>
 
@@ -19,9 +20,10 @@ namespace ion
 class playlist
 {
 public:
-	typedef boost::signals2::signal < void(uri_set_t const &uris) > resource_event_signal_t;
+	typedef boost::signals2::signal < void(uri_set_t const &uris, bool const before) > resource_event_signal_t;
 	typedef boost::fusion::vector2 < ion::uri, metadata_t > entry_t;
-	typedef boost::optional < uint64_t > index_optional_t;
+	typedef uint64_t index_t;
+	typedef boost::optional < index_t > index_optional_t;
 
 
 	virtual ~playlist() {}
@@ -86,6 +88,12 @@ inline uri_optional_t get_preceding_uri(playlist const &playlist_, uri const &ur
 inline uri_optional_t get_succeeding_uri(playlist const &playlist_, uri const &uri_)
 {
 	return playlist_.get_succeeding_uri(uri_);
+}
+
+
+inline playlist::index_optional_t get_uri_index(playlist const &playlist_, uri const &uri_)
+{
+	return playlist_.get_entry_index(uri_);
 }
 
 

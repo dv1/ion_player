@@ -12,8 +12,8 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, simple_playlist &playlist
 	QAbstractListModel(parent_),
 	playlist_(playlist_)
 {
-	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entry_added, this, boost::lambda::_1));
-	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entry_removed, this, boost::lambda::_1));
+	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entry_added, this, boost::lambda::_1, boost::lambda::_2));
+	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entry_removed, this, boost::lambda::_1, boost::lambda::_2));
 }
 
 
@@ -159,13 +159,13 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 }
 
 
-void playlist_qt_model::entry_added(uri_set_t const uri_)
+void playlist_qt_model::entry_added(uri_set_t const uri_, bool const before)
 {
 	reset(); // TODO: do something smarter than this
 }
 
 
-void playlist_qt_model::entry_removed(uri_set_t const uri_)
+void playlist_qt_model::entry_removed(uri_set_t const uri_, bool const before)
 {
 	reset(); // TODO: do something smarter than this
 }

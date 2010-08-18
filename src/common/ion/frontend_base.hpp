@@ -92,8 +92,8 @@ public:
 
 		if (current_playlist != 0)
 		{
-			resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_added, this, boost::lambda::_1));
-			resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_removed, this, boost::lambda::_1));
+			resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_added, this, boost::lambda::_1, boost::lambda::_2));
+			resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_removed, this, boost::lambda::_1, boost::lambda::_2));
 		}
 	}
 
@@ -261,11 +261,13 @@ protected:
 
 	// Playlist event handlers
 
-	void resource_added(uri_set_t const &added_uris)
+	void resource_added(uri_set_t const &added_uris, bool const before)
 	{
 		if (current_playlist == 0)
 			return;
 		if (!current_uri)
+			return;
+		if (before)
 			return;
 
 		uri_optional_t actual_next_uri = get_succeeding_uri(*current_playlist, *current_uri);
@@ -290,17 +292,19 @@ protected:
 	}
 
 
-	void resource_removed(uri_set_t const &removed_uris)
+	void resource_removed(uri_set_t const &removed_uris, bool const before)
 	{
 		if (current_playlist == 0)
 			return;
 		if (!current_uri)
 			return;
+		if (before)
+			return;
 
 		/*
 		When URIs are removed, the currently playing one as well as the next one might have been removed as well. This requires extra handling.
 		This code tests for four possible cases:
-		- current URI removed, next URI removed: stop playback (it is unclear what URI to playback at this point)
+		- current URI removed, next URI removed: stop playback (it is unclear what URI to playback at this point; TODO: maybe this can be clarified by using the "before" mode)
 		- current URI removed, next URI not removed: set current URI = next URI if there is a next one, otherwise stop playback
 		- current URI not removed, next URI removed: determine the new next URI
 		- current URI not removed, next URI not removed: nothing needs to be done

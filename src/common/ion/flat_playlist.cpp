@@ -140,9 +140,13 @@ void flat_playlist::add_entry(entry_t entry_, bool const emit_signal)
 	else
 		set_uri_id(uri_, unique_ids_.create_new(), false);
 
-	entries.push_back(entry_);
 	if (emit_signal)
-		resource_added_signal(boost::assign::list_of(uri_));
+		resource_added_signal(boost::assign::list_of(uri_), true);
+
+	entries.push_back(entry_);
+
+	if (emit_signal)
+		resource_added_signal(boost::assign::list_of(uri_), false);
 }
 
 
@@ -166,11 +170,13 @@ void flat_playlist::remove_entry(uri const &uri_, bool const emit_signal)
 	if (uri_tag_iter == entries_by_uri.end())
 		return;
 
-	// NOTE: erase must happen before the signal is emitted, because otherwise a transition event may be handled incorrectly (it may still see the entry)
+	if (emit_signal)
+		resource_removed_signal(boost::assign::list_of(uri_), true);
+
 	entries_by_uri.erase(uri_tag_iter);
 
 	if (emit_signal)
-		resource_removed_signal(boost::assign::list_of(uri_));
+		resource_removed_signal(boost::assign::list_of(uri_), false);
 }
 
 
@@ -182,6 +188,8 @@ void flat_playlist::set_resource_metadata(uri const &uri_, metadata_t const & ne
 	if (uri_tag_iter == entries_by_uri.end())
 		return;
 
+	resource_metadata_changed_signal(boost::assign::list_of(uri_), true);
+
 	entry_t entry_ = *uri_tag_iter;
 
 	entries_by_uri.erase(uri_tag_iter);
@@ -189,7 +197,7 @@ void flat_playlist::set_resource_metadata(uri const &uri_, metadata_t const & ne
 	boost::fusion::at_c < 1 > (entry_) = new_metadata;
 	entries.push_back(entry_);
 
-	resource_metadata_changed_signal(boost::assign::list_of(uri_));
+	resource_metadata_changed_signal(boost::assign::list_of(uri_), false);
 }
 
 
