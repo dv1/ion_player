@@ -4,6 +4,9 @@
 #include <QObject>
 #include <ion/playlists.hpp>
 #include <ion/flat_playlist.hpp>
+#include <ion/uri.hpp>
+
+#include "misc_types.hpp"
 
 
 class QTabWidget;
@@ -23,11 +26,12 @@ class playlists_ui:
 	public QObject
 {
 public:
-	typedef playlists < flat_playlist > playlists_t;
-
-
 	explicit playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_frontend_, QObject *parent);
 	~playlists_ui();
+
+	playlists_t & get_playlists() { return playlists_; }
+
+	void current_uri_changed(uri_optional_t const &new_current_uri);
 
 
 protected:

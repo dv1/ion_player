@@ -4,7 +4,10 @@
 #include <QAbstractListModel>
 #include <QVariant>
 #include <boost/signals2/connection.hpp>
+#include <boost/fusion/container/vector.hpp>
 #include <ion/playlist.hpp>
+
+#include "misc_types.hpp"
 
 
 namespace ion
@@ -13,14 +16,11 @@ namespace frontend
 {
 
 
-class playlists_ui;
-
-
 class playlist_qt_model:
 	public QAbstractListModel
 {
 public:
-	explicit playlist_qt_model(QObject *parent_, playlists_ui &playlists_ui_, playlist &playlist_);
+	explicit playlist_qt_model(QObject *parent_, playlists_t &playlists_, playlist &playlist_);
 	~playlist_qt_model();
 
 
@@ -36,10 +36,16 @@ public:
 protected:
 	void entries_added(uri_set_t const uri_, bool const before);
 	void entries_removed(uri_set_t const uri_, bool const before);
-	void active_playlist_changed(playlist *new_active_playlist);
+	void active_playlist_changed();
+
+	typedef boost::fusion::vector2 < playlist::index_t, playlist::index_t > index_pair_t;
+	typedef boost::optional < index_pair_t > index_pair_optional_t;
+	index_pair_optional_t get_min_max_indices_from(uri_set_t const uris) const;
 
 
-	playlist &playlist_, *active_playlist;
+	playlist &playlist_;
+	playlists_t &playlists_;
+	playlist const *active_playlist;
 	boost::signals2::connection
 		entry_added_signal_connection,
 		entry_removed_signal_connection,

@@ -20,6 +20,11 @@ playlists_ui::~playlists_ui()
 }
 
 
+void playlists_ui::current_uri_changed(uri_optional_t const &new_current_uri)
+{
+}
+
+
 void playlists_ui::playlist_entry_added(playlists_t::playlist_entry_t const &playlist_entry)
 {
 }

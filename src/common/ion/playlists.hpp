@@ -9,8 +9,8 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/identity.hpp>
-#include <boost/fusion/sequence/intrinsic/at.hpp>
-#include <boost/fusion/container/vector.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -27,8 +27,9 @@ class playlists
 public:
 	typedef Playlist playlist_t;
 	typedef boost::shared_ptr < playlist_t > playlist_ptr_t;
-	typedef boost::fusion::vector2 < std::string, playlist_ptr_t > playlist_entry_t;
+	typedef boost::tuple < std::string, playlist_ptr_t > playlist_entry_t;
 	typedef boost::signals2::signal < void(playlist_entry_t const &playlist_entry) > playlist_entry_event_signal_t;
+	typedef boost::signals2::signal < void(playlist_entry_t const *playlist_entry) > active_entry_changed_signal_t;
 	typedef boost::signals2::signal < void(playlist_entry_t const &playlist_entry, std::string const &new_name) > playlist_entry_renamed_signal_t;
 
 
@@ -57,14 +58,11 @@ public:
 
 
 
-	playlist_entry_t& add_entry(std::string const &playlist_name, playlist_ptr_t playlist_ptr)
+	void add_entry(std::string const &playlist_name, playlist_ptr_t playlist_ptr)
 	{
-		std::unique_ptr < playlist_entry_t > new_entry(new playlist_entry_t(playlist_name, playlist_ptr));
-		playlist_entries.push_back(new_entry.get());
-		playlist_entry_t &result = *new_entry;
-		new_entry.release();
-		playlist_entry_added_signal(result);
-		return result;
+		playlist_entry_t new_entry(playlist_name, playlist_ptr);
+		playlist_entries.push_back(new_entry).first;
+		playlist_entry_added_signal(new_entry);
 	}
 
 
@@ -72,7 +70,7 @@ public:
 	{
 		ordered_entries_t &ordered_entries = playlist_entries.template get < ordered_tag > ();
 		typename ordered_entries_t::iterator iter = ordered_entries.find(entry_to_be_renamed);
-		boost::fusion::at_c < 0 > (*iter) = new_name;
+		boost::get < 0 > (*iter) = new_name;
 		playlist_entry_renamed_signal(*iter, new_name);
 	}
 
@@ -89,32 +87,42 @@ public:
 	playlist_entry_event_signal_t & get_playlist_entry_added_signal() { return playlist_entry_added_signal; }
 	playlist_entry_event_signal_t & get_playlist_entry_removed_signal() { return playlist_entry_removed_signal; }
 	playlist_entry_renamed_signal_t & get_playlist_entry_renamed_signal() { return playlist_entry_renamed_signal; }
-	playlist_entry_event_signal_t & get_active_playlist_changed_signal() { return active_playlist_changed_signal; }
+	active_entry_changed_signal_t & get_active_entry_changed_signal() { return active_entry_changed_signal; }
 
 
-	playlist_entry_t * get_active_entry()
+	Playlist const * get_active_playlist() const
+	{
+		return (active_entry == 0) ? 0 : boost::get < 1 > (*active_entry).get();
+	}
+
+
+	playlist_entry_t const * get_active_entry() const
 	{
 		return active_entry;
 	}
 
 
-	void set_active_entry(playlist_entry_t &new_active_entry)
+	void set_active_entry(playlist_entry_t const *new_active_entry)
 	{
-		active_entry = &new_active_entry;
-		active_playlist_changed_signal(*active_entry);
+		active_entry = new_active_entry;
+		active_entry_changed_signal(active_entry);
 	}
 
 
-	playlist_entries_t const & get_entries() const { return playlist_entries; }
+	sequenced_entries_t const & get_entries() const
+	{
+		return playlist_entries.template get < sequence_tag > ();
+	}
 
 	
 protected:
 	playlist_entry_event_signal_t
 		playlist_entry_added_signal,
-		playlist_entry_removed_signal,
-		active_playlist_changed_signal;
+		playlist_entry_removed_signal;
+	active_entry_changed_signal_t
+		active_entry_changed_signal;
 	playlist_entry_renamed_signal_t playlist_entry_renamed_signal;
-	playlist_entry_t *active_entry;
+	playlist_entry_t const *active_entry;
 	playlist_entries_t playlist_entries;
 };
 
