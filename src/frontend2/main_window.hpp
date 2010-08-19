@@ -47,7 +47,7 @@ protected slots:
 	void set_current_position();
 	void set_current_volume();
 
-	void backend_filepath_filedialog();
+	void open_backend_filepath_filedialog();
 
 	void create_new_playlist();
 	void rename_playlist();

@@ -7,6 +7,18 @@ namespace frontend
 {
 
 
+playlist_entry_ui::playlist_entry_ui(QObject *parent, audio_frontend &audio_frontend_)
+{
+}
+
+
+void playlist_entry_ui::play_selected()
+{
+}
+
+
+
+
 playlists_ui::playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_frontend_, QObject *parent):
 	QObject(parent),
 	tab_widget(tab_widget),
@@ -22,6 +34,12 @@ playlists_ui::~playlists_ui()
 
 void playlists_ui::current_uri_changed(uri_optional_t const &new_current_uri)
 {
+}
+
+
+playlist_entry_ui* playlists_ui::get_currently_visible_entry_ui()
+{
+	return 0;
 }
 
 

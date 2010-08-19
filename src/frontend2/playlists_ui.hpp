@@ -22,6 +22,15 @@ namespace frontend
 class audio_frontend;
 
 
+class playlist_entry_ui:
+	public QObject
+{
+public:
+	explicit playlist_entry_ui(QObject *parent, audio_frontend &audio_frontend_);
+	void play_selected();
+};
+
+
 class playlists_ui:
 	public QObject
 {
@@ -30,8 +39,8 @@ public:
 	~playlists_ui();
 
 	playlists_t & get_playlists() { return playlists_; }
-
 	void current_uri_changed(uri_optional_t const &new_current_uri);
+	playlist_entry_ui* get_currently_visible_entry_ui();
 
 
 protected:

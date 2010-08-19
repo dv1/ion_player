@@ -108,14 +108,14 @@ main_window::~main_window()
 
 void main_window::play()
 {
-	/*playlists_entry *playlists_entry_ = playlists_->get_currently_visible_entry();
-	if (playlists_entry_ == 0)
+	playlist_entry_ui *playlist_entry_ui_ = playlists_ui_->get_currently_visible_entry_ui();
+	if (playlist_entry_ui_ == 0)
 	{
-		QMessageBox::warning(this, "Cannot start playback", "No playlist available - cannot playback anything");
+		QMessageBox::warning(this, "Cannot start playback", "No playlist present in the user interface - cannot playback anything");
 		return;
 	}
 
-	playlists_entry_->play_selected();*/
+	playlist_entry_ui_->play_selected();
 }
 
 
@@ -196,7 +196,7 @@ void main_window::set_current_volume()
 }
 
 
-void main_window::backend_filepath_filedialog()
+void main_window::open_backend_filepath_filedialog()
 {
 }
 
