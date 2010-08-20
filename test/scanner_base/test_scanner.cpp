@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <QCoreApplication>
 #include <QFileInfo>
 #include "test_scanner.hpp"
@@ -68,7 +69,7 @@ void test_scanner::start_process(ion::uri const &uri_to_be_scanned)
 
 void test_scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t const &new_metadata)
 {
-	std::cerr << "Adding entry: URI " << new_uri.get_full() << " metadata " << ion::get_metadata_string(new_metadata) << std::endl;
+	std::cerr << "Adding entry: URI " << new_uri.get_full() << " current playlist " << uintptr_t(current_playlist) << " metadata " << ion::get_metadata_string(new_metadata) << std::endl;
 	--num_entries_added;
 }
 
