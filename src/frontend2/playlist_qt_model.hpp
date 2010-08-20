@@ -36,7 +36,7 @@ public:
 protected:
 	void entries_added(uri_set_t const uri_, bool const before);
 	void entries_removed(uri_set_t const uri_, bool const before);
-	void active_playlist_changed();
+	void active_playlist_changed(playlists_t::playlist_t *playlist_);
 
 	typedef boost::fusion::vector2 < playlist::index_t, playlist::index_t > index_pair_t;
 	typedef boost::optional < index_pair_t > index_pair_optional_t;

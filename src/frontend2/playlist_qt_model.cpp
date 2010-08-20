@@ -21,7 +21,7 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_t &playlists_, 
 
 	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1, boost::lambda::_2));
 	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1, boost::lambda::_2));
-	active_playlist_changed_connection = playlists_.get_active_entry_changed_signal().connect(boost::lambda::bind(&playlist_qt_model::active_playlist_changed, this));
+	active_playlist_changed_connection = playlists_.get_active_playlist_changed_signal().connect(boost::lambda::bind(&playlist_qt_model::active_playlist_changed, this, boost::lambda::_1));
 }
 
 
@@ -201,14 +201,14 @@ void playlist_qt_model::entries_removed(uri_set_t const uris, bool const before)
 }
 
 
-void playlist_qt_model::active_playlist_changed()
+void playlist_qt_model::active_playlist_changed(playlists_t::playlist_t *playlist_)
 {
-	active_playlist = playlists_.get_active_playlist();
+	active_playlist = playlist_;
 
 	if (!current_uri)
 		return;
 		
-	playlist::index_optional_t uri_index = get_uri_index(playlist_, *current_uri);
+	playlist::index_optional_t uri_index = get_uri_index(*playlist_, *current_uri);
 	if (!uri_index)
 		return;
 

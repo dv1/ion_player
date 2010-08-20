@@ -22,11 +22,11 @@ namespace frontend
 class audio_frontend;
 
 
-class playlist_entry_ui:
+class playlist_ui:
 	public QObject
 {
 public:
-	explicit playlist_entry_ui(QObject *parent, audio_frontend &audio_frontend_);
+	explicit playlist_ui(QObject *parent, audio_frontend &audio_frontend_);
 	void play_selected();
 };
 
@@ -40,14 +40,13 @@ public:
 
 	playlists_t & get_playlists() { return playlists_; }
 	void current_uri_changed(uri_optional_t const &new_current_uri);
-	playlist_entry_ui* get_currently_visible_entry_ui();
+	playlist_ui* get_currently_visible_playlist_ui();
 
 
 protected:
-	void playlist_entry_added(playlists_t::playlist_entry_t const &playlist_entry);
-	void playlist_entry_renamed(playlists_t::playlist_entry_t const &playlist_entry, std::string const &new_name);
-	void playlist_entry_removed(playlists_t::playlist_entry_t const &playlist_entry);
-	void active_playlist_changed(playlists_t::playlist_entry_t const &playlist_entry);
+	void playlist_added(playlists_t::playlist_t &playlist_);
+	void playlist_removed(playlists_t::playlist_t &playlist_);
+	void active_playlist_changed(playlists_t::playlist_t *playlist_);
 
 
 	playlists_t playlists_;

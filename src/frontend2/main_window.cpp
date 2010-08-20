@@ -88,7 +88,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	if (!load_playlists())
 	{
 		playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
-		playlists_ui_->get_playlists().add_entry("Default", new_playlist);
+		playlists_ui_->get_playlists().add_playlist("Default", new_playlist);
 	}
 
 
@@ -108,14 +108,14 @@ main_window::~main_window()
 
 void main_window::play()
 {
-	playlist_entry_ui *playlist_entry_ui_ = playlists_ui_->get_currently_visible_entry_ui();
-	if (playlist_entry_ui_ == 0)
+	playlist_ui *playlist_ui_ = playlists_ui_->get_currently_visible_playlist_ui();
+	if (playlist_ui_ == 0)
 	{
 		QMessageBox::warning(this, "Cannot start playback", "No playlist present in the user interface - cannot playback anything");
 		return;
 	}
 
-	playlist_entry_ui_->play_selected();
+	playlist_ui_->play_selected();
 }
 
 
@@ -153,9 +153,9 @@ void main_window::show_settings()
 
 	// in case of the singleplay playlist, fill the combobox with the playlist names
 	settings_dialog_ui.singleplay_playlist->clear();
-	BOOST_FOREACH(playlists_t::playlist_entry_t const &entry, playlists_ui_->get_playlists().get_entries())
+	BOOST_FOREACH(playlists_t::playlist_ptr_t const &playlist_, playlists_ui_->get_playlists().get_playlists())
 	{
-		settings_dialog_ui.singleplay_playlist->addItem(boost::get < 0 > (entry).c_str());
+		settings_dialog_ui.singleplay_playlist->addItem(playlist_->get_name().c_str());
 	}
 	settings_dialog_ui.singleplay_playlist->setEditText(settings_->get_singleplay_playlist()); // and set the current singleplay playlist namie
 

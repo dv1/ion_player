@@ -21,6 +21,7 @@ class playlist
 {
 public:
 	typedef boost::signals2::signal < void(uri_set_t const &uris, bool const before) > resource_event_signal_t;
+	typedef boost::signals2::signal < void(std::string const &new_name) > playlist_renamed_signal_t;
 	typedef boost::fusion::vector2 < ion::uri, metadata_t > entry_t;
 	typedef uint64_t index_t;
 	typedef boost::optional < index_t > index_optional_t;
@@ -33,6 +34,8 @@ public:
 	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }
 	inline resource_event_signal_t & get_resource_metadata_changed_signal() { return resource_metadata_changed_signal; }
 
+	inline playlist_renamed_signal_t & get_playlist_renamed_signal() { return playlist_renamed_signal; }
+
 	virtual metadata_optional_t get_metadata_for(uri const &uri_) const = 0;
 	virtual uri_optional_t get_preceding_uri(uri const &uri_) const = 0;
 	virtual uri_optional_t get_succeeding_uri(uri const &uri_) const = 0;
@@ -43,9 +46,19 @@ public:
 	virtual entry_t const * get_entry(uri const &uri_) const = 0;
 	virtual index_optional_t get_entry_index(uri const &uri_) const = 0;
 
+	std::string const & get_name() const { return name; }
+
+	void set_name(std::string const &new_name)
+	{
+		name = new_name;
+		playlist_renamed_signal(name);
+	}
+
 
 protected:
 	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
+	playlist_renamed_signal_t playlist_renamed_signal;
+	std::string name;
 };
 
 
@@ -53,6 +66,18 @@ protected:
 
 namespace
 {
+
+
+inline std::string const & get_name(playlist const &playlist_)
+{
+	return playlist_.get_name();
+}
+
+
+inline void set_name(playlist &playlist_, std::string const &new_name)
+{
+	playlist_.set_name(new_name);
+}
 
 
 inline playlist::resource_event_signal_t & get_resource_added_signal(playlist &playlist_)
