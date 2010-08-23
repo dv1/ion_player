@@ -63,6 +63,8 @@ protected:
 	unsigned int src_frequency, src_num_channels;
 	source_ptr_t source_;
 	mpg123_handle *mpg123_handle_;
+	mpg123_id3v1 *id3v1_data;
+	mpg123_id3v2 *id3v2_data;
 	buffer_t in_buffer, out_buffer;
 	long current_volume;
 	unsigned long const in_buffer_size, out_buffer_pad_size;
@@ -77,6 +79,9 @@ class mpg123_decoder_creator:
 	public decoder_creator
 {
 public:
+	explicit mpg123_decoder_creator();
+	~mpg123_decoder_creator();
+
 	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback);
 	virtual std::string get_type() const { return "mpg123"; }
 };

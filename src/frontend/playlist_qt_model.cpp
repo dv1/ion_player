@@ -99,15 +99,17 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 		{
 			switch (index.column())
 			{
-				case 0: return QString(get_metadata_value < std::string > (entry->metadata, "artist", "").c_str());
-				case 1: return QString(get_metadata_value < std::string > (entry->metadata, "album", "").c_str());
+				case 0: return QString::fromUtf8(get_metadata_value < std::string > (entry->metadata, "artist", "").c_str());
+				case 1: return QString::fromUtf8(get_metadata_value < std::string > (entry->metadata, "album", "").c_str());
 				case 2:
 				{
 					std::string title = get_metadata_value < std::string > (entry->metadata, "title", "");
 					if (title.empty())
-						title = entry->uri_.get_basename();
-
-					return QString(title.c_str());
+					{
+						return QString(entry->uri_.get_basename().c_str());
+					}
+					else
+						return QString::fromUtf8(title.c_str());
 				}
 				case 3:
 				{

@@ -29,7 +29,7 @@ public:
 	};
 
 
-	explicit dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize);
+	explicit dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize, metadata_t const &initial_metadata);
 	~dumb_decoder();
 
 
@@ -92,6 +92,8 @@ class dumb_decoder_creator:
 	public decoder_creator
 {
 public:
+	explicit dumb_decoder_creator();
+
 	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback);
 	virtual std::string get_type() const { return "dumb"; }
 };

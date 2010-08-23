@@ -10,47 +10,17 @@ namespace backend
 {
 
 
-namespace
-{
-
-int mpg123_refcount = 0;
-
-void mpg123_increment()
-{
-	if (mpg123_refcount == 0)
-	{
-		mpg123_init();
-	}
-
-	++mpg123_refcount;
-}
-
-void mpg123_decrement()
-{
-	--mpg123_refcount;
-
-	if (mpg123_refcount == 0)
-	{
-		mpg123_exit();
-	}
-}
-
-}
-
-
 mpg123_decoder::mpg123_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
 	decoder(send_command_callback),
 	source_(source_),
 	mpg123_handle_(0),
+	id3v1_data(0),
+	id3v2_data(0),
 	current_volume(16777215),
 	in_buffer_size(16384),
 	out_buffer_pad_size(32768),
 	has_song_length(false)
 {
-	// First, increment the internal reference count, which calls the global mpg123 initializer if necessary
-	mpg123_increment();
-
-
 	// Misc checks & initializations
 
 	if (!source_)
@@ -176,6 +146,18 @@ mpg123_decoder::mpg123_decoder(send_command_callback_t const send_command_callba
 		mpg123_handle_ = 0;
 		return;
 	}
+
+
+	// Set the pointers for ID3 data
+	{
+		last_read_return_value = mpg123_id3(mpg123_handle_, &id3v1_data, &id3v2_data);
+		if (last_read_return_value == MPG123_ERR)
+		{
+			mpg123_delete(mpg123_handle_);
+			mpg123_handle_ = 0;
+			return;
+		}
+	}
 }
 
 
@@ -185,8 +167,6 @@ mpg123_decoder::~mpg123_decoder()
 	
 	if (mpg123_handle_ != 0)
 		mpg123_delete(mpg123_handle_);
-
-	mpg123_decrement();
 }
 
 
@@ -268,12 +248,6 @@ long mpg123_decoder::set_current_volume(long const new_volume)
 	mpg123_volume(mpg123_handle_, double(new_volume) / double(max_volume()));
 	current_volume = new_volume;
 
-/*	{
-		double base_, really_, rva_db_;
-		mpg123_getvolume(mpg123_handle_, &base_, &really_, &rva_db_);
-		std::cout << "mpg123_decoder::set_current_volume: " << base_ << ' ' << really_ << ' ' << rva_db_ << std::endl;
-	}*/
-
 	return current_volume;
 }
 
@@ -284,10 +258,63 @@ long mpg123_decoder::get_current_volume() const
 }
 
 
+namespace
+{
+
+void set_metadata_from_mpg123_string(metadata_t &metadata_, char const *field_name, mpg123_string *string_)
+{
+	if (string_ != 0)
+	{
+		if ((string_->p != 0) && (string_->fill >= 1))
+			set_metadata_value(metadata_, field_name, std::string(string_->p, string_->fill - 1));
+	}
+}
+
+template < typename T >
+void set_metadata_from_id3v1_string(metadata_t &metadata_, char const *field_name, T const &t)
+{
+	// not using strlen() here, since it does not allow for a hard limit; strnlen() is not standardized
+	unsigned int length = 0;
+	for (char const *c = &t[0]; length < sizeof(T); ++c, ++length)
+	{
+		if (c == 0)
+			break;
+	}
+
+	if (length > 0)
+		set_metadata_value(metadata_, field_name, std::string(&t[0], length));
+	else
+		set_metadata_value(metadata_, field_name, "");
+}
+
+}
+
+
 metadata_t mpg123_decoder::get_metadata() const
 {
-	// TODO
-	return empty_metadata();
+	metadata_t metadata_ = empty_metadata();
+
+	// NOTE: not using can_playback() here, since it is valid to call get_songinfo() without any playback going on
+	if (is_initialized())
+	{
+		if (id3v2_data != 0)
+		{
+			set_metadata_from_mpg123_string(metadata_, "title", id3v2_data->title);
+			set_metadata_from_mpg123_string(metadata_, "artist", id3v2_data->artist);
+			set_metadata_from_mpg123_string(metadata_, "album", id3v2_data->album);
+			set_metadata_from_mpg123_string(metadata_, "year", id3v2_data->year);
+			set_metadata_from_mpg123_string(metadata_, "genre", id3v2_data->genre);
+		}
+		else if (id3v1_data != 0)
+		{
+			set_metadata_from_id3v1_string(metadata_, "title", id3v1_data->title);
+			set_metadata_from_id3v1_string(metadata_, "artist", id3v1_data->artist);
+			set_metadata_from_id3v1_string(metadata_, "album", id3v1_data->album);
+			set_metadata_from_id3v1_string(metadata_, "year", id3v1_data->year);
+		}
+	}
+
+	return metadata_;
 }
 
 
@@ -406,6 +433,18 @@ unsigned int mpg123_decoder::update(void *dest, unsigned int const num_samples_t
 }
 
 
+
+
+mpg123_decoder_creator::mpg123_decoder_creator()
+{
+	mpg123_init();
+}
+
+
+mpg123_decoder_creator::~mpg123_decoder_creator()
+{
+	mpg123_exit();
+}
 
 
 decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)

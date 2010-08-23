@@ -42,6 +42,7 @@ std::string const & empty_metadata_string();
 bool is_valid(metadata_t const &metadata);
 metadata_optional_t parse_metadata(std::string const &metadata_str);
 std::string get_metadata_string(metadata_t const &metadata);
+bool has_metadata_value(metadata_t const &metadata, std::string const &value_name);
 
 
 

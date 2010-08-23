@@ -38,7 +38,7 @@ void read_module_impl(DUH* &duh, std::vector < uint8_t > &data, dumb_read_functi
 }
 
 
-DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type const module_type_)
+DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type &module_type_)
 {
 	std::vector < uint8_t > data;
 
@@ -67,11 +67,14 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 	{
 		BOOST_FOREACH(read_funcs_t::value_type &value, read_funcs)
 		{
-			if (module_type_ == value.first)
+			if (module_type_ != value.first)
 			{
 				read_module_impl(duh, data, value.second);
 				if (duh != 0)
+				{
+					module_type_ = value.first;
 					return duh;
+				}
 			}
 		}
 	}
@@ -85,7 +88,7 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 
 
 
-dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize):
+dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize, metadata_t const &initial_metadata):
 	decoder(send_command_callback),
 	duh(0),
 	duh_sigrenderer(0),
@@ -99,9 +102,16 @@ dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, 
 	loop_data_.loop_mode = -1;
 	loop_data_.cur_num_loops = 0;
 
-	// TODO: put these global initializations in a static function with refcounting
-	dumb_resampling_quality = DUMB_RQ_CUBIC;
-	dumb_it_max_to_mix = 256;
+	// retrieve the format from the metadata if present (MOD/S3M/XM/IT/...), to allow for quicker loading
+	// (if the format is not present, the code needs to test what module type it is)
+	if (has_metadata_value(initial_metadata, "dumb_module_type"))
+	{
+		std::string type_str = get_metadata_value < std::string > (initial_metadata, "dumb_module_type", "");
+		if (type_str == "mod") module_type_ = dumb_decoder::module_type_mod;
+		else if (type_str == "s3m") module_type_ = dumb_decoder::module_type_s3m;
+		else if (type_str == "xm") module_type_ = dumb_decoder::module_type_xm;
+		else if (type_str == "it") module_type_ = dumb_decoder::module_type_it;
+	}
 
 	if (test_if_module_file())
 		duh = read_module(*source_, filesize, module_type_);
@@ -199,6 +209,22 @@ metadata_t dumb_decoder::get_metadata() const
 		set_metadata_value(metadata_, "title", title);
 	else
 		set_metadata_value(metadata_, "title", "");
+
+	{
+		std::string type_str;
+
+		switch (module_type_)
+		{
+			case module_type_mod: type_str = "mod"; break;
+			case module_type_s3m: type_str = "s3m"; break;
+			case module_type_xm: type_str = "xm"; break;
+			case module_type_it: type_str = "it"; break;
+			default: break;
+		}
+
+		if (!type_str.empty())
+			set_metadata_value(metadata_, "dumb_module_type", type_str);
+	}
 
 	return metadata_;
 }
@@ -394,6 +420,13 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 
 
 
+dumb_decoder_creator::dumb_decoder_creator()
+{
+	dumb_resampling_quality = DUMB_RQ_CUBIC;
+	dumb_it_max_to_mix = 256;
+}
+
+
 decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
@@ -401,8 +434,7 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 	if (filesize < 0)
 		return decoder_ptr_t();
 
-	// TODO: use metadata to determine the format (MOD/S3M/XM/IT/...)
-	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize);
+	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, metadata);
 	if (!dumb_decoder_->is_initialized())
 	{
 		delete dumb_decoder_;
