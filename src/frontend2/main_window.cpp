@@ -14,6 +14,7 @@
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
 #include "misc_types.hpp"
+#include "scanner.hpp"
 
 #include "../backend/decoder.hpp"
 
@@ -84,7 +85,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
 
-	audio_frontend_->get_current_uri_changed_signal().connect(boost::lambda::bind(&playlists_ui::current_uri_changed, playlists_ui_, boost::lambda::_1));
 	if (!load_playlists())
 	{
 		playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
@@ -188,21 +188,29 @@ void main_window::show_settings()
 
 void main_window::set_current_position()
 {
+	int new_position = position_volume_widget_ui.position->value();
+	audio_frontend_->set_current_position(new_position);
 }
 
 
 void main_window::set_current_volume()
 {
+	int new_volume = position_volume_widget_ui.volume->value();
+	audio_frontend_->set_current_volume(new_volume);
 }
 
 
 void main_window::open_backend_filepath_filedialog()
 {
+	QString backend_filepath = QFileDialog::getOpenFileName(this, "Select backend", "");
+	settings_dialog_ui.backend_filepath->setText(backend_filepath);
 }
 
 
 void main_window::create_new_playlist()
 {
+	playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
+	playlists_ui_->get_playlists().add_playlist("New playlist", new_playlist);
 }
 
 
@@ -218,6 +226,20 @@ void main_window::delete_playlist()
 
 void main_window::add_file_to_playlist()
 {
+	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	if (currently_visible_playlist == 0)
+	{
+		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot add a file");
+		return;
+	}
+
+	QStringList song_filenames = QFileDialog::getOpenFileNames(this, QString("Add song to the playlist \"%1\"").arg(currently_visible_playlist->get_name().c_str()), "");
+
+	BOOST_FOREACH(QString const &filename, song_filenames)
+	{
+		ion::uri uri_(std::string("file://") + filename.toStdString());
+		scanner_->start_scan(*currently_visible_playlist, uri_);
+	}
 }
 
 
@@ -238,6 +260,17 @@ void main_window::remove_selected_from_playlist()
 
 void main_window::try_read_stdout_line()
 {
+	if (backend_process == 0)
+		return;
+	if (!audio_frontend_)
+		return;
+
+	while (backend_process->canReadLine())
+	{
+		QString line = backend_process->readLine().trimmed();
+		std::cerr << "backend stdout> " << line.toStdString() << std::endl;
+		audio_frontend_->parse_incoming_line(line.toStdString());
+	}
 }
 
 
@@ -258,30 +291,105 @@ void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_stat
 
 void main_window::get_current_playback_position()
 {
+	audio_frontend_->issue_get_position_command();
+	unsigned int current_position = audio_frontend_->get_current_position();
+	position_volume_widget_ui.position->setValue(current_position);
 }
 
 
 void main_window::start_backend()
 {
+	stop_backend();
+
+	QString backend_filepath = settings_->get_backend_filepath();
+
+	scanner_ = new scanner(this, backend_filepath);
+	backend_process = new QProcess(this);
+	backend_process->start(backend_filepath);
+	backend_process->waitForStarted(30000);
+	if (backend_process->state() == QProcess::NotRunning)
+	{
+		delete backend_process;
+		backend_process = 0;
+		main_window_ui.central_pages->setCurrentWidget(main_window_ui.backend_not_configured_page);
+	}
+	else
+	{
+		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
+
+		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
+		connect(backend_process, SIGNAL(started()),                           this, SLOT(backend_started()));
+		connect(backend_process, SIGNAL(error(QProcess::ProcessError)),       this, SLOT(backend_error(QProcess::ProcessError)));
+		connect(backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(backend_finished(int, QProcess::ExitStatus)));
+		backend_process->setReadChannel(QProcess::StandardOutput);
+		backend_process->setProcessChannelMode(QProcess::SeparateChannels);
+	}
 }
 
 
 void main_window::stop_backend()
 {
+	if (backend_process == 0)
+		return;
+
+	print_backend_line("quit");
+	backend_process->waitForFinished(30000);
+	if (backend_process->state() != QProcess::NotRunning)
+	{
+		backend_process->terminate();
+		std::cerr << "sending backend the TERM signal" << std::endl;
+	}
+	backend_process->waitForFinished(30000);
+	if (backend_process->state() != QProcess::NotRunning)
+	{
+		backend_process->kill();
+		std::cerr << "sending backend the KILL signal" << std::endl;
+	}
+
+	// NOTE: backend_process is deleted and then immediately set to 0. It is NOT set to 0 after scanner_ has been deleted.
+	// This avoids a bug where try_read_stdout_line() is called after the backend process has been deleted
+	// (try_read_stdout_line() is called afterwards because Qt signal-slot calls do not have to happen immediately; they may be marshaled to the main loop)
+	delete backend_process;
+	backend_process = 0;
+
+	delete scanner_;
+	scanner_ = 0;
 }
 
 
 void main_window::change_backend()
 {
+	/*
+	1. make a snapshot of the current playback (current volume, position, uri)
+	2. disable gui
+	3. disconnect playlists from the backend
+	4. send "quit" to the backend
+	5. wait a while, if it doesnt quit, send TERM
+	6. wait a while, if it doesnt terminate, send KILL
+	7. start new process; if successful, re-enable gui
+	8. resume playback if possible
+	*/
+
+	// TODO: make playback snapshot
+	stop_backend();
+	start_backend();
+	// TODO: resume playback
 }
 
 
 void main_window::print_backend_line(std::string const &line)
 {
+	if (backend_process != 0)
+	{
+		std::cerr << "backend stdin> " << line << std::endl;
+		backend_process->write((line + "\n").c_str());
+	}
 }
+
 
 std::string main_window::get_playlists_filename()
 {
+	return QFileInfo(settings_->fileName()).canonicalPath().toStdString() + "/playlists.json";
 }
 
 
@@ -311,11 +419,29 @@ void main_window::apply_flags()
 
 void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 {
+	if (new_current_uri)
+		get_current_position_timer->start();
+	else
+		get_current_position_timer->stop();
+	position_volume_widget_ui.position->setValue(0);
 }
 
 
 void main_window::current_metadata_changed(metadata_optional_t const &new_metadata)
 {
+	if (new_metadata)
+	{
+		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
+
+		if (num_ticks)
+		{
+			position_volume_widget_ui.position->setEnabled(true);
+			position_volume_widget_ui.position->setRange(0, num_ticks);
+			return;
+		}
+	}
+
+	position_volume_widget_ui.position->setEnabled(false);
 }
 
 

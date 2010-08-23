@@ -177,14 +177,16 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 
 void playlist_qt_model::entries_added(uri_set_t const uris, bool const before)
 {
-	if (before)
+	/*if (before)
 	{
 		index_pair_optional_t indices = get_min_max_indices_from(uris);
 		if (indices)
 			beginInsertRows(QModelIndex(), boost::fusion::at_c < 0 > (*indices), boost::fusion::at_c < 1 > (*indices));
 	}
 	else
-		endInsertRows();
+		endInsertRows();*/
+	if (!before)
+		reset();
 }
 
 
@@ -228,7 +230,7 @@ playlist_qt_model::index_pair_optional_t playlist_qt_model::get_min_max_indices_
 			if (indices)
 			{
 				boost::fusion::at_c < 0 > (*indices) = std::min(boost::fusion::at_c < 0 > (*indices), *uri_index);
-				boost::fusion::at_c < 1 > (*indices) = std::min(boost::fusion::at_c < 1 > (*indices), *uri_index);
+				boost::fusion::at_c < 1 > (*indices) = std::max(boost::fusion::at_c < 1 > (*indices), *uri_index);
 			}
 			else
 				indices = index_pair_t(*uri_index, *uri_index);

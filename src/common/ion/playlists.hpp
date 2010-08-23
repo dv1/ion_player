@@ -34,7 +34,7 @@ public:
 protected:
 	struct get_from_ptr
 	{
-		typedef playlist_t* result_type;
+		typedef playlist_t const * result_type;
 
 		result_type operator()(playlist_ptr_t ptr) const
 		{
@@ -81,8 +81,8 @@ public:
 	void remove_playlist(playlist_t const &playlist_to_be_removed)
 	{
 		ordered_t &ordered = playlists_.template get < ordered_tag > ();
-		typename ordered_t::iterator iter = ordered.find(playlist_to_be_removed);
-		playlist_removed_signal(*iter);
+		typename ordered_t::iterator iter = ordered.find(&playlist_to_be_removed);
+		playlist_removed_signal(*(*iter));
 		ordered.erase(iter);
 	}
 

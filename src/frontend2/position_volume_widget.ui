@@ -21,7 +21,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QSlider" name="position">
+    <widget class="ion::frontend::direct_slider" name="position">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>2</horstretch>
@@ -34,7 +34,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QSlider" name="volume">
+    <widget class="ion::frontend::direct_slider" name="volume">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -48,6 +48,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ion::frontend::direct_slider</class>
+   <extends>QSlider</extends>
+   <header>direct_slider.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
