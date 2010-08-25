@@ -436,6 +436,7 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 		if (num_ticks)
 		{
 			position_volume_widget_ui.position->setEnabled(true);
+			position_volume_widget_ui.position->setValue(0);
 			position_volume_widget_ui.position->setRange(0, num_ticks);
 			return;
 		}

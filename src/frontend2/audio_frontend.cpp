@@ -85,6 +85,8 @@ void audio_frontend::parse_command(std::string const &event_command_name, params
 	}
 	else if (event_command_name == "resumed")
 		paused = false;
+	else if (event_command_name == "transition")
+		current_position = 0;
 	else if ((event_command_name == "started") || (event_command_name == "stopped") || (event_command_name == "resource_finished"))
 	{
 		paused = false;
