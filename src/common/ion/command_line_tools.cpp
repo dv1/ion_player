@@ -35,7 +35,8 @@ void split_command_line(std::string const &line, std::string &command, params_t 
 		{
 			switch (char_)
 			{
-				case '\\': // \ (backslash) is the escape symbol -> switch to escape mode, do not add this backslash to the current parameter
+				case '\\': // \ (backslash) is the escape symbol -> switch to escape mode, add this backslash to the current parameter
+				           // (the escape mode exists here to avoid running into problems if the parameters contain an escaped quote)
 					param += "\\";
 					escaping = true;
 					break;
@@ -88,6 +89,7 @@ param_t escape_param(param_t const &unescaped_param)
 		// Go through each character, and escape it if necessary
 		switch (char_)
 		{
+			case '\\': result += "\\\\"; break;
 			case '"': result += "\\\""; break;
 			case '\n': result += "\\n"; break;
 			case '\r': result += "\\r"; break;

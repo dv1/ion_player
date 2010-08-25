@@ -14,9 +14,34 @@ int test_main(int, char **)
 	}
 
 	{
+		std::string input("A\\\"B"), expected_output("A\\\\\\\"B");
+		std::string actual_output = ion::escape_param(input);
+		TEST_ASSERT(actual_output == expected_output, "Expected [[ " << expected_output << " ]] got [[ " << actual_output << " ]]");
+	}
+
+	{
+		std::string input("A\\\\B\\nC"), expected_output("A\\B\nC");
+		std::string actual_output = ion::unescape_param(input);
+		TEST_ASSERT(actual_output == expected_output, "Expected [[ " << expected_output << " ]] got [[ " << actual_output << " ]]");
+	}
+
+	{
 		std::string input("A\\\"B\\nC\\rD\\\"\\n\\rE"), expected_output("A\"B\nC\rD\"\n\rE");
 		std::string actual_output = ion::unescape_param(input);
 		TEST_ASSERT(actual_output == expected_output, "Expected [[ " << expected_output << " ]] got [[ " << actual_output << " ]]");
+	}
+
+	{
+		std::string line("metadata \"file:///foo\" \"{\\n   \\\"decoder_type\\\" : \\\"mpg123\\\",\\n   \\\"num_ticks\\\" : 6086990,\\n   \\\"num_ticks_per_second\\\" : 44100,\\n   \\\"title\\\" : \\\"moo2.mp3\\\"\\n}\\n\"");
+
+		std::string split_command;
+		ion::params_t split_params;
+		ion::split_command_line(line, split_command, split_params);
+
+		TEST_VALUE(split_command, "metadata");
+		TEST_VALUE(split_params.size(), 2);
+		TEST_VALUE(split_params[0], "file:///foo");
+		TEST_VALUE(split_params[1], "{\n   \"decoder_type\" : \"mpg123\",\n   \"num_ticks\" : 6086990,\n   \"num_ticks_per_second\" : 44100,\n   \"title\" : \"moo2.mp3\"\n}\n");
 	}
 
 	{
