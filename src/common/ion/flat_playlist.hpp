@@ -65,6 +65,7 @@ public:
 	void add_entry(entry_t entry_, bool const emit_signal = true);
 	void remove_entry(entry_t const &entry_, bool const emit_signal = true);
 	void remove_entry(uri const &uri_, bool const emit_signal = true);
+	void remove_entries(uri_set_t const &uris, bool const emit_signal = true);
 	void set_resource_metadata(uri const &uri_, metadata_t const & new_metadata);
 
 

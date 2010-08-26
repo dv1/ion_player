@@ -274,6 +274,14 @@ void main_window::add_url_to_playlist()
 
 void main_window::remove_selected_from_playlist()
 {
+	playlist_ui *playlist_ui_ = playlists_ui_->get_currently_visible_playlist_ui();
+	if (playlist_ui_ == 0)
+	{
+		QMessageBox::warning(this, "Cannot remove items", "No playlist present in the user interface - cannot remove anything");
+		return;
+	}
+
+	playlist_ui_->remove_selected();
 }
 
 

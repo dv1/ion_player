@@ -164,19 +164,29 @@ void flat_playlist::remove_entry(entry_t const &entry_, bool const emit_signal)
 
 void flat_playlist::remove_entry(uri const &uri_, bool const emit_signal)
 {
-	entries_by_uri_t &entries_by_uri = entries.get < uri_tag > ();
-	entries_by_uri_t::iterator uri_tag_iter = get_uri_iterator_for(uri_);
+	remove_entries(boost::assign::list_of(uri_), emit_signal);
+}
 
-	if (uri_tag_iter == entries_by_uri.end())
-		return;
+
+void flat_playlist::remove_entries(uri_set_t const &uris, bool const emit_signal)
+{
+	if (emit_signal)
+		resource_removed_signal(uris, true);
+
+	BOOST_FOREACH(ion::uri const &uri_, uris)
+	{
+		entries_by_uri_t &entries_by_uri = entries.get < uri_tag > ();
+		entries_by_uri_t::iterator uri_tag_iter = get_uri_iterator_for(uri_);
+
+		if (uri_tag_iter != entries_by_uri.end())
+		{
+			std::cout << uri_.get_full() << std::endl;
+			entries_by_uri.erase(uri_tag_iter);
+		}
+	}
 
 	if (emit_signal)
-		resource_removed_signal(boost::assign::list_of(uri_), true);
-
-	entries_by_uri.erase(uri_tag_iter);
-
-	if (emit_signal)
-		resource_removed_signal(boost::assign::list_of(uri_), false);
+		resource_removed_signal(uris, false);
 }
 
 

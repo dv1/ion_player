@@ -66,19 +66,17 @@ void playlist_ui::play_selected()
 
 void playlist_ui::remove_selected()
 {
-	std::vector < ion::uri > uris_to_be_removed;
+	//std::vector < ion::uri > uris_to_be_removed;
+	uri_set_t uris_to_be_removed;
 
 	QModelIndexList selected_rows = view_widget->selectionModel()->selectedRows();
 	BOOST_FOREACH(QModelIndex const &index, selected_rows)
 	{
 		playlists_t::playlist_t::entry_t const *playlist_entry = playlist_.get_entry(index.row());
-		uris_to_be_removed.push_back(boost::fusion::at_c < 0 > (*playlist_entry));
+		uris_to_be_removed.insert(boost::fusion::at_c < 0 > (*playlist_entry));
 	}
 
-	BOOST_FOREACH(ion::uri const &uri_, uris_to_be_removed)
-	{
-		playlist_.remove_entry(uri_);
-	}
+	playlist_.remove_entries(uris_to_be_removed);
 }
 
 

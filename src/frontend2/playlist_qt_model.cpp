@@ -1,4 +1,5 @@
-#include <QIcon>
+#include <QApplication>
+#include <QFont>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/fusion/sequence/intrinsic/at.hpp>
@@ -85,22 +86,19 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 		}
 
 
-		case Qt::DecorationRole:
+		case Qt::FontRole:
 		{
-			switch (index.column())
+			if (current_uri)
 			{
-				case 0:
+				if ((&playlist_ == active_playlist) && (entry_uri == *current_uri))
 				{
-					if (current_uri)
-					{
-						if ((&playlist_ == active_playlist) && (entry_uri == *current_uri))
-							return QIcon(":/icons/play");
-					}
-
-					return QVariant();
+					QFont font = QApplication::font();
+					font.setBold(true);
+					return font;
 				}
-				default: return QVariant();
 			}
+			else
+				return QVariant();
 
 			break;
 		}
@@ -177,29 +175,25 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 
 void playlist_qt_model::entries_added(uri_set_t const uris, bool const before)
 {
-	/*if (before)
+	if (uris.empty())
+		return;
+
+	if (before)
 	{
-		index_pair_optional_t indices = get_min_max_indices_from(uris);
-		if (indices)
-			beginInsertRows(QModelIndex(), boost::fusion::at_c < 0 > (*indices), boost::fusion::at_c < 1 > (*indices));
+		int start = rowCount(QModelIndex());
+		int end = start + uris.size() - 1;
+		beginInsertRows(QModelIndex(), start, end);
 	}
 	else
-		endInsertRows();*/
-	if (!before)
-		reset();
+		endInsertRows();
 }
 
 
-void playlist_qt_model::entries_removed(uri_set_t const uris, bool const before)
+void playlist_qt_model::entries_removed(uri_set_t const, bool const before)
 {
-	if (before)
-	{
-		index_pair_optional_t indices = get_min_max_indices_from(uris);
-		if (indices)
-			beginRemoveRows(QModelIndex(), boost::fusion::at_c < 0 > (*indices), boost::fusion::at_c < 1 > (*indices));
-	}
-	else
-		endRemoveRows();
+	// Using reset() instead of begin/endRemoveRows(), since the selection may be complex (that is, non-contiguous; example, 5 items, and 1 2 5 are selected)
+	if (!before)
+		reset();
 }
 
 
