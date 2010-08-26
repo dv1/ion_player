@@ -1,6 +1,7 @@
 #include <ctime>
 #include <cstdlib>
 
+#include <QDirIterator>
 #include <QTimer>
 #include <QFileInfo>
 #include <QFileDialog>
@@ -245,6 +246,24 @@ void main_window::add_file_to_playlist()
 
 void main_window::add_folder_contents_to_playlist()
 {
+	QString dir = QFileDialog::getExistingDirectory(this, "Select directory to scan", QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	if (dir.isNull())
+		return;
+
+	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	if (currently_visible_playlist == 0)
+	{
+		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot add a file");
+		return;
+	}
+
+	QDirIterator dir_iterator(dir, QDirIterator::Subdirectories);
+	while (dir_iterator.hasNext())
+	{
+		QString filename = dir_iterator.next();
+		ion::uri uri_(std::string("file://") + filename.toStdString());
+		scanner_->start_scan(*currently_visible_playlist, uri_);
+	}
 }
 
 

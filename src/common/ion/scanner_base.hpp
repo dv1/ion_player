@@ -119,8 +119,12 @@ protected:
 	}
 
 
-	void scanning_process_terminated()
+	void scanning_process_terminated(bool const continue_scanning)
 	{
+		current_playlist = 0;
+		if (continue_scanning)
+			init_scanning();
+
 		// TODO: implement crash handling (also mind multiple backend support!)
 	}
 

@@ -43,13 +43,13 @@ void backend::set_send_command_callback(send_command_callback_t const &new_send_
 }
 
 
-std::string backend::get_metadata(std::string const &uri_str)
+backend::metadata_str_optional_t backend::get_metadata(std::string const &uri_str)
 {
 	decoder_ptr_t temp_decoder = create_new_decoder(uri_str, "", empty_metadata());
 	if (temp_decoder)
 		return temp_decoder->get_metadata_str();
 	else
-		return empty_metadata_string();
+		return boost::none;
 }
 
 
@@ -163,12 +163,12 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 			response_command = "current_volume";
 			response_params.push_back(boost::lexical_cast < std::string > (current_volume));
 		}
-		else if (command == "get_metadata")
+		/*else if (command == "get_metadata")
 		{
 			DECODER_GUARD;
 			if (current_decoder)
 				exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_metadata_str,   current_decoder.get(), true), response_command, response_params);
-		}
+		}*/
 		else
 		{
 			response_command = "unknown_command";

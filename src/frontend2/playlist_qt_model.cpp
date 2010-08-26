@@ -111,15 +111,15 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 			metadata_t metadata = boost::fusion::at_c < 1 > (*entry);
 			switch (index.column())
 			{
-				case 0: return QString(get_metadata_value < std::string > (metadata, "artist", "").c_str());
-				case 1: return QString(get_metadata_value < std::string > (metadata, "album", "").c_str());
+				case 0: return QString::fromUtf8(get_metadata_value < std::string > (metadata, "artist", "").c_str());
+				case 1: return QString::fromUtf8(get_metadata_value < std::string > (metadata, "album", "").c_str());
 				case 2:
 				{
 					std::string title = get_metadata_value < std::string > (metadata, "title", "");
 					if (title.empty())
 						title = entry_uri.get_basename();
 
-					return QString(title.c_str());
+					return QString::fromUtf8(title.c_str());
 				}
 				case 3:
 				{

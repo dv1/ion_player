@@ -83,7 +83,7 @@ void scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
 	switch (exit_status)
 	{
 		case QProcess::NormalExit: scanning_process_finished(true); break;
-		case QProcess::CrashExit: scanning_process_terminated(); break;
+		case QProcess::CrashExit: scanning_process_terminated(true); break;
 	};
 }
 

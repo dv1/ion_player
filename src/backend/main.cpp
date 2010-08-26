@@ -1,5 +1,6 @@
 #include <boost/shared_ptr.hpp>
 #include <ion/backend_main_loop.hpp>
+#include <ion/resource_exceptions.hpp>
 #include "backend.hpp"
 #include "alsa_sink.hpp"
 #include "file_source.hpp"
@@ -103,8 +104,25 @@ int main(int argc, char **argv)
 
 			for (unsigned int i = 1; i < params.size(); ++i)
 			{
-				std::string const &url = params[i];
-				std::cout << ion::recombine_command_line("metadata", boost::assign::list_of(url)(backend_.get_metadata(url))) << std::endl;
+				try
+				{
+					std::string const &url = params[i];
+					ion::backend::backend::metadata_str_optional_t metadata_str = backend_.get_metadata(url);
+					if (metadata_str)
+						std::cout << ion::recombine_command_line("metadata", boost::assign::list_of(url)(*metadata_str)) << std::endl;
+				}
+				catch (ion::resource_not_found const &exc)
+				{
+					std::cout << ion::recombine_command_line("resource_not_found", boost::assign::list_of(exc.what())) << std::endl;
+				}
+				catch (ion::resource_corrupted const &exc)
+				{
+					std::cout << ion::recombine_command_line("resource_corrupted", boost::assign::list_of(exc.what())) << std::endl;
+				}
+				catch (ion::uri::invalid_uri const &exc)
+				{
+					std::cout << ion::recombine_command_line("invalid_uri", boost::assign::list_of(exc.what())) << std::endl;
+				}
 			}
 			break;
 		}
