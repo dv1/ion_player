@@ -42,7 +42,7 @@ def set_options(opt):
 	opt.recurse('src/backend')
 	opt.recurse('src/common')
 	opt.recurse('src/old_frontend')
-	opt.recurse('src/frontend2')
+	opt.recurse('src/frontend')
 
 
 def get_num_jobs():
@@ -85,7 +85,7 @@ def configure(conf):
 	conf.recurse('src/backend')
 	conf.recurse('src/common')
 	conf.recurse('src/old_frontend')
-	conf.recurse('src/frontend2')
+	conf.recurse('src/frontend')
 
 	# add debug variant
 	if 'debug' in conf.env['BUILD_VARIANTS']:
@@ -138,7 +138,7 @@ def build(bld):
 	bld.recurse('src/backend')
 	bld.recurse('src/common')
 	bld.recurse('src/old_frontend')
-	bld.recurse('src/frontend2')
+	bld.recurse('src/frontend')
 
 
 	# unit test utility functions
