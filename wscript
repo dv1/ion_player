@@ -41,7 +41,8 @@ def set_options(opt):
 	opt.add_option('--enable-extra-warnings', action='store_true', default='', help='enable warnings that are usually disabled')
 	opt.recurse('src/backend')
 	opt.recurse('src/common')
-	opt.recurse('src/frontend')
+	opt.recurse('src/old_frontend')
+	opt.recurse('src/frontend2')
 
 
 def get_num_jobs():
@@ -83,7 +84,8 @@ def configure(conf):
 	# sources
 	conf.recurse('src/backend')
 	conf.recurse('src/common')
-	conf.recurse('src/frontend')
+	conf.recurse('src/old_frontend')
+	conf.recurse('src/frontend2')
 
 	# add debug variant
 	if 'debug' in conf.env['BUILD_VARIANTS']:
@@ -135,7 +137,7 @@ def build(bld):
 
 	bld.recurse('src/backend')
 	bld.recurse('src/common')
-	bld.recurse('src/frontend')
+	bld.recurse('src/old_frontend')
 	bld.recurse('src/frontend2')
 
 

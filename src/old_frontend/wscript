@@ -12,7 +12,7 @@ def build(bld):
 	obj = bld(
 		features = ['cxx', 'cprogram'],
 		uselib = 'QTCORE QTGUI BUILDMODE STRICT',
-		target = 'ion_player',
+		target = 'ion_player_old',
 		uselib_local = 'ionplayer_common',
 		includes = '.'
 	)
