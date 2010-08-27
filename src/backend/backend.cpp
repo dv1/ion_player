@@ -43,7 +43,7 @@ void backend::set_send_command_callback(send_command_callback_t const &new_send_
 }
 
 
-backend::metadata_str_optional_t backend::get_metadata(std::string const &uri_str)
+decoder::metadata_str_optional_t backend::get_metadata(std::string const &uri_str)
 {
 	decoder_ptr_t temp_decoder = create_new_decoder(uri_str, "", empty_metadata());
 	if (temp_decoder)

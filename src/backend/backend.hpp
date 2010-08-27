@@ -24,7 +24,6 @@ public:
 	typedef decoder_creator::creators_t decoder_creators_t;
 	typedef sink_creator::creators_t    sink_creators_t;
 	typedef source_creator::creators_t  source_creators_t;
-	typedef boost::optional < std::string > metadata_str_optional_t;
 
 
 	explicit backend();
@@ -43,7 +42,7 @@ public:
 	// Retrieves metadata for the given resource.
 	// pre: the given uri must be valid. It does not matter if the same resource is currently being played.
 	// post: does not affect backend states.
-	metadata_str_optional_t get_metadata(std::string const &uri_str);
+	decoder::metadata_str_optional_t get_metadata(std::string const &uri_str);
 
 	void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
 

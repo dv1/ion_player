@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 				try
 				{
 					std::string const &url = params[i];
-					ion::backend::backend::metadata_str_optional_t metadata_str = backend_.get_metadata(url);
+					ion::backend::decoder::metadata_str_optional_t metadata_str = backend_.get_metadata(url);
 					if (metadata_str)
 						std::cout << ion::recombine_command_line("metadata", boost::assign::list_of(url)(*metadata_str)) << std::endl;
 				}

@@ -308,6 +308,17 @@ void main_window::backend_started()
 
 void main_window::backend_error(QProcess::ProcessError process_error)
 {
+	std::cerr << "BACKEND ERROR: ";
+	switch (process_error)
+	{
+		case QProcess::FailedToStart: std::cerr << "failed to start"; break;
+		case QProcess::Crashed: std::cerr << "crashed"; break;
+		case QProcess::Timedout: std::cerr << "timeout"; break;
+		case QProcess::WriteError: std::cerr << "write error"; break;
+		case QProcess::ReadError: std::cerr << "read error"; break;
+		default: std::cerr << "<unknown error>"; break;
+	}
+	std::cerr << std::endl;
 }
 
 
