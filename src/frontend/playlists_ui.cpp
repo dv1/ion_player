@@ -119,6 +119,12 @@ playlists_ui::playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_fronten
 playlists_ui::~playlists_ui()
 {
 	disconnect(&tab_widget, SIGNAL(tabCloseRequested(int)), this, SLOT(close_current_playlist(int)));
+
+	// deleting the uis explicitely, to ensure they are gone *before* the playlists_ instance is destroyed
+	BOOST_FOREACH(playlist_ui *ui, playlist_uis)
+	{
+		delete ui;
+	}
 }
 
 

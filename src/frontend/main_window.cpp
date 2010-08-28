@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QFileInfo>
 #include <QFileDialog>
+#include <QLabel>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
@@ -73,6 +74,19 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
 
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(open_backend_filepath_filedialog())); // TODO: better naming of the button
+
+	current_song_title = new QLabel(this);
+	current_playback_time = new QLabel(this);
+	current_song_length = new QLabel(this);
+	current_scan_status = new QLabel(this);
+	current_song_title->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	current_playback_time->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	current_song_length->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	current_scan_status->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+	main_window_ui.statusbar->addPermanentWidget(current_scan_status);
+	main_window_ui.statusbar->addPermanentWidget(current_song_title);
+	main_window_ui.statusbar->addPermanentWidget(current_playback_time);
+	main_window_ui.statusbar->addPermanentWidget(current_song_length);
 
 
 	get_current_position_timer = new QTimer(this);
@@ -197,6 +211,7 @@ void main_window::set_current_position()
 {
 	int new_position = position_volume_widget_ui.position->value();
 	audio_frontend_->set_current_position(new_position);
+	set_current_time_label(new_position);
 }
 
 
@@ -360,6 +375,8 @@ void main_window::get_current_playback_position()
 	audio_frontend_->issue_get_position_command();
 	unsigned int current_position = audio_frontend_->get_current_position();
 	position_volume_widget_ui.position->setValue(current_position);
+
+	set_current_time_label(current_position);
 }
 
 
@@ -522,18 +539,61 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 {
 	if (new_metadata)
 	{
-		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
+		std::string title = get_metadata_value < std::string > (*new_metadata, "title", "");
+		if (!title.empty())
+			current_song_title->setText(QString::fromUtf8(title.c_str()));
 
-		if (num_ticks)
+		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
+		current_num_ticks_per_second = get_metadata_value < unsigned int > (*new_metadata, "num_ticks_per_second", 0);
+
+		if (num_ticks > 0)
 		{
 			position_volume_widget_ui.position->setEnabled(true);
 			position_volume_widget_ui.position->setValue(0);
 			position_volume_widget_ui.position->setRange(0, num_ticks);
-			return;
+
+			if (current_num_ticks_per_second > 0)
+			{
+				unsigned int length_in_seconds = num_ticks / current_num_ticks_per_second;
+				unsigned int minutes = length_in_seconds / 60;
+				unsigned int seconds = length_in_seconds % 60;
+				set_label_time(current_playback_time, 0, 0);
+				set_label_time(current_song_length, minutes, seconds);
+			}
 		}
 	}
+	else
+	{
+		current_song_title->setText("");
+		current_song_length->setText("");
+		current_playback_time->setText("");
+		position_volume_widget_ui.position->setEnabled(false);
+	}
+}
 
-	position_volume_widget_ui.position->setEnabled(false);
+
+void main_window::set_current_time_label(unsigned int const current_position)
+{
+	if (current_num_ticks_per_second > 0)
+	{
+		unsigned int time_in_seconds = current_position / current_num_ticks_per_second;
+		unsigned int minutes = time_in_seconds / 60;
+		unsigned int seconds = time_in_seconds % 60;
+
+		set_label_time(current_playback_time, minutes, seconds);
+	}
+	else
+		current_playback_time->setText("");
+}
+
+
+void main_window::set_label_time(QLabel *label, int const minutes, int const seconds)
+{
+	label->setText(
+		QString("%1:%2")
+			.arg(minutes, 2, 10, QChar('0'))
+			.arg(seconds, 2, 10, QChar('0'))
+	);
 }
 
 

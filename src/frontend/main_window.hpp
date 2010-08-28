@@ -17,6 +17,9 @@
 #include "audio_frontend.hpp"
 
 
+class QLabel;
+
+
 namespace ion
 {
 namespace frontend
@@ -82,6 +85,9 @@ protected:
 	void current_uri_changed(uri_optional_t const &new_current_uri);
 	void current_metadata_changed(metadata_optional_t const &new_metadata);
 
+	void set_current_time_label(unsigned int const current_position);
+	void set_label_time(QLabel *label, int const minutes, int const seconds);
+
 
 	typedef boost::shared_ptr < audio_frontend > audio_frontend_ptr_t;
 	audio_frontend_ptr_t audio_frontend_;
@@ -93,6 +99,9 @@ protected:
 	playlists_ui *playlists_ui_;
 	settings *settings_;
 	QDialog *settings_dialog;
+
+	QLabel *current_song_title, *current_playback_time, *current_song_length, *current_scan_status;
+	unsigned int current_num_ticks_per_second;
 
 	Ui_main_window main_window_ui;
 	Ui_position_volume_widget position_volume_widget_ui;
