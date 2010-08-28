@@ -88,6 +88,10 @@ protected:
 };
 
 
+void load_from(flat_playlist &playlist_, Json::Value const &in_value);
+void save_to(flat_playlist const &playlist_, Json::Value &out_value);
+
+
 }
 
 

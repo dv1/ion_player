@@ -170,6 +170,14 @@ void playlists_ui::playlist_added(playlists_t::playlist_t &playlist_)
 
 void playlists_ui::playlist_removed(playlists_t::playlist_t &playlist_)
 {
+	BOOST_FOREACH(playlist_ui *ui, playlist_uis)
+	{
+		if (&(ui->get_playlist()) == &playlist_)
+		{
+			delete ui;
+			break;
+		}
+	}
 }
 
 

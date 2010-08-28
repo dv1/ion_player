@@ -1,5 +1,6 @@
 #include <ctime>
 #include <cstdlib>
+#include <fstream>
 
 #include <QDirIterator>
 #include <QTimer>
@@ -11,6 +12,10 @@
 
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/object/new.hpp>
+
+#include <json/reader.h>
+#include <json/writer.h>
 
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
@@ -89,7 +94,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	if (!load_playlists())
 	{
 		playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
-		playlists_ui_->get_playlists().add_playlist("Default", new_playlist);
+		set_name(*new_playlist, "Default");
+		playlists_ui_->get_playlists().add_playlist(new_playlist);
 	}
 
 
@@ -211,17 +217,39 @@ void main_window::open_backend_filepath_filedialog()
 void main_window::create_new_playlist()
 {
 	playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
-	playlists_ui_->get_playlists().add_playlist("New playlist", new_playlist);
+	set_name(*new_playlist, "New playlist");
+	playlists_ui_->get_playlists().add_playlist(new_playlist);
 }
 
 
 void main_window::rename_playlist()
 {
+	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	if (currently_visible_playlist == 0)
+	{
+		QMessageBox::warning(this, "Renaming playlist failed", "No playlist available - cannot rename");
+		return;
+	}
+
+	QString new_name = QInputDialog::getText(this, "New playlist name", QString("Type in new name for playlist \"%1\"").arg(currently_visible_playlist->get_name().c_str()), QLineEdit::Normal, currently_visible_playlist->get_name().c_str());
+	if (!new_name.isNull())
+		currently_visible_playlist->set_name(new_name.toStdString());
 }
 
 
 void main_window::delete_playlist()
 {
+	if (playlists_ui_->get_tab_widget().count() <= 1)
+		return;
+
+	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	if (currently_visible_playlist == 0)
+	{
+		QMessageBox::warning(this, "Removing playlist failed", "No playlist available - cannot remove");
+		return;
+	}
+
+	playlists_ui_->get_playlists().remove_playlist(*currently_visible_playlist);
 }
 
 
@@ -433,11 +461,36 @@ std::string main_window::get_playlists_filename()
 
 bool main_window::load_playlists()
 {
+	std::string playlists_filename = get_playlists_filename();
+	std::ifstream playlists_file(playlists_filename.c_str());
+
+	try
+	{
+		if (playlists_file.good())
+		{
+			Json::Value json_value;
+			playlists_file >> json_value;
+			load_from(playlists_ui_->get_playlists(), json_value, boost::phoenix::new_ < flat_playlist > ());
+			return true;
+		}
+	}
+	catch (std::runtime_error const &)
+	{
+	}
+
+	return false;
 }
 
 
 void main_window::save_playlists()
 {
+	Json::Value json_value;
+	save_to(playlists_ui_->get_playlists(), json_value);
+
+	std::string playlists_filename = get_playlists_filename();
+
+	std::ofstream playlists_file(playlists_filename.c_str());
+	playlists_file << json_value;
 }
 
 

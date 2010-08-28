@@ -69,10 +69,9 @@ public:
 
 
 
-	void add_playlist(std::string const &playlist_name, playlist_ptr_t playlist_ptr)
+	void add_playlist(playlist_ptr_t playlist_ptr)
 	{
 		assert(playlist_ptr);
-		set_name(*playlist_ptr, playlist_name); // TODO: this is unnecessary - simply expect that the name has been set already - meaning that the playlist_name parameter is unnecessary as well
 		playlists_.push_back(playlist_ptr);
 		playlist_added_signal(*playlist_ptr);
 	}
@@ -120,6 +119,40 @@ protected:
 	playlist_t *active_playlist;
 	playlists_t playlists_;
 };
+
+
+namespace
+{
+
+template < typename Playlist, typename CreatePlaylistFunc >
+inline void load_from(playlists < Playlist > &playlists_, Json::Value const &in_value, CreatePlaylistFunc const &create_playlist_func)
+{
+	// TODO: clear out existing playlists
+
+	for (unsigned int index = 0; index < in_value.size(); ++index)
+	{
+		Json::Value json_entry = in_value[index];
+		typename playlists < Playlist > ::playlist_ptr_t new_playlist(create_playlist_func());
+		load_from(*new_playlist, json_entry);
+		playlists_.add_playlist(new_playlist);
+	}
+}
+
+
+template < typename Playlist >
+inline void save_to(playlists < Playlist > const &playlists_, Json::Value &out_value)
+{
+	out_value = Json::Value(Json::arrayValue);
+
+	BOOST_FOREACH(typename playlists < Playlist > ::playlist_ptr_t const &entry_, playlists_.get_playlists())
+	{
+		Json::Value playlist_value(Json::objectValue);
+		save_to(*entry_, playlist_value);
+		out_value.append(playlist_value);
+	}
+}
+
+}
 
 
 }

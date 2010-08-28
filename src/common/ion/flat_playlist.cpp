@@ -243,5 +243,49 @@ void flat_playlist::set_uri_id(uri &uri_, unique_ids_t::id_t const &new_id, bool
 }
 
 
+
+
+void load_from(flat_playlist &playlist_, Json::Value const &in_value)
+{
+	set_name(playlist_, in_value["name"].asString());
+
+	// TODO: clear existing contents from the playlist
+
+	Json::Value entries_value = in_value.get("entries", Json::Value(Json::objectValue));
+	for (unsigned int index = 0; index < entries_value.size(); ++index)
+	{
+		Json::Value json_entry = entries_value[index];
+
+		try
+		{
+			flat_playlist::entry_t entry_(ion::uri(json_entry["uri"].asString()), json_entry["metadata"]);
+			playlist_.add_entry(entry_, true);
+		}
+		catch (ion::uri::invalid_uri const &invalid_uri_)
+		{
+			std::cerr << "Detected invalid uri \"" << invalid_uri_.what() << '"' << std::endl;
+		}
+	}
+
+	// TODO: send a signal that the playlist's contents have changed entirely
+}
+
+
+void save_to(flat_playlist const &playlist_, Json::Value &out_value)
+{
+	out_value["name"] = playlist_.get_name();
+
+	Json::Value entries_value(Json::arrayValue);
+	BOOST_FOREACH(flat_playlist::entry_t const &entry_, playlist_.get_entry_range())
+	{
+		Json::Value entry_value(Json::objectValue);
+		entry_value["uri"] = boost::fusion::at_c < 0 > (entry_).get_full();
+		entry_value["metadata"] = boost::fusion::at_c < 1 > (entry_);
+		entries_value.append(entry_value);
+	}
+	out_value["entries"] = entries_value;
+}
+
+
 }
 
