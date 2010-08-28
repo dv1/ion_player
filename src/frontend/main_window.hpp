@@ -18,6 +18,7 @@
 
 
 class QLabel;
+class QMovie;
 
 
 namespace ion
@@ -66,6 +67,8 @@ protected slots:
 	void backend_error(QProcess::ProcessError process_error);
 	void backend_finished(int exit_code, QProcess::ExitStatus exit_status);
 
+	void scan_running(bool state);
+
 	void get_current_playback_position();
 
 
@@ -101,6 +104,7 @@ protected:
 	QDialog *settings_dialog;
 
 	QLabel *current_song_title, *current_playback_time, *current_song_length, *current_scan_status;
+	QMovie *busy_indicator;
 	unsigned int current_num_ticks_per_second;
 
 	Ui_main_window main_window_ui;

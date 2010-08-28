@@ -121,6 +121,8 @@ Use the settings button above to open the dialog window.</string>
    <addaction name="action_add_folder_contents"/>
    <addaction name="action_add_url"/>
    <addaction name="action_remove_selected"/>
+   <addaction name="separator"/>
+   <addaction name="action_find"/>
   </widget>
   <widget class="QToolBar" name="playlist_toolbar">
    <property name="windowTitle">
@@ -286,6 +288,15 @@ Use the settings button above to open the dialog window.</string>
    </property>
    <property name="text">
     <string>rename_playlist</string>
+   </property>
+  </action>
+  <action name="action_find">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/icons/find</normaloff>:/icons/find</iconset>
+   </property>
+   <property name="text">
+    <string>find</string>
    </property>
   </action>
  </widget>

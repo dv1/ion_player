@@ -38,6 +38,24 @@ scanner::~scanner()
 }
 
 
+void scanner::start_scan(playlist_t &playlist, ion::uri const &uri_to_be_scanned)
+{
+	if (scan_queue.empty())
+	{
+		emit scan_running(true);
+	}
+
+	base_t::start_scan(playlist, uri_to_be_scanned);
+	emit queue_updated();
+}
+
+
+scanner::scan_queue_t const & scanner::get_scan_queue() const
+{
+	return scan_queue;
+}
+
+
 bool scanner::is_process_running() const
 {
 	return (backend_process.state() != QProcess::NotRunning);
@@ -46,6 +64,8 @@ bool scanner::is_process_running() const
 
 void scanner::start_process(ion::uri const &uri_to_be_scanned)
 {
+	emit queue_updated();
+
 	backend_process.start(backend_filepath, (QStringList() << "-info" << uri_to_be_scanned.get_full().c_str()), QIODevice::ReadOnly);
 	backend_process.waitForStarted(30000);
 }
@@ -80,6 +100,11 @@ void scanner::started()
 
 void scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
 {
+	if (scan_queue.empty())
+	{
+		emit scan_running(false);
+	}
+
 	switch (exit_status)
 	{
 		case QProcess::NormalExit: scanning_process_finished(true); break;

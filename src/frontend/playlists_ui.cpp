@@ -176,11 +176,13 @@ void playlists_ui::playlist_added(playlists_t::playlist_t &playlist_)
 
 void playlists_ui::playlist_removed(playlists_t::playlist_t &playlist_)
 {
-	BOOST_FOREACH(playlist_ui *ui, playlist_uis)
+	for (playlist_uis_t::iterator iter = playlist_uis.begin(); iter != playlist_uis.end(); ++iter)
 	{
+		playlist_ui *ui = *iter;
 		if (&(ui->get_playlist()) == &playlist_)
 		{
 			delete ui;
+			playlist_uis.erase(iter);
 			break;
 		}
 	}

@@ -10,6 +10,8 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
+#include <QMovie>
+#include <QProcess>
 
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -74,6 +76,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
 
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(open_backend_filepath_filedialog())); // TODO: better naming of the button
+
+	busy_indicator = new QMovie(":/icons/busy_indicator", QByteArray(), this);
 
 	current_song_title = new QLabel(this);
 	current_playback_time = new QLabel(this);
@@ -370,6 +374,21 @@ void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_stat
 }
 
 
+void main_window::scan_running(bool state)
+{
+	if (state)
+	{
+		current_scan_status->setMovie(busy_indicator);
+		busy_indicator->start();
+	}
+	else
+	{
+		busy_indicator->stop();
+		current_scan_status->clear();
+	}
+}
+
+
 void main_window::get_current_playback_position()
 {
 	audio_frontend_->issue_get_position_command();
@@ -387,6 +406,8 @@ void main_window::start_backend()
 	QString backend_filepath = settings_->get_backend_filepath();
 
 	scanner_ = new scanner(this, backend_filepath);
+	connect(scanner_, SIGNAL(scan_running(bool)), this, SLOT(scan_running(bool)));
+
 	backend_process = new QProcess(this);
 	backend_process->start(backend_filepath);
 	backend_process->waitForStarted(30000);
