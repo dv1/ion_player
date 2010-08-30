@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QTimer>
+#include <QDirIterator>
 
 #include "ui_main_window.h"
 #include "ui_position_volume_widget.h"
@@ -15,6 +17,7 @@
 
 #include "settings.hpp"
 #include "audio_frontend.hpp"
+#include "misc_types.hpp"
 
 
 class QLabel;
@@ -71,6 +74,8 @@ protected slots:
 
 	void get_current_playback_position();
 
+	void scan_directory();
+
 
 protected:
 	void start_backend(bool const start_scanner = true);
@@ -97,7 +102,12 @@ protected:
 
 	QProcess *backend_process;
 	scanner *scanner_;
-	QTimer *get_current_position_timer;
+	QTimer *current_position_timer;
+	QTimer scan_directory_timer;
+
+	typedef boost::shared_ptr < QDirIterator > dir_iterator_ptr_t;
+	dir_iterator_ptr_t dir_iterator;
+	playlists_t::playlist_t *dir_iterator_playlist;
 
 	playlists_ui *playlists_ui_;
 	settings *settings_;

@@ -2,8 +2,6 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <QDirIterator>
-#include <QTimer>
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QLabel>
@@ -23,7 +21,6 @@
 
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
-#include "misc_types.hpp"
 #include "scanner.hpp"
 
 #include "../backend/decoder.hpp"
@@ -97,9 +94,12 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	main_window_ui.statusbar->addPermanentWidget(current_song_length);
 
 
-	get_current_position_timer = new QTimer(this);
-	get_current_position_timer->setInterval(1000);
-	connect(get_current_position_timer, SIGNAL(timeout()), this, SLOT(get_current_playback_position()));
+	current_position_timer = new QTimer(this);
+	current_position_timer->setInterval(1000);
+	connect(current_position_timer, SIGNAL(timeout()), this, SLOT(get_current_playback_position()));
+
+	scan_directory_timer.setSingleShot(false);
+	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory()));
 
 
 	audio_frontend_ = audio_frontend_ptr_t(new audio_frontend(boost::lambda::bind(&main_window::print_backend_line, this, boost::lambda::_1)));
@@ -127,6 +127,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 main_window::~main_window()
 {
+	dir_iterator = dir_iterator_ptr_t();
 	stop_backend();
 	save_playlists();
 	delete playlists_ui_;
@@ -297,24 +298,22 @@ void main_window::add_file_to_playlist()
 
 void main_window::add_folder_contents_to_playlist()
 {
-	QString dir = QFileDialog::getExistingDirectory(this, "Select directory to scan", QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-	if (dir.isNull())
+	if (dir_iterator)
 		return;
 
-	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
-	if (currently_visible_playlist == 0)
+	dir_iterator_playlist = playlists_ui_->get_currently_visible_playlist();
+	if (dir_iterator_playlist == 0)
 	{
 		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot add a file");
 		return;
 	}
 
-	QDirIterator dir_iterator(dir, QDirIterator::Subdirectories);
-	while (dir_iterator.hasNext())
-	{
-		QString filename = dir_iterator.next();
-		ion::uri uri_(std::string("file://") + filename.toStdString());
-		scanner_->start_scan(*currently_visible_playlist, uri_);
-	}
+	QString dir = QFileDialog::getExistingDirectory(this, "Select directory to scan", QString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	if (dir.isNull())
+		return;
+
+	dir_iterator = dir_iterator_ptr_t(new QDirIterator(dir, QDirIterator::Subdirectories));
+	scan_directory_timer.start(0);
 }
 
 
@@ -412,6 +411,26 @@ void main_window::get_current_playback_position()
 	position_volume_widget_ui.position->setValue(current_position);
 
 	set_current_time_label(current_position);
+}
+
+
+void main_window::scan_directory()
+{
+	if (!dir_iterator || !dir_iterator_playlist)
+		return;
+
+	if (dir_iterator->hasNext())
+	{
+		QString filename = dir_iterator->next();
+		ion::uri uri_(std::string("file://") + filename.toStdString());
+		scanner_->start_scan(*dir_iterator_playlist, uri_);
+	}
+	else
+	{
+		dir_iterator_playlist = 0;
+		dir_iterator = dir_iterator_ptr_t();
+		scan_directory_timer.stop();
+	}
 }
 
 
@@ -580,9 +599,9 @@ void main_window::apply_flags()
 void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 {
 	if (new_current_uri)
-		get_current_position_timer->start();
+		current_position_timer->start();
 	else
-		get_current_position_timer->stop();
+		current_position_timer->stop();
 	position_volume_widget_ui.position->setValue(0);
 }
 
