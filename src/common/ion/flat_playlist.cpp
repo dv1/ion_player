@@ -153,11 +153,6 @@ void flat_playlist::add_entry(entry_t entry_, bool const emit_signal)
 void flat_playlist::remove_entry(entry_t const &entry_, bool const emit_signal)
 {
 	ion::uri const &uri_ = boost::fusion::at_c < 0 > (entry_);
-
-	unique_id_optional_t id = get_uri_id(uri_);
-	if (id)
-		unique_ids_.erase(*id);
-
 	remove_entry(uri_, emit_signal);
 }
 
@@ -180,6 +175,10 @@ void flat_playlist::remove_entries(uri_set_t const &uris, bool const emit_signal
 
 		if (uri_tag_iter != entries_by_uri.end())
 		{
+			unique_id_optional_t id = get_uri_id(uri_);
+			if (id)
+				unique_ids_.erase(*id);
+
 			std::cout << uri_.get_full() << std::endl;
 			entries_by_uri.erase(uri_tag_iter);
 		}
