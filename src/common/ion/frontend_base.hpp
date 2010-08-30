@@ -191,12 +191,12 @@ public:
 		{
 			crash_count = 0;
 			backend_broken = false;
-			backend_type = current_backend_type;
+			current_backend_type = backend_type;
 		}
 
 		if (current_uri)
 		{
-			if (crash_count < 2)
+			if (crash_count < 3)
 			{
 				uri current_uri_ = *current_uri;
 				play(current_uri_);
@@ -214,7 +214,7 @@ public:
 
 	// not to be called if the backend exists normally
 	// returnvalue true => restart backend, false => do not restart backend
-	// If playback is running (= current_uri is valid), just return true. Otherwise, if there were 5 crashes or more, mark the backend as broken, and
+	// If playback is running (= current_uri is valid), just return true. Otherwise, if there were 5 crashes or more, mark the backend as broken (since it kept crashing while idling), and
 	// tell the caller not to restart this backend. Otherwise, tell the caller to restart it.
 	bool backend_terminated()
 	{
@@ -361,6 +361,15 @@ protected:
 	{
 		if (current_playlist == 0)
 			return;
+
+		// Reset the crash count if a different URI is to be played. New resource means a fresh try. Previous crashes of previous URIs must not affect playback.
+		if (current_uri)
+		{
+			if (*current_uri != current_uri_)
+			{
+				crash_count = 0;
+			}
+		}
 
 		current_uri = current_uri_;
 

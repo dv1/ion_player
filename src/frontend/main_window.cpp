@@ -12,6 +12,7 @@
 #include <QSystemTrayIcon>
 #include <QMovie>
 #include <QProcess>
+#include <QMetaType>
 
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -39,6 +40,9 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	scanner_(0)
 {
 	std::srand(std::time(0));
+
+	qRegisterMetaType < QProcess::ProcessError > ("QProcess::ProcessError");
+	qRegisterMetaType < QProcess::ExitStatus > ("QProcess::ExitStatus");
 
 	main_window_ui.setupUi(this);
 
@@ -350,27 +354,39 @@ void main_window::try_read_stdout_line()
 
 void main_window::backend_started()
 {
+	std::cerr << "Backend started." << std::endl;
+	audio_frontend_->backend_started("ion_audio");
 }
 
 
 void main_window::backend_error(QProcess::ProcessError process_error)
 {
+	bool restart = false, send_signals = true;
 	std::cerr << "BACKEND ERROR: ";
 	switch (process_error)
 	{
 		case QProcess::FailedToStart: std::cerr << "failed to start"; break;
-		case QProcess::Crashed: std::cerr << "crashed"; break;
+		case QProcess::Crashed: std::cerr << "crashed"; restart = true; send_signals = false; break;
 		case QProcess::Timedout: std::cerr << "timeout"; break;
-		case QProcess::WriteError: std::cerr << "write error"; break;
-		case QProcess::ReadError: std::cerr << "read error"; break;
+		case QProcess::WriteError: std::cerr << "write error"; restart = true; break;
+		case QProcess::ReadError: std::cerr << "read error"; restart = true; break;
 		default: std::cerr << "<unknown error>"; break;
 	}
 	std::cerr << std::endl;
+	audio_frontend_->backend_terminated();
+
+	if (restart)
+	{
+		std::cerr << "Restarting backend" << std::endl;
+		stop_backend(false, false, send_signals);
+		start_backend(false);
+	}
 }
 
 
 void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_status)
 {
+	std::cerr << "Backend finished." << std::endl;
 }
 
 
@@ -399,55 +415,67 @@ void main_window::get_current_playback_position()
 }
 
 
-void main_window::start_backend()
+void main_window::start_backend(bool const start_scanner)
 {
 	stop_backend();
 
 	QString backend_filepath = settings_->get_backend_filepath();
 
-	scanner_ = new scanner(this, backend_filepath);
-	connect(scanner_, SIGNAL(scan_running(bool)), this, SLOT(scan_running(bool)));
+	if (start_scanner)
+	{
+		scanner_ = new scanner(this, backend_filepath);
+		connect(scanner_, SIGNAL(scan_running(bool)), this, SLOT(scan_running(bool)));
+	}
 
 	backend_process = new QProcess(this);
+
+	{
+		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
+
+		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
+		connect(backend_process, SIGNAL(started()),                           this, SLOT(backend_started()), Qt::DirectConnection);
+		connect(backend_process, SIGNAL(error(QProcess::ProcessError)),       this, SLOT(backend_error(QProcess::ProcessError)), Qt::QueuedConnection);
+		connect(backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(backend_finished(int, QProcess::ExitStatus)), Qt::QueuedConnection);
+		backend_process->setReadChannel(QProcess::StandardOutput);
+		backend_process->setProcessChannelMode(QProcess::SeparateChannels);
+	}
+
 	backend_process->start(backend_filepath);
-	backend_process->waitForStarted(30000);
+	// TODO: waitForStarted() causes a SECOND started() signal to be sent. This is unacceptable because it confuses the audio frontend's logic. Check if this signal emission can be suppressed.
+	//backend_process->waitForStarted(30000);
+
 	if (backend_process->state() == QProcess::NotRunning)
 	{
 		delete backend_process;
 		backend_process = 0;
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.backend_not_configured_page);
 	}
-	else
-	{
-		main_window_ui.central_pages->setCurrentWidget(main_window_ui.tabs_page);
-
-		connect(backend_process, SIGNAL(readyRead()),                         this, SLOT(try_read_stdout_line()));
-		connect(backend_process, SIGNAL(started()),                           this, SLOT(backend_started()));
-		connect(backend_process, SIGNAL(error(QProcess::ProcessError)),       this, SLOT(backend_error(QProcess::ProcessError)));
-		connect(backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(backend_finished(int, QProcess::ExitStatus)));
-		backend_process->setReadChannel(QProcess::StandardOutput);
-		backend_process->setProcessChannelMode(QProcess::SeparateChannels);
-	}
 }
 
 
-void main_window::stop_backend()
+void main_window::stop_backend(bool const send_quit_message, bool const stop_scanner, bool const send_signals)
 {
 	if (backend_process == 0)
 		return;
 
-	print_backend_line("quit");
-	backend_process->waitForFinished(30000);
-	if (backend_process->state() != QProcess::NotRunning)
+	if (send_quit_message)
+		print_backend_line("quit");
+
+	if (send_signals)
 	{
-		backend_process->terminate();
-		std::cerr << "sending backend the TERM signal" << std::endl;
-	}
-	backend_process->waitForFinished(30000);
-	if (backend_process->state() != QProcess::NotRunning)
-	{
-		backend_process->kill();
-		std::cerr << "sending backend the KILL signal" << std::endl;
+		backend_process->waitForFinished(30000);
+		if (backend_process->state() != QProcess::NotRunning)
+		{
+			backend_process->terminate();
+			std::cerr << "sending backend the TERM signal" << std::endl;
+		}
+
+		backend_process->waitForFinished(30000);
+		if (backend_process->state() != QProcess::NotRunning)
+		{
+			backend_process->kill();
+			std::cerr << "sending backend the KILL signal" << std::endl;
+		}
 	}
 
 	// NOTE: backend_process is deleted and then immediately set to 0. It is NOT set to 0 after scanner_ has been deleted.
@@ -456,8 +484,11 @@ void main_window::stop_backend()
 	delete backend_process;
 	backend_process = 0;
 
-	delete scanner_;
-	scanner_ = 0;
+	if (stop_scanner)
+	{
+		delete scanner_;
+		scanner_ = 0;
+	}
 }
 
 

@@ -73,8 +73,8 @@ protected slots:
 
 
 protected:
-	void start_backend();
-	void stop_backend();
+	void start_backend(bool const start_scanner = true);
+	void stop_backend(bool const send_quit_message = true, bool const stop_scanner = true, bool const send_signals = true);
 	void change_backend();
 
 	void print_backend_line(std::string const &line);
