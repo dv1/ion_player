@@ -36,6 +36,8 @@ public:
 	void play_selected();
 	void remove_selected();
 
+	void ensure_currently_playing_visible();
+
 	inline playlist & get_playlist() { return playlist_; }
 	inline QTreeView* get_view_widget() { return view_widget; }
 	inline playlist_qt_model* get_playlist_qt_model() { return playlist_qt_model_; }
@@ -70,6 +72,8 @@ public:
 	audio_frontend& get_audio_frontend() { return audio_frontend_; }
 	playlist_ui* get_currently_visible_playlist_ui();
 	playlist* get_currently_visible_playlist();
+	playlist_ui* get_currently_playing_playlist_ui();
+	void set_ui_visible(playlist_ui *ui);
 
 
 protected slots:

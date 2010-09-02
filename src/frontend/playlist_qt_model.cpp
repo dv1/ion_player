@@ -173,6 +173,26 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 }
 
 
+bool playlist_qt_model::is_currently_playing() const
+{
+	playlist_traits < playlist > ::entry_t const *entry = get_entry(playlist_, *current_uri);
+	return (entry != 0);
+}
+
+
+QModelIndex playlist_qt_model::get_current_uri_model_index() const
+{
+	if (!current_uri)
+		return QModelIndex();
+
+	playlist_traits < playlist > ::index_optional_t cur_uri_index = get_entry_index(playlist_, *current_uri);
+	if (!cur_uri_index)
+		return QModelIndex();
+
+	return createIndex(*cur_uri_index, 0);
+}
+
+
 void playlist_qt_model::entries_added(uri_set_t const uris, bool const before)
 {
 	if (uris.empty())

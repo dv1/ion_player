@@ -105,6 +105,8 @@ Use the settings button above to open the dialog window.</string>
    <addaction name="action_previous_song"/>
    <addaction name="action_next_song"/>
    <addaction name="separator"/>
+   <addaction name="action_move_to_currently_playing"/>
+   <addaction name="separator"/>
    <addaction name="action_settings"/>
   </widget>
   <widget class="QToolBar" name="edit_playlist_toolbar">
@@ -297,6 +299,11 @@ Use the settings button above to open the dialog window.</string>
    </property>
    <property name="text">
     <string>find</string>
+   </property>
+  </action>
+  <action name="action_move_to_currently_playing">
+   <property name="text">
+    <string>move_to_currently_playing</string>
    </property>
   </action>
  </widget>

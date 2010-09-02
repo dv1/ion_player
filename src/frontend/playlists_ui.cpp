@@ -80,6 +80,14 @@ void playlist_ui::remove_selected()
 }
 
 
+void playlist_ui::ensure_currently_playing_visible()
+{
+	QModelIndex model_index = playlist_qt_model_->get_current_uri_model_index();
+	if (model_index.isValid())
+		view_widget->scrollTo(model_index, QAbstractItemView::PositionAtCenter);
+}
+
+
 void playlist_ui::play_song_in_row(QModelIndex const &index)
 {
 	playlist_traits < playlist > ::entry_t const *playlist_entry = get_entry(playlist_, index.row());
@@ -145,6 +153,27 @@ playlist* playlists_ui::get_currently_visible_playlist()
 {
 	playlist_ui *ui = get_currently_visible_playlist_ui();
 	return (ui == 0) ? 0 : &(ui->get_playlist());
+}
+
+
+playlist_ui* playlists_ui::get_currently_playing_playlist_ui()
+{
+	// TODO: add a current_uri event handler to playlists_ui that caches the currently playing playlist's UI (get_currently_playing_playlist_ui() would then turn into a simple getter)
+	// HOWEVER, the current code is OK if get_currently_playing_playlist_ui() is called rarely; in that case, caching would be actually the slower variant
+	BOOST_FOREACH(playlist_ui *ui, playlist_uis)
+	{
+		if (ui->get_playlist_qt_model()->is_currently_playing())
+			return ui;
+	}
+
+	return 0;
+}
+
+
+void playlists_ui::set_ui_visible(playlist_ui *ui)
+{
+	if (ui != 0)
+		tab_widget.setCurrentWidget(ui->get_view_widget());
 }
 
 

@@ -49,6 +49,9 @@ protected slots:
 	void stop();
 	void previous_song();
 	void next_song();
+
+	void move_to_currently_playing();
+
 	void show_settings();
 
 	void set_current_position();

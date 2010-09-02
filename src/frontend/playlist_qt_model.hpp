@@ -31,6 +31,8 @@ public:
 	virtual int rowCount(QModelIndex const &parent) const;
 
 	void current_uri_changed(uri_optional_t const &new_current_uri);
+	bool is_currently_playing() const;
+	QModelIndex get_current_uri_model_index() const;
 
 
 protected:

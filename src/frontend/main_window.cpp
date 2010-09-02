@@ -61,6 +61,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(main_window_ui.action_stop,                SIGNAL(triggered()), this, SLOT(stop()));
 	connect(main_window_ui.action_previous_song,       SIGNAL(triggered()), this, SLOT(previous_song()));
 	connect(main_window_ui.action_next_song,           SIGNAL(triggered()), this, SLOT(next_song()));
+	connect(main_window_ui.action_move_to_currently_playing,            SIGNAL(triggered()), this, SLOT(move_to_currently_playing()));
 	connect(main_window_ui.action_settings,            SIGNAL(triggered()), this, SLOT(show_settings()));
 	connect(main_window_ui.action_create_new_tab,      SIGNAL(triggered()), this, SLOT(create_new_playlist()));
 	connect(main_window_ui.action_add_file,            SIGNAL(triggered()), this, SLOT(add_file_to_playlist()));
@@ -172,6 +173,17 @@ void main_window::previous_song()
 void main_window::next_song()
 {
 	audio_frontend_->move_to_next_resource();
+}
+
+
+void main_window::move_to_currently_playing()
+{
+	playlist_ui *currently_playing_ui = playlists_ui_->get_currently_playing_playlist_ui();
+	if (currently_playing_ui)
+	{
+		playlists_ui_->set_ui_visible(currently_playing_ui);
+		currently_playing_ui->ensure_currently_playing_visible();
+	}
 }
 
 
