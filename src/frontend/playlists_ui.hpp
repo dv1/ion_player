@@ -30,13 +30,13 @@ class playlist_ui:
 {
 	Q_OBJECT
 public:
-	explicit playlist_ui(QObject *parent, playlists_t::playlist_t &playlist_, playlists_ui &playlists_ui_);
+	explicit playlist_ui(QObject *parent, playlist &playlist_, playlists_ui &playlists_ui_);
 	~playlist_ui();
 
 	void play_selected();
 	void remove_selected();
 
-	inline playlists_t::playlist_t & get_playlist() { return playlist_; }
+	inline playlist & get_playlist() { return playlist_; }
 	inline QTreeView* get_view_widget() { return view_widget; }
 	inline playlist_qt_model* get_playlist_qt_model() { return playlist_qt_model_; }
 
@@ -49,7 +49,7 @@ protected:
 	void playlist_renamed(std::string const &new_name);
 
 
-	playlists_t::playlist_t &playlist_;
+	playlist &playlist_;
 	playlists_ui &playlists_ui_;
 	QTreeView *view_widget;
 	playlist_qt_model *playlist_qt_model_;
@@ -69,7 +69,7 @@ public:
 	playlists_t & get_playlists() { return playlists_; }
 	audio_frontend& get_audio_frontend() { return audio_frontend_; }
 	playlist_ui* get_currently_visible_playlist_ui();
-	playlists_t::playlist_t* get_currently_visible_playlist();
+	playlist* get_currently_visible_playlist();
 
 
 protected slots:
@@ -77,8 +77,8 @@ protected slots:
 
 
 protected:
-	void playlist_added(playlists_t::playlist_t &playlist_);
-	void playlist_removed(playlists_t::playlist_t &playlist_);
+	void playlist_added(playlists_traits < playlists_t > ::playlist_t &playlist_);
+	void playlist_removed(playlists_traits < playlists_t > ::playlist_t &playlist_);
 
 
 	playlists_t playlists_;

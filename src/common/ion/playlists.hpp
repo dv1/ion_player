@@ -11,10 +11,13 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
+#include <boost/range/iterator_range.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <ion/uri.hpp>
+#include <ion/playlists_traits.hpp>
+#include <ion/persistent_traits.hpp>
 
 
 namespace ion
@@ -121,8 +124,88 @@ protected:
 };
 
 
+
+template < typename Playlist >
+struct playlists_traits < playlists < Playlist > >
+{
+	typedef playlists < Playlist > playlists_t;
+	typedef typename playlists_t::playlist_t playlist_t;
+	typedef typename playlists_t::playlist_ptr_t playlist_ptr_t;
+	typedef typename playlists_t::playlist_event_signal_t playlist_event_signal_t;
+	typedef typename playlists_t::active_playlist_changed_signal_t active_playlist_changed_signal_t;
+	typedef boost::iterator_range < typename playlists_t::sequenced_t::const_iterator > const_playlist_range_t;
+};
+
+
+template < typename Playlist >
+struct persistent_traits < playlists < Playlist > >
+{
+	typedef Json::Value container_t;
+};
+
+
+
 namespace
 {
+
+
+template < typename Playlist >
+inline void add_playlist(playlists < Playlist > &playlists_, typename playlists < Playlist > ::playlist_ptr_t const &playlist_ptr)
+{
+	playlists_.add_playlist(playlist_ptr);
+}
+
+
+template < typename Playlist >
+inline void remove_playlist(playlists < Playlist > &playlists_, typename playlists < Playlist > ::playlist_t const &playlist_to_be_removed)
+{
+	playlists_.remove_playlist(playlist_to_be_removed);
+}
+
+
+template < typename Playlist >
+inline typename playlists < Playlist > ::playlist_event_signal_t & get_playlist_added_signal(playlists < Playlist > &playlists_)
+{
+	return playlists_.get_playlist_added_signal();
+}
+
+
+template < typename Playlist >
+inline typename playlists < Playlist > ::playlist_event_signal_t & get_playlist_removed_signal(playlists < Playlist > &playlists_)
+{
+	return playlists_.get_playlist_removed_signal();
+}
+
+
+template < typename Playlist >
+inline typename playlists < Playlist > ::active_playlist_changed_signal_t & get_active_playlist_changed_signal(playlists < Playlist > &playlists_)
+{
+	return playlists_.get_active_playlist_changed_signal();
+}
+
+
+template < typename Playlist >
+inline typename playlists < Playlist > ::playlist_t * get_active_playlist(playlists < Playlist > const &playlists_)
+{
+	return playlists_.get_active_playlist();
+}
+
+
+template < typename Playlist >
+inline void set_active_playlist(playlists < Playlist > &playlists_, typename playlists < Playlist > ::playlist_t * new_active_playlist)
+{
+	playlists_.set_active_playlist(new_active_playlist);
+}
+
+
+template < typename Playlist >
+inline typename playlists_traits < playlists < Playlist > > ::const_playlist_range_t get_playlists(playlists < Playlist > const &playlists_)
+{
+	typename playlists < Playlist > ::sequenced_t const & sequenced_ = playlists_.get_playlists();
+	return typename playlists_traits < playlists < Playlist > > ::const_playlist_range_t(sequenced_.begin(), sequenced_.end());
+}
+
+
 
 template < typename Playlist, typename CreatePlaylistFunc >
 inline void load_from(playlists < Playlist > &playlists_, Json::Value const &in_value, CreatePlaylistFunc const &create_playlist_func)
@@ -151,6 +234,7 @@ inline void save_to(playlists < Playlist > const &playlists_, Json::Value &out_v
 		out_value.append(playlist_value);
 	}
 }
+
 
 }
 

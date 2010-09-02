@@ -25,7 +25,7 @@ public:
 	~scanner();
 
 
-	void start_scan(playlist_t &playlist, ion::uri const &uri_to_be_scanned);
+	void start_scan(playlist_t &playlist_, ion::uri const &uri_to_be_scanned);
 
 	scan_queue_t const & get_scan_queue() const;
 

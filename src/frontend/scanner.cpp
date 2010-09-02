@@ -38,14 +38,14 @@ scanner::~scanner()
 }
 
 
-void scanner::start_scan(playlist_t &playlist, ion::uri const &uri_to_be_scanned)
+void scanner::start_scan(playlist_t &playlist_, ion::uri const &uri_to_be_scanned)
 {
 	if (scan_queue.empty())
 	{
 		emit scan_running(true);
 	}
 
-	base_t::start_scan(playlist, uri_to_be_scanned);
+	base_t::start_scan(playlist_, uri_to_be_scanned);
 	emit queue_updated();
 }
 
@@ -73,7 +73,7 @@ void scanner::start_process(ion::uri const &uri_to_be_scanned)
 
 void scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t const &new_metadata)
 {
-	add_entry(*current_playlist, playlist::entry_t(new_uri, new_metadata), true); // TODO: make the playlist::entry_t() part more generic
+	add_entry(*current_playlist, playlist_traits < playlist > ::entry_t(new_uri, new_metadata), true); // TODO: make the playlist_traits < playlist > ::entry_t() part more generic
 }
 
 

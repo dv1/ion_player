@@ -72,6 +72,10 @@ public:
 	void clear_entries(bool const emit_signal);
 
 
+	void load_from(Json::Value const &in_value);
+	void save_to(Json::Value &out_value) const;
+
+
 protected:
 	typedef unique_ids < long > unique_ids_t;
 	typedef boost::optional < unique_ids_t::id_t > unique_id_optional_t;
@@ -89,10 +93,6 @@ protected:
 	entries_t entries;
 	unique_ids_t unique_ids_;
 };
-
-
-void load_from(flat_playlist &playlist_, Json::Value const &in_value);
-void save_to(flat_playlist const &playlist_, Json::Value &out_value);
 
 
 }

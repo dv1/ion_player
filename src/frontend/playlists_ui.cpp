@@ -1,8 +1,9 @@
 #include <QTreeView>
 #include <QTabWidget>
 #include <boost/foreach.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
+#include <ion/playlist.hpp>
 #include "playlist_qt_model.hpp"
 #include "playlists_ui.hpp"
 #include "audio_frontend.hpp"
@@ -14,7 +15,7 @@ namespace frontend
 {
 
 
-playlist_ui::playlist_ui(QObject *parent, playlists_t::playlist_t &playlist_, playlists_ui &playlists_ui_):
+playlist_ui::playlist_ui(QObject *parent, playlist &playlist_, playlists_ui &playlists_ui_):
 	QObject(parent),
 	playlist_(playlist_),
 	playlists_ui_(playlists_ui_),
@@ -23,10 +24,10 @@ playlist_ui::playlist_ui(QObject *parent, playlists_t::playlist_t &playlist_, pl
 {
 	QTabWidget &tab_widget = playlists_ui_.get_tab_widget();
 
-	playlist_renamed_signal_connection = get_playlist_renamed_signal(playlist_).connect(boost::lambda::bind(&playlist_ui::playlist_renamed, this, boost::lambda::_1));
+	playlist_renamed_signal_connection = get_playlist_renamed_signal(playlist_).connect(boost::phoenix::bind(&playlist_ui::playlist_renamed, this, boost::phoenix::arg_names::arg1));
 
 	playlist_qt_model_ = new playlist_qt_model(&tab_widget, playlists_ui_.get_playlists(), playlist_);
-	current_uri_changed_signal_connection = playlists_ui_.get_audio_frontend().get_current_uri_changed_signal().connect(boost::lambda::bind(&playlist_qt_model::current_uri_changed, playlist_qt_model_, boost::lambda::_1));
+	current_uri_changed_signal_connection = playlists_ui_.get_audio_frontend().get_current_uri_changed_signal().connect(boost::phoenix::bind(&playlist_qt_model::current_uri_changed, playlist_qt_model_, boost::phoenix::arg_names::arg1));
 
 	view_widget = new QTreeView(&tab_widget);
 	view_widget->setRootIsDecorated(false);
@@ -71,7 +72,7 @@ void playlist_ui::remove_selected()
 	QModelIndexList selected_rows = view_widget->selectionModel()->selectedRows();
 	BOOST_FOREACH(QModelIndex const &index, selected_rows)
 	{
-		playlists_t::playlist_t::entry_t const *playlist_entry = get_entry(playlist_, index.row());
+		playlist_traits < playlist > ::entry_t const *playlist_entry = get_entry(playlist_, index.row());
 		uris_to_be_removed.insert(boost::fusion::at_c < 0 > (*playlist_entry));
 	}
 
@@ -81,10 +82,10 @@ void playlist_ui::remove_selected()
 
 void playlist_ui::play_song_in_row(QModelIndex const &index)
 {
-	playlists_t::playlist_t::entry_t const *playlist_entry = get_entry(playlist_, index.row());
+	playlist_traits < playlist > ::entry_t const *playlist_entry = get_entry(playlist_, index.row());
 	if (playlist_entry != 0)
 	{
-		playlists_ui_.get_playlists().set_active_playlist(&playlist_);
+		set_active_playlist(playlists_ui_.get_playlists(), &playlist_);
 		playlists_ui_.get_audio_frontend().set_current_playlist(&playlist_);
 		playlists_ui_.get_audio_frontend().play(boost::fusion::at_c < 0 > (*playlist_entry));
 	}
@@ -110,8 +111,8 @@ playlists_ui::playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_fronten
 {
 	connect(&tab_widget, SIGNAL(tabCloseRequested(int)), this, SLOT(close_current_playlist(int)));
 
-	playlist_added_signal_connection = playlists_.get_playlist_added_signal().connect(boost::lambda::bind(&playlists_ui::playlist_added, this, boost::lambda::_1));
-	playlist_removed_signal_connection = playlists_.get_playlist_removed_signal().connect(boost::lambda::bind(&playlists_ui::playlist_removed, this, boost::lambda::_1));
+	playlist_added_signal_connection = get_playlist_added_signal(playlists_).connect(boost::phoenix::bind(&playlists_ui::playlist_added, this, boost::phoenix::arg_names::arg1));
+	playlist_removed_signal_connection = get_playlist_removed_signal(playlists_).connect(boost::phoenix::bind(&playlists_ui::playlist_removed, this, boost::phoenix::arg_names::arg1));
 }
 
 
@@ -140,7 +141,7 @@ playlist_ui* playlists_ui::get_currently_visible_playlist_ui()
 }
 
 
-playlists_t::playlist_t* playlists_ui::get_currently_visible_playlist()
+playlist* playlists_ui::get_currently_visible_playlist()
 {
 	playlist_ui *ui = get_currently_visible_playlist_ui();
 	return (ui == 0) ? 0 : &(ui->get_playlist());
@@ -159,21 +160,21 @@ void playlists_ui::close_current_playlist(int index)
 	{
 		if (ui->get_view_widget() == page_widget)
 		{
-			playlists_.remove_playlist(ui->get_playlist());
+			remove_playlist(playlists_, ui->get_playlist());
 			break;
 		}
 	}
 }
 
 
-void playlists_ui::playlist_added(playlists_t::playlist_t &playlist_)
+void playlists_ui::playlist_added(playlists_traits < playlists_t > ::playlist_t &playlist_)
 {
 	playlist_ui *new_playlist_ui = new playlist_ui(this, playlist_, *this);
 	playlist_uis.push_back(new_playlist_ui);
 }
 
 
-void playlists_ui::playlist_removed(playlists_t::playlist_t &playlist_)
+void playlists_ui::playlist_removed(playlists_traits < playlists_t > ::playlist_t &playlist_)
 {
 	for (playlist_uis_t::iterator iter = playlist_uis.begin(); iter != playlist_uis.end(); ++iter)
 	{

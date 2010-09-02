@@ -10,8 +10,11 @@
 #include <boost/optional.hpp>
 
 #include <ion/playlist_traits.hpp>
+#include <ion/persistent_traits.hpp>
 #include <ion/metadata.hpp>
 #include <ion/uri.hpp>
+
+#include <json/value.h>
 
 
 namespace ion
@@ -66,6 +69,9 @@ public:
 
 	virtual void clear_entries(bool const emit_signal) = 0;
 
+	virtual void load_from(Json::Value const &in_value) = 0;
+	virtual void save_to(Json::Value &out_value) const = 0;
+
 
 protected:
 	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
@@ -89,6 +95,14 @@ struct playlist_traits < playlist >
 	typedef playlist::index_t index_t;
 	typedef playlist::index_optional_t index_optional_t;
 };
+
+
+template < >
+struct persistent_traits < playlist >
+{
+	typedef Json::Value container_t;
+};
+
 
 
 namespace
@@ -216,6 +230,19 @@ inline void remove_entries(playlist &playlist_, uri_set_t const &uris, bool cons
 inline void set_resource_metadata(playlist &playlist_, uri const &uri_, metadata_t const &new_metadata)
 {
 	playlist_.set_resource_metadata(uri_, new_metadata);
+}
+
+
+
+inline void load_from(playlist &playlist_, Json::Value const &in_value)
+{
+	playlist_.load_from(in_value);
+}
+
+
+inline void save_to(playlist const &playlist_, Json::Value &out_value)
+{
+	playlist_.save_to(out_value);
 }
 
 

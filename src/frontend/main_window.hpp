@@ -107,7 +107,7 @@ protected:
 
 	typedef boost::shared_ptr < QDirIterator > dir_iterator_ptr_t;
 	dir_iterator_ptr_t dir_iterator;
-	playlists_t::playlist_t *dir_iterator_playlist;
+	playlist *dir_iterator_playlist;
 
 	playlists_ui *playlists_ui_;
 	settings *settings_;

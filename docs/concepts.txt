@@ -1,3 +1,18 @@
+Persistent concept:
+
+Types:
+
+persistent_traits < Persistent > ::container_t
+
+Functions:
+
+void load_from(Persistent &persistent, persistent_traits < Persistent > ::container_t const &container)
+void save_to(Persistent const &persistent, persistent_traits < Persistent > ::container_t &container)
+
+
+=====================================
+
+
 Playlist concept:
 
 Types:
@@ -7,9 +22,9 @@ playlist_traits < Playlist > ::playlist_renamed_signal_t     boost signals2 comp
 
 Functions:
 
-playlist_traits < Playlist > ::resource_event_signal_t get_resource_added_signal(Playlist &playlist)
-playlist_traits < Playlist > ::resource_event_signal_t get_resource_removed_signal(Playlist &playlist)
-playlist_traits < Playlist > ::resource_event_signal_t get_resource_metadata_changed_signal(Playlist &playlist)
+playlist_traits < Playlist > ::resource_event_signal_t & get_resource_added_signal(Playlist &playlist)
+playlist_traits < Playlist > ::resource_event_signal_t & get_resource_removed_signal(Playlist &playlist)
+playlist_traits < Playlist > ::resource_event_signal_t & get_resource_metadata_changed_signal(Playlist &playlist)
 playlist_traits < Playlist > ::playlist_renamed_signal_t get_playlist_renamed_signal(Playlist &playlist)
 metadata_optional_t get_metadata_for(Playlist const &playlist, uri const &uri_)
 uri_optional_t get_preceding_uri(Playlist const &playlist, uri const &uri_)
@@ -59,12 +74,40 @@ void remove_entry(MutablePlaylist &playlist, uri const &uri_, bool const emit_si
 void remove_entries(MutablePlaylist &playlist, uri_set_t const &uris, bool const emit_signal)
 void set_resource_metadata(MutablePlaylist &playlist, uri const &uri_, metadata_t const &new_metadata)
 void clear_entries(MutablePlaylist &playlist, bool const emit_signal)
+bool is_mutable(MutablePlaylist const &playlist)
+
+
+=====================================
+
+
+Playlists concept:
+
+Types:
+
+playlists_traits < Playlists > ::playlist_t
+playlists_traits < Playlists > ::playlist_ptr_t
+playlists_traits < Playlists > ::playlist_event_signal_t     boost signals2 compatible type, signature void(playlists_traits < Playlists > ::playlist_t &playlist_)
+playlists_traits < Playlists > ::active_playlist_changed_signal_t     boost signals2 compatible type, signature void(playlists_traits < Playlists > ::playlist_t *playlist_)
+playlists_traits < Playlists > ::const_playlist_range_t
+
+Functions:
+
+void add_playlist(Playlists &playlists, playlists_traits < Playlists > ::playlist_ptr_t const &playlist_ptr)
+void remove_playlist(Playlists &playlists, playlists_traits < Playlists > ::playlist_t const &playlist_to_be_removed)
+playlists_traits < Playlists > ::playlist_event_signal_t & get_playlist_added_signal(Playlists &playlists)
+playlists_traits < Playlists > ::playlist_event_signal_t & get_playlist_removed_signal(Playlists &playlists)
+playlists_traits < Playlists > ::active_playlist_changed_signal_t & get_active_playlist_changed_signal(Playlists &playlists)
+playlists_traits < Playlists > ::playlist_t * get_active_playlist(Playlists const &playlists)
+void set_active_playlist(Playlists const &playlists, playlists_traits < Playlists > ::playlist_t * new_active_playlist)
+playlists_traits < Playlists > ::const_playlist_range_t get_playlists(Playlists const &playlists)
 
 
 =====================================
 
 
 Backend concept:
+
+Functions:
 
 std::string get_backend_type(Backend const &backend)
 void execute_command(Backend &backend, std::string const &command, params_t const &parameters, std::string &response_command, params_t &response_parameters)

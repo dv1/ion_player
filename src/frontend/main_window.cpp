@@ -117,9 +117,9 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 	if (!load_playlists())
 	{
-		playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
+		playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist());
 		set_name(*new_playlist, "Default");
-		playlists_ui_->get_playlists().add_playlist(new_playlist);
+		add_playlist(playlists_ui_->get_playlists(), new_playlist);
 	}
 
 
@@ -185,7 +185,7 @@ void main_window::show_settings()
 
 	// in case of the singleplay playlist, fill the combobox with the playlist names
 	settings_dialog_ui.singleplay_playlist->clear();
-	BOOST_FOREACH(playlists_t::playlist_ptr_t const &playlist_, playlists_ui_->get_playlists().get_playlists())
+	BOOST_FOREACH(playlists_t::playlist_ptr_t const &playlist_, get_playlists(playlists_ui_->get_playlists()))
 	{
 		settings_dialog_ui.singleplay_playlist->addItem(playlist_->get_name().c_str());
 	}
@@ -242,15 +242,15 @@ void main_window::open_backend_filepath_filedialog()
 
 void main_window::create_new_playlist()
 {
-	playlists_t::playlist_ptr_t new_playlist(new flat_playlist());
+	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist());
 	set_name(*new_playlist, "New playlist");
-	playlists_ui_->get_playlists().add_playlist(new_playlist);
+	add_playlist(playlists_ui_->get_playlists(), new_playlist);
 }
 
 
 void main_window::rename_playlist()
 {
-	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	playlist *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
 	if (currently_visible_playlist == 0)
 	{
 		QMessageBox::warning(this, "Renaming playlist failed", "No playlist available - cannot rename");
@@ -268,20 +268,20 @@ void main_window::delete_playlist()
 	if (playlists_ui_->get_tab_widget().count() <= 1)
 		return;
 
-	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	playlist *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
 	if (currently_visible_playlist == 0)
 	{
 		QMessageBox::warning(this, "Removing playlist failed", "No playlist available - cannot remove");
 		return;
 	}
 
-	playlists_ui_->get_playlists().remove_playlist(*currently_visible_playlist);
+	remove_playlist(playlists_ui_->get_playlists(), *currently_visible_playlist);
 }
 
 
 void main_window::add_file_to_playlist()
 {
-	playlists_t::playlist_t *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
+	playlist *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
 	if (currently_visible_playlist == 0)
 	{
 		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot add a file");
