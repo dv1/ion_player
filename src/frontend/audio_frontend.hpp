@@ -4,7 +4,7 @@
 #include <QObject>
 
 #include <ion/frontend_base.hpp>
-#include <ion/flat_playlist.hpp>
+#include <ion/playlist.hpp>
 
 
 namespace ion

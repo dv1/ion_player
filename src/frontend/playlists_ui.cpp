@@ -3,7 +3,6 @@
 #include <boost/foreach.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <ion/flat_playlist.hpp>
 #include "playlist_qt_model.hpp"
 #include "playlists_ui.hpp"
 #include "audio_frontend.hpp"
@@ -24,7 +23,7 @@ playlist_ui::playlist_ui(QObject *parent, playlists_t::playlist_t &playlist_, pl
 {
 	QTabWidget &tab_widget = playlists_ui_.get_tab_widget();
 
-	playlist_renamed_signal_connection = playlist_.get_playlist_renamed_signal().connect(boost::lambda::bind(&playlist_ui::playlist_renamed, this, boost::lambda::_1));
+	playlist_renamed_signal_connection = get_playlist_renamed_signal(playlist_).connect(boost::lambda::bind(&playlist_ui::playlist_renamed, this, boost::lambda::_1));
 
 	playlist_qt_model_ = new playlist_qt_model(&tab_widget, playlists_ui_.get_playlists(), playlist_);
 	current_uri_changed_signal_connection = playlists_ui_.get_audio_frontend().get_current_uri_changed_signal().connect(boost::lambda::bind(&playlist_qt_model::current_uri_changed, playlist_qt_model_, boost::lambda::_1));
@@ -34,7 +33,7 @@ playlist_ui::playlist_ui(QObject *parent, playlists_t::playlist_t &playlist_, pl
 	view_widget->setAlternatingRowColors(true);
 	view_widget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	view_widget->setModel(playlist_qt_model_);
-	tab_widget.addTab(view_widget, playlist_.get_name().c_str());
+	tab_widget.addTab(view_widget, get_name(playlist_).c_str());
 
 
 	connect(view_widget, SIGNAL(doubleClicked(QModelIndex const &)), this, SLOT(play_song_in_row(QModelIndex const &)));
@@ -72,17 +71,17 @@ void playlist_ui::remove_selected()
 	QModelIndexList selected_rows = view_widget->selectionModel()->selectedRows();
 	BOOST_FOREACH(QModelIndex const &index, selected_rows)
 	{
-		playlists_t::playlist_t::entry_t const *playlist_entry = playlist_.get_entry(index.row());
+		playlists_t::playlist_t::entry_t const *playlist_entry = get_entry(playlist_, index.row());
 		uris_to_be_removed.insert(boost::fusion::at_c < 0 > (*playlist_entry));
 	}
 
-	playlist_.remove_entries(uris_to_be_removed);
+	remove_entries(playlist_, uris_to_be_removed, true);
 }
 
 
 void playlist_ui::play_song_in_row(QModelIndex const &index)
 {
-	playlists_t::playlist_t::entry_t const *playlist_entry = playlist_.get_entry(index.row());
+	playlists_t::playlist_t::entry_t const *playlist_entry = get_entry(playlist_, index.row());
 	if (playlist_entry != 0)
 	{
 		playlists_ui_.get_playlists().set_active_playlist(&playlist_);

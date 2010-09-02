@@ -80,20 +80,20 @@ void flat_playlist::mark_backend_resource_incompatibility(uri const &uri_, std::
 }
 
 
-uint64_t flat_playlist::get_num_entries() const
+flat_playlist::num_entries_t flat_playlist::get_num_entries() const
 {
 	return entries.size();
 }
 
 
-flat_playlist::entry_t const * flat_playlist::get_entry(uint64_t const nr) const
+flat_playlist::entry_t const * flat_playlist::get_entry(index_t const index) const
 {
-	if (nr >= get_num_entries())
+	if (index >= get_num_entries())
 		return 0;
 
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
 	entry_sequence_t::const_iterator iter = entry_sequence.begin();
-	iter = iter + nr;
+	iter = iter + index;
 	return &(*iter);
 }
 
@@ -130,9 +130,11 @@ flat_playlist::entry_range_t flat_playlist::get_entry_range() const
 }
 
 
-void flat_playlist::add_entry(entry_t entry_, bool const emit_signal)
+void flat_playlist::add_entry(entry_t const & entry_, bool const emit_signal)
 {
-	ion::uri &uri_ = boost::fusion::at_c < 0 > (entry_);
+	entry_t local_entry_copy = entry_;
+
+	ion::uri &uri_ = boost::fusion::at_c < 0 > (local_entry_copy);
 
 	unique_id_optional_t old_id = get_uri_id(uri_);
 	if (old_id)
@@ -143,7 +145,7 @@ void flat_playlist::add_entry(entry_t entry_, bool const emit_signal)
 	if (emit_signal)
 		resource_added_signal(boost::assign::list_of(uri_), true);
 
-	entries.push_back(entry_);
+	entries.push_back(local_entry_copy);
 
 	if (emit_signal)
 		resource_added_signal(boost::assign::list_of(uri_), false);
@@ -210,6 +212,18 @@ void flat_playlist::set_resource_metadata(uri const &uri_, metadata_t const & ne
 }
 
 
+void flat_playlist::clear_entries(bool const emit_signal)
+{
+	if (emit_signal)
+		all_resources_changed_signal(true);
+
+	entries.clear();
+
+	if (emit_signal)
+		all_resources_changed_signal(false);
+}
+
+
 flat_playlist::unique_id_optional_t flat_playlist::get_uri_id(uri const &uri_)
 {
 	uri::options_t::const_iterator iter = uri_.get_options().find("id");
@@ -248,7 +262,8 @@ void load_from(flat_playlist &playlist_, Json::Value const &in_value)
 {
 	set_name(playlist_, in_value["name"].asString());
 
-	// TODO: clear existing contents from the playlist
+	playlist_.get_all_resources_changed_signal()(true);
+	playlist_.clear_entries(false);
 
 	Json::Value entries_value = in_value.get("entries", Json::Value(Json::objectValue));
 	for (unsigned int index = 0; index < entries_value.size(); ++index)
@@ -266,7 +281,7 @@ void load_from(flat_playlist &playlist_, Json::Value const &in_value)
 		}
 	}
 
-	// TODO: send a signal that the playlist's contents have changed entirely
+	playlist_.get_all_resources_changed_signal()(false);
 }
 
 

@@ -20,8 +20,8 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_t &playlists_, 
 {
 	active_playlist = playlists_.get_active_playlist();
 
-	entry_added_signal_connection = playlist_.get_resource_added_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1, boost::lambda::_2));
-	entry_removed_signal_connection = playlist_.get_resource_removed_signal().connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1, boost::lambda::_2));
+	entry_added_signal_connection = get_resource_added_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1, boost::lambda::_2));
+	entry_removed_signal_connection = get_resource_removed_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1, boost::lambda::_2));
 	active_playlist_changed_connection = playlists_.get_active_playlist_changed_signal().connect(boost::lambda::bind(&playlist_qt_model::active_playlist_changed, this, boost::lambda::_1));
 }
 
@@ -59,11 +59,11 @@ int playlist_qt_model::columnCount(QModelIndex const &parent) const
 
 QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 {
-	if ((index.column() >= 4) || (index.row() >= int(playlist_.get_num_entries())))
+	if ((index.column() >= 4) || (index.row() >= int(get_num_entries(playlist_))))
 		return QVariant();
 
 
-	playlist::entry_t const *entry = playlist_.get_entry(index.row());
+	playlist::entry_t const *entry = get_entry(playlist_, index.row());
 
 	if (entry == 0)
 		return QVariant();
@@ -151,7 +151,7 @@ QModelIndex playlist_qt_model::parent(QModelIndex const &index) const
 
 int playlist_qt_model::rowCount(QModelIndex const &parent) const
 {
-	return playlist_.get_num_entries();
+	return get_num_entries(playlist_);
 }
 
 
@@ -160,9 +160,9 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 	playlist::index_optional_t old_uri_index, new_uri_index;
 
 	if (current_uri)
-		old_uri_index = get_uri_index(playlist_, *current_uri);
+		old_uri_index = get_entry_index(playlist_, *current_uri);
 	if (new_current_uri)
-		new_uri_index = get_uri_index(playlist_, *new_current_uri);
+		new_uri_index = get_entry_index(playlist_, *new_current_uri);
 
 	current_uri = new_current_uri;
 
@@ -204,7 +204,7 @@ void playlist_qt_model::active_playlist_changed(playlists_t::playlist_t *playlis
 	if (!current_uri)
 		return;
 		
-	playlist::index_optional_t uri_index = get_uri_index(*playlist_, *current_uri);
+	playlist::index_optional_t uri_index = get_entry_index(*playlist_, *current_uri);
 	if (!uri_index)
 		return;
 
@@ -218,7 +218,7 @@ playlist_qt_model::index_pair_optional_t playlist_qt_model::get_min_max_indices_
 
 	BOOST_FOREACH(uri const &uri_, uris)
 	{
-		playlist::index_optional_t uri_index = get_uri_index(playlist_, uri_);
+		playlist::index_optional_t uri_index = get_entry_index(playlist_, uri_);
 		if (uri_index)
 		{
 			if (indices)

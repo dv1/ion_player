@@ -19,6 +19,8 @@
 #include <json/reader.h>
 #include <json/writer.h>
 
+#include <ion/flat_playlist.hpp>
+
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
 #include "scanner.hpp"
@@ -461,6 +463,7 @@ void main_window::start_backend(bool const start_scanner)
 
 	backend_process->start(backend_filepath);
 	// TODO: waitForStarted() causes a SECOND started() signal to be sent. This is unacceptable because it confuses the audio frontend's logic. Check if this signal emission can be suppressed.
+	// Note that this is a confirmed Qt bug, and seems to be present only on Linux platforms.
 	//backend_process->waitForStarted(30000);
 
 	if (backend_process->state() == QProcess::NotRunning)

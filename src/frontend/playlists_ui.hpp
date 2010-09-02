@@ -5,7 +5,6 @@
 #include <QObject>
 #include <boost/signals2/connection.hpp>
 #include <ion/playlists.hpp>
-#include <ion/flat_playlist.hpp>
 #include <ion/uri.hpp>
 
 #include "misc_types.hpp"

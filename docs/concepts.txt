@@ -1,14 +1,64 @@
 Playlist concept:
 
-<unspecified function object type (uri_optional_t)> get_current_uri_changed_callback(Playlist const &playlist)
-<boost signals2 compatible type> get_resource_added_signal(Playlist const &playlist)
-<boost signals2 compatible type> get_resource_removed_signal(Playlist const &playlist)
-<boost signals2 compatible type> get_resource_metadata_changed_signal(Playlist const &playlist)
+Types:
+
+playlist_traits < Playlist > ::resource_event_signal_t     boost signals2 compatible type, signature void(uri_set_t const &uris, bool const before)
+playlist_traits < Playlist > ::playlist_renamed_signal_t     boost signals2 compatible type, signature void(std::string const &new_name)
+
+Functions:
+
+playlist_traits < Playlist > ::resource_event_signal_t get_resource_added_signal(Playlist &playlist)
+playlist_traits < Playlist > ::resource_event_signal_t get_resource_removed_signal(Playlist &playlist)
+playlist_traits < Playlist > ::resource_event_signal_t get_resource_metadata_changed_signal(Playlist &playlist)
+playlist_traits < Playlist > ::playlist_renamed_signal_t get_playlist_renamed_signal(Playlist &playlist)
 metadata_optional_t get_metadata_for(Playlist const &playlist, uri const &uri_)
 uri_optional_t get_preceding_uri(Playlist const &playlist, uri const &uri_)
 uri_optional_t get_succeeding_uri(Playlist const &playlist, uri const &uri_)
-Playlist::index_optional_t get_uri_index(Playlist const &playlist, uri const &uri_)
 void mark_backend_resource_incompatibility(Playlist const &playlist, uri const &uri_, std::string const &backend_type)
+std::string get_name(Playlist const &playlist)
+void set_name(Playlist &playlist, std::string const &new_name)
+
+
+=====================================
+
+
+IndexedPlaylist concept:
+refines Playlist
+
+Types:
+
+playlist_traits < IndexedPlaylist > ::entry_t
+playlist_traits < IndexedPlaylist > ::num_entries_t
+playlist_traits < IndexedPlaylist > ::index_t
+playlist_traits < IndexedPlaylist > ::index_optional_t     equals boost::optional < playlist_traits < IndexedPlaylist > ::index_t >
+
+Functions:
+
+playlist_traits < IndexedPlaylist > ::num_entries_t get_num_entries(Playlist const &playlist)
+playlist_traits < IndexedPlaylist > ::entry_t const * get_entry(Playlist const &playlist, playlist_traits < IndexedPlaylist > ::index_t const &index)
+playlist_traits < IndexedPlaylist > ::entry_t const * get_entry(Playlist const &playlist, uri const &uri_)
+playlist_traits < IndexedPlaylist > ::index_optional_t get_entry_index(Playlist const &playlist, uri const &uri_)
+
+
+=====================================
+
+
+MutablePlaylist concept:
+refines IndexedPlaylist
+
+Types:
+
+playlist_traits < MutablePlaylist > ::all_resources_changed_signal_t     boost signals2 compatible type, signature void(bool const before)
+
+Functions:
+
+playlist_traits < Playlist > ::all_resources_changed_signal_t get_all_resources_changed_signal(Playlist &playlist)
+void add_entry(MutablePlaylist &playlist, playlist_traits < MutablePlaylist > ::entry_t const &entry_, bool const emit_signal)
+void remove_entry(MutablePlaylist &playlist, playlist_traits < MutablePlaylist > ::entry_t const &entry_, bool const emit_signal)
+void remove_entry(MutablePlaylist &playlist, uri const &uri_, bool const emit_signal)
+void remove_entries(MutablePlaylist &playlist, uri_set_t const &uris, bool const emit_signal)
+void set_resource_metadata(MutablePlaylist &playlist, uri const &uri_, metadata_t const &new_metadata)
+void clear_entries(MutablePlaylist &playlist, bool const emit_signal)
 
 
 =====================================

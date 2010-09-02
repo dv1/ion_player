@@ -56,17 +56,20 @@ public:
 	virtual uri_optional_t get_succeeding_uri(uri const &uri_) const;
 	virtual void mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type);
 
-	virtual uint64_t get_num_entries() const;
-	virtual entry_t const * get_entry(uint64_t const nr) const;
+	virtual num_entries_t get_num_entries() const;
+	virtual entry_t const * get_entry(index_t const index) const;
 	virtual entry_t const * get_entry(uri const &uri_) const;
 	virtual index_optional_t get_entry_index(uri const &uri_) const;
+
 	entry_range_t get_entry_range() const;
 
-	void add_entry(entry_t entry_, bool const emit_signal = true);
-	void remove_entry(entry_t const &entry_, bool const emit_signal = true);
-	void remove_entry(uri const &uri_, bool const emit_signal = true);
-	void remove_entries(uri_set_t const &uris, bool const emit_signal = true);
+	void add_entry(entry_t const &entry_, bool const emit_signal);
+	void remove_entry(entry_t const &entry_, bool const emit_signal);
+	void remove_entry(uri const &uri_, bool const emit_signal);
+	void remove_entries(uri_set_t const &uris, bool const emit_signal);
 	void set_resource_metadata(uri const &uri_, metadata_t const & new_metadata);
+
+	void clear_entries(bool const emit_signal);
 
 
 protected:
