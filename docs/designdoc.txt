@@ -470,10 +470,7 @@ Sets the current loop mode. If mode is <0, looping is disabled. mode = 0 means i
 
 
 --- get_modules
--- response: modules [<module 1> <id 1>] [<module 2> <id 2>] [<module 3> <id 3>] ...
-Gets a list of modules. The amount of arguments is always even (since for each module, there will be <moduleN> and <idN>).
-<moduleN>: type of the Nth substem. <idN>: identifies the Nth module.
-
+Gets a list of modules. This tells the backend to send a modules event.
 
 
 4.9. Event list
@@ -498,4 +495,9 @@ The current volume the playback is using. 0.0 means silence, 1.0 means full volu
 
 --- loop_mode <mode>
 The current loop mode. See set_loop_mode for the meaning of <mode>.
+
+
+--- modules [<module 1> <id 1>] [<module 2> <id 2>] [<module 3> <id 3>] ...
+The list of available modules. The amount of arguments is always even (since for each module, there will be <moduleN> and <idN>).
+<moduleN>: type of the Nth substem. <idN>: identifies the Nth module.
 

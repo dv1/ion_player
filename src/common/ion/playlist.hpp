@@ -53,6 +53,8 @@ public:
 	virtual entry_t const * get_entry(uri const &uri_) const = 0;
 	virtual index_optional_t get_entry_index(uri const &uri_) const = 0;
 
+	virtual bool is_mutable() const = 0;
+
 	std::string get_name() const { return name; }
 
 	void set_name(std::string const &new_name)
