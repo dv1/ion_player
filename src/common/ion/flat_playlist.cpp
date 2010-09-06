@@ -6,6 +6,12 @@ namespace ion
 {
 
 
+flat_playlist::flat_playlist(unique_ids_t &unique_ids_):
+	unique_ids_(unique_ids_)
+{
+}
+
+
 metadata_optional_t flat_playlist::get_metadata_for(uri const &uri_) const
 {
 	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();

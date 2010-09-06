@@ -12,14 +12,14 @@
 #include <QProcess>
 #include <QMetaType>
 
+#include <boost/function.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/spirit/home/phoenix/object/new.hpp>
+#include <boost/spirit/home/phoenix/core/reference.hpp>
 
 #include <json/reader.h>
 #include <json/writer.h>
-
-#include <ion/flat_playlist.hpp>
 
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
@@ -118,7 +118,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 	if (!load_playlists())
 	{
-		playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist());
+		playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist(unique_ids_));
 		set_name(*new_playlist, "Default");
 		add_playlist(playlists_ui_->get_playlists(), new_playlist);
 	}
@@ -254,7 +254,7 @@ void main_window::open_backend_filepath_filedialog()
 
 void main_window::create_new_playlist()
 {
-	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist());
+	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist(unique_ids_));
 	set_name(*new_playlist, "New playlist");
 	add_playlist(playlists_ui_->get_playlists(), new_playlist);
 }
@@ -573,7 +573,7 @@ bool main_window::load_playlists()
 		{
 			Json::Value json_value;
 			playlists_file >> json_value;
-			load_from(playlists_ui_->get_playlists(), json_value, boost::phoenix::new_ < flat_playlist > ());
+			load_from(playlists_ui_->get_playlists(), json_value, boost::phoenix::new_ < flat_playlist > (boost::phoenix::ref(unique_ids_)));
 			return true;
 		}
 	}

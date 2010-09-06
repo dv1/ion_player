@@ -7,7 +7,6 @@
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/fusion/sequence/intrinsic/at.hpp>
 #include <boost/range/iterator_range.hpp>
-
 #include <ion/unique_ids.hpp>
 
 #include "playlist.hpp"
@@ -47,8 +46,12 @@ public:
 			>
 		>
 	> entries_t;
+	typedef unique_ids < long > unique_ids_t;
 
 	typedef boost::iterator_range < entries_t::index < sequence_tag > ::type::const_iterator > entry_range_t;
+
+
+	explicit flat_playlist(unique_ids_t &unique_ids_);
 
 
 	virtual metadata_optional_t get_metadata_for(uri const &uri_) const;
@@ -77,7 +80,6 @@ public:
 
 
 protected:
-	typedef unique_ids < long > unique_ids_t;
 	typedef boost::optional < unique_ids_t::id_t > unique_id_optional_t;
 
 
@@ -91,7 +93,7 @@ protected:
 
 
 	entries_t entries;
-	unique_ids_t unique_ids_;
+	unique_ids_t &unique_ids_;
 };
 
 

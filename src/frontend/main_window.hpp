@@ -14,6 +14,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <ion/uri.hpp>
+#include <ion/flat_playlist.hpp>
 
 #include "settings.hpp"
 #include "audio_frontend.hpp"
@@ -102,6 +103,10 @@ protected:
 
 	typedef boost::shared_ptr < audio_frontend > audio_frontend_ptr_t;
 	audio_frontend_ptr_t audio_frontend_;
+
+	// TODO: put the unique_ids instance in the playlist class, as a flyweight (!), to guarantee that only one instance exists for all playlists
+	// do not put it in flat_playlist, since the unique_ids instance should be used in *all* playlists, even non-flat ones (but not in filter/view playlists)
+	flat_playlist::unique_ids_t unique_ids_;
 
 	QProcess *backend_process;
 	scanner *scanner_;
