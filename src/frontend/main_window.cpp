@@ -242,6 +242,11 @@ void main_window::set_current_volume()
 {
 	int new_volume = position_volume_widget_ui.volume->value();
 	audio_frontend_->set_current_volume(new_volume);
+	position_volume_widget_ui.volume->set_tooltip_text(
+		QString("%1%").arg(
+			int(float(new_volume) / float(ion::backend::decoder::max_volume()) * 100.0f)
+		)
+	);
 }
 
 
@@ -422,7 +427,7 @@ void main_window::get_current_playback_position()
 {
 	audio_frontend_->issue_get_position_command();
 	unsigned int current_position = audio_frontend_->get_current_position();
-	position_volume_widget_ui.position->setValue(current_position);
+	position_volume_widget_ui.position->set_value(current_position);
 
 	set_current_time_label(current_position);
 }
@@ -617,7 +622,9 @@ void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 		current_position_timer->start();
 	else
 		current_position_timer->stop();
-	position_volume_widget_ui.position->setValue(0);
+	position_volume_widget_ui.position->set_value(0);
+
+	current_playback_time->setText(get_time_string(0, 0));
 }
 
 
@@ -635,7 +642,7 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 		if (num_ticks > 0)
 		{
 			position_volume_widget_ui.position->setEnabled(true);
-			position_volume_widget_ui.position->setValue(0);
+			position_volume_widget_ui.position->set_value(0);
 			position_volume_widget_ui.position->setRange(0, num_ticks);
 
 			if (current_num_ticks_per_second > 0)
@@ -643,8 +650,9 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 				unsigned int length_in_seconds = num_ticks / current_num_ticks_per_second;
 				unsigned int minutes = length_in_seconds / 60;
 				unsigned int seconds = length_in_seconds % 60;
-				set_label_time(current_playback_time, 0, 0);
-				set_label_time(current_song_length, minutes, seconds);
+
+				current_playback_time->setText(get_time_string(0, 0));
+				current_song_length->setText(get_time_string(minutes, seconds));
 			}
 		}
 	}
@@ -666,20 +674,19 @@ void main_window::set_current_time_label(unsigned int const current_position)
 		unsigned int minutes = time_in_seconds / 60;
 		unsigned int seconds = time_in_seconds % 60;
 
-		set_label_time(current_playback_time, minutes, seconds);
+		current_playback_time->setText(get_time_string(minutes, seconds));
 	}
 	else
 		current_playback_time->setText("");
 }
 
 
-void main_window::set_label_time(QLabel *label, int const minutes, int const seconds)
+QString main_window::get_time_string(int const minutes, int const seconds) const
 {
-	label->setText(
-		QString("%1:%2")
-			.arg(minutes, 2, 10, QChar('0'))
-			.arg(seconds, 2, 10, QChar('0'))
-	);
+	return QString("%1:%2")
+		.arg(minutes, 2, 10, QChar('0'))
+		.arg(seconds, 2, 10, QChar('0'))
+		;
 }
 
 

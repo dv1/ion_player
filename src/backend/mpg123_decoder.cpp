@@ -422,7 +422,7 @@ unsigned int mpg123_decoder::update(void *dest, unsigned int const num_samples_t
 
 	if (remaining_size > 0)
 	{
-		std::memcpy(&out_buffer[0], &out_buffer[available_size], remaining_size); // Copy any remaining data to the start of the out buffer
+		std::memmove(&out_buffer[0], &out_buffer[available_size], remaining_size); // Copy any remaining data to the start of the out buffer
 		out_buffer.resize(remaining_size); // Resize the out buffer to the size of the remaining data
 	}
 	else

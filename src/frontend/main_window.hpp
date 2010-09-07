@@ -98,7 +98,7 @@ protected:
 	void current_metadata_changed(metadata_optional_t const &new_metadata);
 
 	void set_current_time_label(unsigned int const current_position);
-	void set_label_time(QLabel *label, int const minutes, int const seconds);
+	QString get_time_string(int const minutes, int const seconds) const;
 
 
 	typedef boost::shared_ptr < audio_frontend > audio_frontend_ptr_t;

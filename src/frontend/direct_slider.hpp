@@ -1,9 +1,7 @@
 #ifndef ION_FRONTEND_DIRECT_SLIDER_HPP
 #define ION_FRONTEND_DIRECT_SLIDER_HPP
 
-#include <QMouseEvent>
 #include <QSlider>
-#include <QStyle>
 
 
 namespace ion
@@ -16,18 +14,24 @@ class direct_slider:
 	public QSlider
 {
 public:
-	direct_slider(QWidget *parent):
-		QSlider(parent)
-	{
-	}
+	direct_slider(QWidget *parent);
+
+	void set_tooltip_text(QString const &new_text);
+	void set_value(int new_position);
 
 
 protected:
-	/*void mouseReleaseEvent(QMouseEvent *event)
-	{
-		if (minimum() < maximum())
-			setValue(QStyle::sliderValueFromPosition(minimum(), maximum(), event->x(), width(), false));
-	}*/
+	void mousePressEvent(QMouseEvent *event);
+	void mouseMoveEvent(QMouseEvent *event);
+	void mouseReleaseEvent(QMouseEvent *event);
+
+	void show_tooltip_text(QMouseEvent *event, bool const immediately);
+	void hide_tooltip_text();
+	int convert_pixel_position_to_value(int const pixel_position);
+
+
+	bool pressed;
+	QString tooltip_text;
 };
 
 
