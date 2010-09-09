@@ -39,7 +39,6 @@ flat_playlist::entries_by_uri_t::iterator flat_playlist::get_uri_iterator_for(ur
 	entries_by_uri_t::iterator uri_tag_iter = entries_by_uri.find(uri_);
 
 	return uri_tag_iter;
-
 }
 
 
@@ -118,14 +117,13 @@ flat_playlist::entry_t const * flat_playlist::get_entry(uri const &uri_) const
 
 flat_playlist::index_optional_t flat_playlist::get_entry_index(uri const &uri_) const
 {
-	entries_by_uri_t const &entries_by_uri = entries.get < uri_tag > ();
-	entries_by_uri_t::const_iterator uri_iter = get_uri_iterator_for(uri_);
-	if (uri_iter == entries_by_uri.end())
+	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
+	entry_sequence_t::const_iterator seq_iter = entries.project < sequence_tag > (get_uri_iterator_for(uri_));
+
+	if (seq_iter == entry_sequence.end())
 		return boost::none;
 
-	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
-	entry_sequence_t::const_iterator sequence_iter = entries.project < sequence_tag > (uri_iter);
-	return uint64_t(sequence_iter - entry_sequence.begin());
+	return index_t(seq_iter - entry_sequence.begin());
 }
 
 

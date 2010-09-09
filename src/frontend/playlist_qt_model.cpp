@@ -175,8 +175,13 @@ void playlist_qt_model::current_uri_changed(uri_optional_t const &new_current_ur
 
 bool playlist_qt_model::is_currently_playing() const
 {
-	playlist_traits < playlist > ::entry_t const *entry = get_entry(playlist_, *current_uri);
-	return (entry != 0);
+	if (current_uri)
+	{
+		playlist_traits < playlist > ::entry_t const *entry = get_entry(playlist_, *current_uri);
+		return (entry != 0);
+	}
+	else
+		return false;
 }
 
 
