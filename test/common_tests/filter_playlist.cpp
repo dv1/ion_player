@@ -37,7 +37,6 @@ int test_main(int, char **)
 	playlists.add_playlist(playlists_t::playlist_ptr_t(playlist2));
 
 	filter_playlist_t filter_playlist(playlists, boost::phoenix::bind(&match, boost::phoenix::arg_names::arg1));
-	filter_playlist.update_entries();
 
 
 	TEST_VALUE(ion::get_num_entries(filter_playlist), 3);
@@ -49,14 +48,14 @@ int test_main(int, char **)
 	// Internally, if one of the playlists that have URIs in the filter playlist proxy entry list get altered,
 	// the filter playlist is notified, and changes its proxy entry list accordingly.
 
-	playlist1->add_entry(ion::flat_playlist::entry_t(ion::uri("foo://extra"), *ion::parse_metadata("{ \"title\" : \"ccccc\" }")), false);
+	playlist1->add_entry(ion::flat_playlist::entry_t(ion::uri("foo://extra"), *ion::parse_metadata("{ \"title\" : \"ccccc\" }")), true);
 	TEST_VALUE(ion::get_num_entries(filter_playlist), 4);
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 0)).get_path(), "bar12");
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 1)).get_path(), "extra");
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 2)).get_path(), "bar23");
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 3)).get_path(), "bar24");
 
-	playlist2->remove_entry(*ion::get_entry(filter_playlist, 2), false);
+	playlist2->remove_entry(*ion::get_entry(filter_playlist, 2), true);
 	TEST_VALUE(ion::get_num_entries(filter_playlist), 3);
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 0)).get_path(), "bar12");
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 1)).get_path(), "extra");
