@@ -13,6 +13,15 @@ bool match(ion::playlist::entry_t const &entry)
 }
 
 
+void print_playlist(ion::playlist const &playlist_)
+{
+	for (ion::playlist::index_t i = 0; i < ion::get_num_entries(playlist_); ++i)
+	{
+		std::cout << i << ": " << boost::fusion::at_c < 0 > (*ion::get_entry(playlist_, i)).get_path() << std::endl;
+	}
+}
+
+
 int test_main(int, char **)
 {
 	typedef ion::playlists < ion::flat_playlist > playlists_t;
@@ -56,10 +65,11 @@ int test_main(int, char **)
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 3)).get_path(), "bar24");
 
 	playlist2->remove_entry(*ion::get_entry(filter_playlist, 2), true);
+	//print_playlist(filter_playlist);
 	TEST_VALUE(ion::get_num_entries(filter_playlist), 3);
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 0)).get_path(), "bar12");
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 1)).get_path(), "extra");
-	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 1)).get_path(), "bar24");
+	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 2)).get_path(), "bar24");
 
 	playlists.remove_playlist(*playlist1);
 	TEST_VALUE(ion::get_num_entries(filter_playlist), 1);

@@ -319,13 +319,24 @@ protected:
 
 		if (matches)
 		{
-			// TODO: Replace push_back. Instead, use an insert: put the new entry just after the last proxy entry with the given playlist
-			proxy_entries.push_back(
-				proxy_entry(
-					boost::fusion::at_c < 0 > (*entry_),
-					playlist_
-				)
+			proxy_entry_sequence_t &proxy_entry_sequence = proxy_entries.template get < sequence_tag > ();
+
+			typename proxy_entry_sequence_t::reverse_iterator riter = proxy_entry_sequence.rbegin();
+			for (; riter != proxy_entry_sequence.rend(); ++riter)
+			{
+				if (riter->playlist_ == playlist_)
+					break;
+			}
+
+			proxy_entry new_proxy_entry(
+				boost::fusion::at_c < 0 > (*entry_),
+				playlist_
 			);
+
+			if (riter == proxy_entry_sequence.rend())
+				proxy_entry_sequence.push_back(new_proxy_entry);
+			else
+				proxy_entry_sequence.insert(riter.base(), new_proxy_entry);
 		}
 	}
 
