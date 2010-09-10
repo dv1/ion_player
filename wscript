@@ -39,9 +39,9 @@ def set_options(opt):
 	opt.tool_options('boost_', '.')
 	opt.add_option('--build-variants', action='store', default='debug,release', help='build the selected variants')
 	opt.add_option('--enable-extra-warnings', action='store_true', default='', help='enable warnings that are usually disabled')
-	opt.recurse('src/backend')
+	opt.recurse('src/audio_backend')
 	opt.recurse('src/common')
-	opt.recurse('src/frontend')
+	opt.recurse('src/audio_player')
 
 
 def get_num_jobs():
@@ -81,9 +81,9 @@ def configure(conf):
 	conf.recurse('extern/Game_Music_Emu-0.5.2')
 
 	# sources
-	conf.recurse('src/backend')
+	conf.recurse('src/audio_backend')
 	conf.recurse('src/common')
-	conf.recurse('src/frontend')
+	conf.recurse('src/audio_player')
 
 	# add debug variant
 	if 'debug' in conf.env['BUILD_VARIANTS']:
@@ -133,9 +133,9 @@ def build(bld):
 	bld.recurse('extern/Game_Music_Emu-0.5.2')
 	bld.recurse('extern/jsoncpp')
 
-	bld.recurse('src/backend')
+	bld.recurse('src/audio_backend')
 	bld.recurse('src/common')
-	bld.recurse('src/frontend')
+	bld.recurse('src/audio_player')
 
 
 	# unit test utility functions
@@ -161,7 +161,7 @@ def build(bld):
 	for unit_test in unit_tests:
 		bld(
 			features = ['cxx', 'cprogram', 'test'],
-			uselib_local = 'ionplayer_backend ionplayer_common',
+			uselib_local = 'ion_audio_backend ion_common',
 			uselib = 'BOOST_THREAD BOOST BUILDMODE STRICT',
 			target = r_test.sub('.test', unit_test),
 			includes = '. test',

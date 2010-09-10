@@ -12,8 +12,8 @@ def build(bld):
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
 		uselib = 'BOOST BUILDMODE STRICT',
-		target = 'ionplayer_common',
-		name = 'ionplayer_common',
+		target = 'ion_common',
+		name = 'ion_common',
 		uselib_local = 'jsoncpp',
 		export_incdirs = '.',
 		includes = '.'
