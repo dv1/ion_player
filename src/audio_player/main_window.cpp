@@ -52,9 +52,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	settings_dialog = new QDialog(this);
 	settings_dialog_ui.setupUi(settings_dialog);
 
-	search_dialog = new QDialog(this);
-	search_dialog_ui.setupUi(search_dialog);
-
 	QToolButton *create_playlist_button = new QToolButton(this);
 	create_playlist_button->setDefaultAction(main_window_ui.action_create_new_tab);
 	main_window_ui.playlist_tab_widget->setCornerWidget(create_playlist_button);
@@ -72,8 +69,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(main_window_ui.action_add_url,             SIGNAL(triggered()), this, SLOT(add_url_to_playlist()));
 	connect(main_window_ui.action_remove_selected,     SIGNAL(triggered()), this, SLOT(remove_selected_from_playlist()));
 
-	connect(main_window_ui.action_find,                SIGNAL(triggered()), this, SLOT(show_search_dialog()));
-
 	connect(main_window_ui.action_new_playlist, SIGNAL(triggered()), this, SLOT(create_new_playlist()));
 	connect(main_window_ui.action_delete_playlist, SIGNAL(triggered()), this, SLOT(delete_playlist()));
 	connect(main_window_ui.action_rename_playlist, SIGNAL(triggered()), this, SLOT(rename_playlist()));
@@ -83,8 +78,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 	connect(position_volume_widget_ui.position, SIGNAL(sliderReleased()), this, SLOT(set_current_position()));
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
-
-	connect(search_dialog, SIGNAL(finished(int)), this, SLOT(search_dialog_hidden()));
 
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(open_backend_filepath_filedialog())); // TODO: better naming of the button
 
@@ -129,6 +122,10 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		set_name(*new_playlist, "Default");
 		add_playlist(playlists_ui_->get_playlists(), new_playlist);
 	}
+
+
+	search_dialog_ = new search_dialog(this, playlists_ui_->get_playlists(), *audio_frontend_);
+	connect(main_window_ui.action_find, SIGNAL(triggered()), search_dialog_, SLOT(show_search_dialog()));
 
 
 	start_backend();
@@ -359,35 +356,6 @@ void main_window::remove_selected_from_playlist()
 	}
 
 	playlist_ui_->remove_selected();
-}
-
-
-void main_window::show_search_dialog()
-{
-	if (search_dialog->isVisible())
-		return;
-
-	search_playlist_ = filter_playlist_ptr_t(new filter_playlist_t(playlists_ui_->get_playlists()));
-	search_qt_model_ = new playlist_qt_model(this, playlists_ui_->get_playlists(), *search_playlist_);
-
-	QItemSelectionModel *old_selection_model = search_dialog_ui.search_results_view->selectionModel();
-	search_dialog_ui.search_results_view->setModel(search_qt_model_);
-	if (old_selection_model != 0)
-		delete old_selection_model;
-
-	search_dialog->show();
-}
-
-
-void main_window::search_dialog_hidden()
-{
-	search_dialog_ui.search_results_view->setModel(0);
-	QItemSelectionModel *old_selection_model = search_dialog_ui.search_results_view->selectionModel();
-	if (old_selection_model != 0)
-		delete old_selection_model;
-
-	delete search_qt_model_;
-	filter_playlist_ = filter_playlist_ptr_t();
 }
 
 
@@ -732,7 +700,6 @@ QString main_window::get_time_string(int const minutes, int const seconds) const
 		.arg(seconds, 2, 10, QChar('0'))
 		;
 }
-
 
 
 }

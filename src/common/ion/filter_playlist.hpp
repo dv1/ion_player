@@ -5,11 +5,14 @@
 #include <map>
 #include <boost/array.hpp>
 #include <boost/function.hpp>
+#include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/random_access_index.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 
 #include "playlist.hpp"
 
@@ -44,6 +47,8 @@ public:
 		}
 	};
 
+	typedef boost::optional < proxy_entry > proxy_entry_optional_t;
+
 
 	struct sequence_tag {};
 	struct uri_tag {};
@@ -77,7 +82,7 @@ public:
 		playlist_added_connection = get_playlist_added_signal(playlists_).connect(boost::phoenix::bind(&self_t::playlist_added, this, boost::phoenix::arg_names::arg1));
 		playlist_removed_connection = get_playlist_removed_signal(playlists_).connect(boost::phoenix::bind(&self_t::playlist_removed, this, boost::phoenix::arg_names::arg1));
 
-		update_entries();
+		update_entries_impl();
 
 		BOOST_FOREACH(typename playlists_t::playlist_ptr_t playlist_, get_playlists(playlists_))
 		{
@@ -200,60 +205,43 @@ public:
 	}
 
 
+	proxy_entry_optional_t get_proxy_entry(index_t const index) const
+	{
+		if (index >= get_num_entries())
+			return boost::none;
+
+		proxy_entry_sequence_t const &proxy_entry_sequence = proxy_entries.template get < sequence_tag > ();
+		typename proxy_entry_sequence_t::const_iterator iter = proxy_entry_sequence.begin();
+		iter = iter + index;
+
+		return *iter;
+	}
+
+
+	proxy_entries_t const & get_proxy_entries() const { return proxy_entries; }
+
+
 	virtual bool is_mutable() const
 	{
 		return false;
 	}
 
 
-	virtual void add_entry(entry_t const &, bool const)
-	{
-	}
-
-
-	virtual void remove_entry(entry_t const &, bool const)
-	{
-	}
-
-
-	virtual void remove_entry(uri const &, bool const)
-	{
-	}
-
-
-	virtual void remove_entries(uri_set_t const &, bool const)
-	{
-	}
-
-
-	virtual void set_resource_metadata(uri const &, metadata_t const &)
-	{
-	}
-
-
-	virtual void clear_entries(bool const)
-	{
-	}
-
-
-	virtual void load_from(Json::Value const &)
-	{
-	}
-
-
-	virtual void save_to(Json::Value &) const
-	{
-	}
+	virtual void add_entry(entry_t const &, bool const) {}
+	virtual void remove_entry(entry_t const &, bool const) {}
+	virtual void remove_entry(uri const &, bool const) {}
+	virtual void remove_entries(uri_set_t const &, bool const) {}
+	virtual void set_resource_metadata(uri const &, metadata_t const &) {}
+	virtual void clear_entries(bool const) {}
+	virtual void load_from(Json::Value const &) {}
+	virtual void save_to(Json::Value &) const {}
 
 
 	void update_entries()
 	{
-		proxy_entries.clear();
-
-		BOOST_FOREACH(typename playlists_t::playlist_ptr_t playlist_, get_playlists(playlists_))
-		{
-			add_other_playlist(playlist_.get(), false);
-		}
+		all_resources_changed_signal(true);
+		update_entries_impl();
+		all_resources_changed_signal(false);
 	}
 
 
@@ -270,6 +258,17 @@ protected:
 	typedef std::map < playlist*, playlist_connections_ptr_t > playlist_connections_map_t;
 
 
+
+
+	void update_entries_impl()
+	{
+		proxy_entries.clear();
+
+		BOOST_FOREACH(typename playlists_t::playlist_ptr_t playlist_, get_playlists(playlists_))
+		{
+			add_other_playlist(playlist_.get(), false);
+		}
+	}
 
 
 	void get_playlist_uriset(playlist const &playlist_, uri_set_t &uris) const

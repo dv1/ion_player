@@ -22,6 +22,8 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_t &playlists_, 
 
 	entry_added_signal_connection = get_resource_added_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1, boost::lambda::_2));
 	entry_removed_signal_connection = get_resource_removed_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1, boost::lambda::_2));
+	all_resources_changed_connection = get_all_resources_changed_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::all_resources_changed, this, boost::lambda::_1));
+
 	active_playlist_changed_connection = get_active_playlist_changed_signal(playlists_).connect(boost::lambda::bind(&playlist_qt_model::active_playlist_changed, this, boost::lambda::_1));
 }
 
@@ -30,6 +32,7 @@ playlist_qt_model::~playlist_qt_model()
 {
 	entry_added_signal_connection.disconnect();
 	entry_removed_signal_connection.disconnect();
+	all_resources_changed_connection.disconnect();
 	active_playlist_changed_connection.disconnect();
 }
 
@@ -90,7 +93,7 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 		{
 			if (current_uri)
 			{
-				if ((&playlist_ == active_playlist) && (entry_uri == *current_uri))
+				if (/*(&playlist_ == active_playlist) && */(entry_uri == *current_uri))
 				{
 					QFont font = QApplication::font();
 					font.setBold(true);
@@ -217,6 +220,13 @@ void playlist_qt_model::entries_added(uri_set_t const uris, bool const before)
 void playlist_qt_model::entries_removed(uri_set_t const, bool const before)
 {
 	// Using reset() instead of begin/endRemoveRows(), since the selection may be complex (that is, non-contiguous; example, 5 items, and 1 2 5 are selected)
+	if (!before)
+		reset();
+}
+
+
+void playlist_qt_model::all_resources_changed(bool const before)
+{
 	if (!before)
 		reset();
 }

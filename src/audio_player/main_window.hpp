@@ -8,7 +8,6 @@
 
 #include "ui_main_window.h"
 #include "ui_position_volume_widget.h"
-#include "ui_search_dialog.h"
 #include "ui_settings.h"
 
 #include <boost/optional.hpp>
@@ -16,10 +15,10 @@
 
 #include <ion/uri.hpp>
 #include <ion/flat_playlist.hpp>
-#include <ion/filter_playlist.hpp>
 
 #include "settings.hpp"
 #include "audio_frontend.hpp"
+#include "search_dialog.hpp"
 #include "misc_types.hpp"
 
 
@@ -35,7 +34,6 @@ namespace audio_player
 
 class playlists_ui;
 class scanner;
-class playlist_qt_model;
 
 
 class main_window:
@@ -72,9 +70,6 @@ protected slots:
 	void add_url_to_playlist();
 	void remove_selected_from_playlist();
 
-	void show_search_dialog();
-	void search_dialog_hidden();
-
 	void try_read_stdout_line();
 	void backend_started();
 	void backend_error(QProcess::ProcessError process_error);
@@ -107,11 +102,9 @@ protected:
 	QString get_time_string(int const minutes, int const seconds) const;
 
 
+
 	typedef boost::shared_ptr < audio_frontend > audio_frontend_ptr_t;
 	audio_frontend_ptr_t audio_frontend_;
-
-	typedef filter_playlist < playlists_t > filter_playlist_t;
-	typedef boost::shared_ptr < filter_playlist_t > filter_playlist_ptr_t;
 
 	// TODO: put the unique_ids instance in the playlist class, as a flyweight (!), to guarantee that only one instance exists for all playlists
 	// do not put it in flat_playlist, since the unique_ids instance should be used in *all* playlists, even non-flat ones (but not in filter/view playlists)
@@ -131,9 +124,7 @@ protected:
 	settings *settings_;
 	QDialog *settings_dialog;
 
-	QDialog *search_dialog;
-	filter_playlist_ptr_t search_playlist_;
-	playlist_qt_model *search_qt_model_;
+	search_dialog *search_dialog_;
 
 	QLabel *current_song_title, *current_playback_time, *current_song_length, *current_scan_status;
 	QMovie *busy_indicator;
@@ -142,7 +133,6 @@ protected:
 	Ui_main_window main_window_ui;
 	Ui_position_volume_widget position_volume_widget_ui;
 	Ui_settings_dialog settings_dialog_ui;
-	Ui_search_dialog search_dialog_ui;
 };
 
 
