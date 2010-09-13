@@ -15,6 +15,8 @@
 #include <boost/signals2/signal.hpp>
 #include <boost/shared_ptr.hpp>
 
+#include <json/value.h>
+
 #include <ion/uri.hpp>
 #include <ion/playlists_traits.hpp>
 #include <ion/persistent_traits.hpp>

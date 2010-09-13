@@ -1,6 +1,9 @@
 #ifndef ION_AUDIO_BACKEND_TYPES_HPP
 #define ION_AUDIO_BACKEND_TYPES_HPP
 
+#include <ion/metadata.hpp>
+
+
 namespace ion
 {
 namespace audio_backend
@@ -50,6 +53,24 @@ struct playback_properties
 			(num_channels > 0) &&
 			(sample_type_ != sample_unknown)
 			;
+	}
+};
+
+
+struct module_ui
+{
+	std::string html_code;
+	metadata_t properties;
+
+	explicit module_ui():
+		properties(empty_metadata())
+	{
+	}
+
+	explicit module_ui(std::string const &html_code, metadata_t const &properties):
+		html_code(html_code),
+		properties(properties)
+	{
 	}
 };
 

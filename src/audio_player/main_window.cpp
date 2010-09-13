@@ -49,9 +49,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	position_volume_widget_ui.setupUi(sliders_widget);
 	main_window_ui.sliders_toolbar->addWidget(sliders_widget);
 
-	settings_dialog = new QDialog(this);
-	settings_dialog_ui.setupUi(settings_dialog);
-
 	QToolButton *create_playlist_button = new QToolButton(this);
 	create_playlist_button->setDefaultAction(main_window_ui.action_create_new_tab);
 	main_window_ui.playlist_tab_widget->setCornerWidget(create_playlist_button);
@@ -78,8 +75,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 	connect(position_volume_widget_ui.position, SIGNAL(sliderReleased()), this, SLOT(set_current_position()));
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
-
-	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(open_backend_filepath_filedialog())); // TODO: better naming of the button
 
 	busy_indicator = new QMovie(":/icons/busy_indicator", QByteArray(), this);
 
@@ -113,8 +108,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	settings_ = new settings(*this, this);
 	apply_flags();
 
-
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
+	settings_dialog_ = new settings_dialog(this, *settings_, *audio_frontend_, playlists_ui_->get_playlists(), boost::lambda::bind(&main_window::change_backend, this));
 
 	if (!load_playlists())
 	{
@@ -193,44 +188,12 @@ void main_window::move_to_currently_playing()
 
 void main_window::show_settings()
 {
-	// transfer settings from settings structure to dialog GUI
-	settings_dialog_ui.always_on_top->setCheckState(settings_->get_always_on_top_flag() ? Qt::Checked : Qt::Unchecked);
-	settings_dialog_ui.on_all_workspaces->setCheckState(settings_->get_on_all_workspaces_flag() ? Qt::Checked : Qt::Unchecked);
-	settings_dialog_ui.notification_area_icon->setCheckState(settings_->get_systray_icon_flag() ? Qt::Checked : Qt::Unchecked);
-	settings_dialog_ui.backend_filepath->setText(settings_->get_backend_filepath());
+	settings_dialog_->update_module_ui();
 
-	// in case of the singleplay playlist, fill the combobox with the playlist names
-	settings_dialog_ui.singleplay_playlist->clear();
-	BOOST_FOREACH(playlists_t::playlist_ptr_t const &playlist_, get_playlists(playlists_ui_->get_playlists()))
-	{
-		settings_dialog_ui.singleplay_playlist->addItem(playlist_->get_name().c_str());
-	}
-	settings_dialog_ui.singleplay_playlist->setEditText(settings_->get_singleplay_playlist()); // and set the current singleplay playlist namie
-
-
-	// if user rejected the dialog, stop processing
-	if (settings_dialog->exec() == QDialog::Rejected)
+	if (settings_dialog_->run_dialog() == QDialog::Rejected)
 		return;
 
-
-	// update settings
-	settings_->set_always_on_top_flag(settings_dialog_ui.always_on_top->checkState() == Qt::Checked);
-	settings_->set_on_all_workspaces_flag(settings_dialog_ui.on_all_workspaces->checkState() == Qt::Checked);
-	settings_->set_systray_icon_flag(settings_dialog_ui.notification_area_icon->checkState() == Qt::Checked);
-
-	// flags
 	apply_flags();
-
-	// singleplay playlist
-	if (!settings_dialog_ui.singleplay_playlist->currentText().isNull() || !settings_dialog_ui.singleplay_playlist->currentText().isEmpty())
-		settings_->set_singleplay_playlist(settings_dialog_ui.singleplay_playlist->currentText());
-
-	// backend filepath
-	if (settings_dialog_ui.backend_filepath->text() != settings_->get_backend_filepath())
-	{
-		settings_->set_backend_filepath(settings_dialog_ui.backend_filepath->text());
-		change_backend();
-	}
 }
 
 
@@ -251,14 +214,6 @@ void main_window::set_current_volume()
 			int(float(new_volume) / float(ion::audio_backend::decoder::max_volume()) * 100.0f)
 		)
 	);
-}
-
-
-void main_window::open_backend_filepath_filedialog()
-{
-	QString backend_filepath = QFileDialog::getOpenFileName(this, "Select backend", settings_dialog_ui.backend_filepath->text());
-	if (!backend_filepath.isNull() && !backend_filepath.isEmpty())
-		settings_dialog_ui.backend_filepath->setText(backend_filepath);
 }
 
 
@@ -499,7 +454,10 @@ void main_window::start_backend(bool const start_scanner)
 		delete backend_process;
 		backend_process = 0;
 		main_window_ui.central_pages->setCurrentWidget(main_window_ui.backend_not_configured_page);
+		return;
 	}
+
+	audio_frontend_->update_module_entries();
 }
 
 

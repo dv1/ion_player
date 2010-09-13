@@ -8,7 +8,6 @@
 
 #include "ui_main_window.h"
 #include "ui_position_volume_widget.h"
-#include "ui_settings.h"
 
 #include <boost/optional.hpp>
 #include <boost/shared_ptr.hpp>
@@ -18,6 +17,7 @@
 
 #include "settings.hpp"
 #include "audio_frontend.hpp"
+#include "settings_dialog.hpp"
 #include "search_dialog.hpp"
 #include "misc_types.hpp"
 
@@ -58,8 +58,6 @@ protected slots:
 
 	void set_current_position();
 	void set_current_volume();
-
-	void open_backend_filepath_filedialog();
 
 	void create_new_playlist();
 	void rename_playlist();
@@ -122,7 +120,7 @@ protected:
 	playlists_ui *playlists_ui_;
 
 	settings *settings_;
-	QDialog *settings_dialog;
+	settings_dialog *settings_dialog_;
 
 	search_dialog *search_dialog_;
 
@@ -132,7 +130,6 @@ protected:
 
 	Ui_main_window main_window_ui;
 	Ui_position_volume_widget position_volume_widget_ui;
-	Ui_settings_dialog settings_dialog_ui;
 };
 
 

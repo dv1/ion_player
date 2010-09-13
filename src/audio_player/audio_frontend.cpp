@@ -69,10 +69,20 @@ void audio_frontend::stop()
 }
 
 
+void audio_frontend::update_module_entries()
+{
+	send_line_to_backend_callback("get_modules");
+}
+
+
 void audio_frontend::parse_command(std::string const &event_command_name, params_t const &event_params)
 {
 	if (event_command_name == "paused")
 		paused = true;
+	else if (event_command_name == "modules")
+		parse_modules_list(event_params);
+	else if (event_command_name == "module_ui")
+		read_module_ui(event_params);
 	else if ((event_command_name == "current_position") && (event_params.size() >= 1))
 	{
 		try
@@ -94,6 +104,55 @@ void audio_frontend::parse_command(std::string const &event_command_name, params
 	}
 
 	base_t::parse_command(event_command_name, event_params);
+}
+
+
+void audio_frontend::parse_modules_list(params_t const &event_params)
+{
+	bool first_from_pair = true;
+	std::string type, id;
+
+	module_entries.clear();
+
+	BOOST_FOREACH(param_t const &param, event_params)
+	{
+		if (first_from_pair)
+		{
+			type = param;
+			first_from_pair = false;
+		}
+		else
+		{
+			if ((type == "decoder") || (type == "sink"))
+			{
+				id = param;			
+				module_entries.push_back(module_entry(type, id));
+				send_line_to_backend_callback(recombine_command_line("get_module_ui", boost::assign::list_of(id)));
+			}
+			first_from_pair = true;
+		}
+	}
+}
+
+
+void audio_frontend::read_module_ui(params_t const &event_params)
+{
+	if (event_params.size() < 3)
+		return; // TODO: report the error
+
+	module_entries_by_id_t &module_entries_by_id = module_entries.get < id_tag > ();
+	module_entries_by_id_t::iterator iter = module_entries_by_id.find(event_params[0]);
+	if (iter == module_entries_by_id.end())
+		return;
+
+	metadata_optional_t properties = parse_metadata(event_params[2]);
+	if (!properties)
+		return;
+
+	module_entry entry = *iter;
+	entry.html_code = event_params[1];
+	entry.ui_properties = *properties;
+	module_entries_by_id.replace(iter, entry);
 }
 
 

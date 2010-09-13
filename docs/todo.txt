@@ -1,0 +1,59 @@
+=======================================================================================
+OPEN:
+
+* Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
+* Add filter playlists to GUI; matching function shall use wildcards
+* Make use of the systray for basic player control and minimizing to tray
+* Import/export M3U
+* Import/export individual playlists in JSON format
+* Ability to edit metadata
+* Configuration UIs for backend modules (decoders, sinks)
+* UIs for editing settings for individual resources (the settings are stored as URI options)
+* Playlist sorting
+* Moving/cutting/copying/pasting playlist entries
+* Provide UI for cancelling a directory scan
+* Handle I/O failures (for example, SMB share + network cable disconnected)
+* Save/restore playback status when changing backend
+* Mark crashed/corrupt entries in playlist
+* make it possible to insert new items in middle of playlist
+* add unrecognized_resource event & exception
+* accelerate metadata scan by spawning the backend only at the beginning & when it crashes
+* audio/mods/MOD/Realms.mod causes DUMB to hang
+* Add shuffle
+* Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
+* uade decoder (only for file:// URIs!)
+* adplug decoder
+* flac decoder
+* ogg vorbis decoder
+* game music emulator decoder
+* extensive testing
+[* post processing, VST support, UPnP]
+
+
+=======================================================================================
+DONE:
+
+* Add code for scanning folders in background
+* Removing items -> return their IDs to the unique_ids instance
+* Restart playback backend if it crashes
+* Display playback status in status bar
+* Save/restore playlists
+* Renaming and erasing of playlists
+* Write custom sliders that allow for an instant jump to where the user clicked (instead of the "paged" jump style the default QSliders have)
+
+
+=======================================================================================
+BUG: transitional deadlock in backend
+
+1. set_next_decoder called, backend issues a decoder_mutex lock, common_sink_base issues a mutex lock
+2. while step 1 is running, sink calls resource_finished
+3. resource_finished tries to lock decoder_mutex, but since the sink loop locked the sink mutex, the code stops at this point
+
+=> Conclusion: extremely short songs (< ~1s) cause race conditions in backend and common_sink_base
+
+Reproduce with gamesmusic/tfmx/ contents and "race_conditions_commands" file. Disable the libmagic call in mpg123_decoder.cpp first, so mpg123 actually tries to
+play the TFMX files.
+
+SOLUTION: remove the mutex in common_sink_base; instead, supply the sink with a reference (!) to the backend's decoder_mutex. This implies that a lot of
+unnecessary locks must be removed. Therefore, do this fix only when everything else is running ok, since it is quite invasive, and regressions WILL happen.
+

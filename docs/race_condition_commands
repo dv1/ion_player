@@ -1,0 +1,5 @@
+play "file:///mnt/files/audio/gamesmusic/tfmx/Turrican2/SMPL.Turrican2_2?id=95849802" "{\n   \"decoder_type\" : \"mpg123\",\n   \"num_ticks\" : 0,\n   \"num_ticks_per_second\" : 44100,\n   \"title\" : \"SMPL.Turrican2_2\"\n}\n" "file:///mnt/files/audio/gamesmusic/tfmx/Turrican2/SMPL.Turrican2_4?id=2146915271" "{\n   \"decoder_type\" : \"mpg123\",\n   \"num_ticks\" : 0,\n   \"num_ticks_per_second\" : 44100,\n   \"title\" : \"SMPL.Turrican2_4\"\n}\n"
+set_next_resource "file:///mnt/files/audio/gamesmusic/tfmx/turrican3/T3-LVL1.SAM?id=1337453390"
+set_next_resource "file:///mnt/files/audio/gamesmusic/tfmx/turrican3/T3-LVL1.TFX?id=675074803"
+quit
+
