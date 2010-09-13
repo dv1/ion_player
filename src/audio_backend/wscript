@@ -16,12 +16,14 @@ def configure(conf):
 	conf.env['CPPPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src")
 	conf.env['LIBPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src/.libs")
 	conf.env['LIB_ADPLUG'] = 'adplug'
+	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC')
+	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC')
 
 
 def build(bld):
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX MAGIC BOOST BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = 'ion_common dumb jsoncpp',

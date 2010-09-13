@@ -447,8 +447,23 @@ mpg123_decoder_creator::~mpg123_decoder_creator()
 }
 
 
-decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t magic_handle)
 {
+	// TODO: this is a hack. It would be better to extend libmagic to accept the source_ parameter (or at least a bunch of callbacks for custom I/O).
+	if (source_->get_uri().get_type() == "file")
+	{
+		std::string filename = source_->get_uri().get_path();
+		char const *mime_type = magic_file(magic_handle, filename.c_str());
+		if (mime_type != 0)
+		{
+			if (std::string(mime_type) != "audio/mpeg")
+				return decoder_ptr_t();
+		}
+		else
+			return decoder_ptr_t();
+	}
+
+
 	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(send_command_callback, source_);
 	if (!mpg123_decoder_->is_initialized())
 	{

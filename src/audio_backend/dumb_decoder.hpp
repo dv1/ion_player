@@ -94,8 +94,11 @@ class dumb_decoder_creator:
 public:
 	explicit dumb_decoder_creator();
 
-	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback);
+	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t magic_handle);
 	virtual std::string get_type() const { return "dumb"; }
+
+protected:
+	DUMBFILE_SYSTEM fs;
 };
 
 

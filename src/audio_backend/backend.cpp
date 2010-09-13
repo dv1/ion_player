@@ -19,6 +19,8 @@ backend::backend():
 	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
+	magic_handle = magic_open(MAGIC_MIME_TYPE | MAGIC_NO_CHECK_COMPRESS | MAGIC_NO_CHECK_TAR | MAGIC_NO_CHECK_APPTYPE | MAGIC_NO_CHECK_ELF | MAGIC_NO_CHECK_TEXT | MAGIC_NO_CHECK_CDF | MAGIC_NO_CHECK_ENCODING | MAGIC_NO_CHECK_FORTRAN | MAGIC_NO_CHECK_TROFF);
+	magic_load(magic_handle, 0);
 }
 
 
@@ -34,6 +36,7 @@ backend::~backend()
 {
 	if (current_sink)
 		current_sink->stop();
+	magic_close(magic_handle);
 }
 
 
@@ -506,7 +509,7 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 		decoder_creators_t::iterator iter = decoder_creators.find(decoder_type);
 		if (iter != decoder_creators.end())
 		{
-			new_decoder = iter->second->create(new_source, metadata, send_command_callback);
+			new_decoder = iter->second->create(new_source, metadata, send_command_callback, magic_handle);
 		}
 	}
 
@@ -519,7 +522,7 @@ decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::strin
 			{
 				new_source->reset();
 
-				new_decoder = decoder_creator_pair.second->create(new_source, metadata, send_command_callback);
+				new_decoder = decoder_creator_pair.second->create(new_source, metadata, send_command_callback, magic_handle);
 				if (new_decoder)
 					break;
 			}

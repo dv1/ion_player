@@ -12,6 +12,48 @@
 #include "dumb_decoder.hpp"
 
 
+
+
+extern "C"
+{
+
+static void* custom_dumb_stream_open(char const * source_ptr)
+{
+        return (void*)(source_ptr);
+}
+
+static int custom_dumb_stream_skip(void *f, long n)
+{
+        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
+        source_->seek(n, ion::audio_backend::source::seek_relative);
+        return 0;
+}
+
+static int custom_dumb_stream_getc(void *f)
+{
+        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
+        uint8_t b;
+        source_->read(reinterpret_cast < char* > (&b), 1);
+        return int(b);
+}
+
+static long custom_dumb_stream_getnc(char *ptr, long n, void *f)
+{
+        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
+        source_->read(ptr, n);
+        return n;
+}
+
+static void custom_dumb_stream_close(void *f)
+{
+        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
+        source_->seek(0, ion::audio_backend::source::seek_absolute);
+}
+
+}
+
+
+
 namespace ion
 {
 namespace audio_backend
@@ -23,44 +65,35 @@ namespace
 {
 
 
-typedef boost::function < DUH* (DUMBFILE *) > dumb_read_function_t;
+typedef boost::function < DUH* (char const *) > dumb_read_function_t;
 typedef boost::tuple < dumb_read_function_t, std::string > dumb_read_function_entry_t;
 
 
-void read_module_impl(DUH* &duh, std::vector < uint8_t > &data, dumb_read_function_entry_t const &function_entry)
+void read_module_impl(DUH* &duh, source &source_, dumb_read_function_entry_t const &function_entry)
 {
 	if (duh != 0)
 		return;
 
-	DUMBFILE *file = dumbfile_open_memory(reinterpret_cast < char const * > (&data[0]), data.size());
-	duh = function_entry.get < 0 > ()(file);
-	dumbfile_close(file);
+	char const *source_ptr = reinterpret_cast < char const* > (&source_);
+	duh = function_entry.get < 0 > ()(source_ptr);
 }
 
 
 DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type &module_type_)
 {
-	std::vector < uint8_t > data;
-
-	{
-		data.resize(filesize);
-		long actual_size = source_.read(&data[0], filesize);
-		data.resize(actual_size);
-	}
-
 	DUH *duh = 0;
 
 	typedef std::map < dumb_decoder::module_type, dumb_read_function_entry_t > read_funcs_t;
 	read_funcs_t read_funcs;
-	read_funcs[dumb_decoder::module_type_xm] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_read_xm, boost::lambda::_1), "xm");
-	read_funcs[dumb_decoder::module_type_it] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_read_it, boost::lambda::_1), "it");
-	read_funcs[dumb_decoder::module_type_s3m] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_read_s3m, boost::lambda::_1), "s3m");
-	read_funcs[dumb_decoder::module_type_mod] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_read_mod, boost::lambda::_1), "mod");
+	read_funcs[dumb_decoder::module_type_xm] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_xm, boost::lambda::_1), "xm");
+	read_funcs[dumb_decoder::module_type_it] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_it, boost::lambda::_1), "it");
+	read_funcs[dumb_decoder::module_type_s3m] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_s3m, boost::lambda::_1), "s3m");
+	read_funcs[dumb_decoder::module_type_mod] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_mod, boost::lambda::_1), "mod");
 
 	{
 		read_funcs_t::iterator read_func_iter = read_funcs.find(module_type_);
 		if (read_func_iter != read_funcs.end())
-			read_module_impl(duh, data, read_func_iter->second);
+			read_module_impl(duh, source_, read_func_iter->second);
 	}
 
 	if (duh == 0)
@@ -69,7 +102,7 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 		{
 			if (module_type_ != value.first)
 			{
-				read_module_impl(duh, data, value.second);
+				read_module_impl(duh, source_, value.second);
 				if (duh != 0)
 				{
 					module_type_ = value.first;
@@ -424,15 +457,38 @@ dumb_decoder_creator::dumb_decoder_creator()
 {
 	dumb_resampling_quality = DUMB_RQ_CUBIC;
 	dumb_it_max_to_mix = 256;
+
+        fs.open = &custom_dumb_stream_open;
+        fs.skip = &custom_dumb_stream_skip;
+        fs.getc = &custom_dumb_stream_getc;
+        fs.getnc = &custom_dumb_stream_getnc;
+        fs.close = &custom_dumb_stream_close;
+        register_dumbfile_system(&fs);
 }
 
 
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t magic_handle)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
 	long filesize = source_->get_size();
 	if (filesize < 0)
 		return decoder_ptr_t();
+
+
+	// TODO: this is a hack. It would be better to extend libmagic to accept the source_ parameter (or at least a bunch of callbacks for custom I/O).
+	if (source_->get_uri().get_type() == "file")
+	{
+		std::string filename = source_->get_uri().get_path();
+		char const *mime_type = magic_file(magic_handle, filename.c_str());
+		if (mime_type != 0)
+		{
+			if (std::string(mime_type) != "audio/x-mod")
+				return decoder_ptr_t();
+		}
+		else
+			return decoder_ptr_t();
+	}
+
 
 	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, metadata);
 	if (!dumb_decoder_->is_initialized())

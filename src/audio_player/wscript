@@ -11,7 +11,7 @@ def configure(conf):
 def build(bld):
 	obj = bld(
 		features = ['cxx', 'cprogram'],
-		uselib = 'QTCORE QTGUI BUILDMODE STRICT',
+		uselib = 'QTCORE QTGUI QTWEBKIT BUILDMODE STRICT',
 		target = 'ion_player',
 		uselib_local = 'ion_common',
 		includes = '.'

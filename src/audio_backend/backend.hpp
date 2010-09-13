@@ -1,6 +1,8 @@
 #ifndef ION_AUDIO_BACKEND_BACKEND_HPP
 #define ION_AUDIO_BACKEND_BACKEND_HPP
 
+#include <magic.h>
+
 #include <boost/thread/mutex.hpp>
 
 #include <ion/uri.hpp>
@@ -116,6 +118,8 @@ protected:
 	long current_volume;
 
 	boost::mutex decoder_mutex;
+
+	magic_t magic_handle;
 
 	int loop_count;
 };

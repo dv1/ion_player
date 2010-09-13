@@ -333,7 +333,7 @@ The player is made up of two parts: an audio playback backend, and a frontend wi
 
 4.1. Backend structure
 
-The pureplayer backend is made up of modules, which are grouped in: sources, decoders, sinks.
+The ion backend is made up of modules, which are grouped in: sources, decoders, sinks.
 
 - source: A source gets data upon request. A source can be a local file, an HTTP stream etc. Sources must comply to the rules defined in section 2.6.
           Sources do not interpret the data in any way, not even for ASCII newline conversions (for example, \r\n stays \r\n, no matter what system it
@@ -435,7 +435,7 @@ a flyweight pattern implementation, where the flyweight is the song, and the ind
 
 4.8. Command list
 
-In addition to the commands described in 3.2, these commands exist in pureplayer:
+In addition to the commands described in 3.2, these commands exist in ion:
 
 --- pause
 Pauses playback. If nothing is being played, it does nothing. If playback is already paused, it does nothing.
@@ -473,9 +473,18 @@ Sets the current loop mode. If mode is <0, looping is disabled. mode = 0 means i
 Gets a list of modules. This tells the backend to send a modules event.
 
 
+--- get_module_ui < module ID >
+Tells the backend to return a user interface for the specified module. The user interface is present as HTML; for rendering, WebKit is typically used. No Webserver is necessary - instead, the frontend interfaces to the UI through Javascript.
+
+
+--- set_module_properties < module ID > < properties >
+Sets the properties of a module. The properties are in JSON format. (Do not confuse this with resource metadata.)
+It is up to the module to interpret the properties; the HTML UI generates them, the frontend just passes the JSON object through.
+
+
 4.9. Event list
 
-In addition to the commands described in 3.3, these events exist in pureplayer:
+In addition to the commands described in 3.3, these events exist in ion:
 
 --- paused <uri>
 The currently playing song has just been paused.
@@ -500,4 +509,9 @@ The current loop mode. See set_loop_mode for the meaning of <mode>.
 --- modules [<module 1> <id 1>] [<module 2> <id 2>] [<module 3> <id 3>] ...
 The list of available modules. The amount of arguments is always even (since for each module, there will be <moduleN> and <idN>).
 <moduleN>: type of the Nth substem. <idN>: identifies the Nth module.
+
+
+--- module_ui < module ID > < html_ui > < properties >
+Returns a user interface for the given module. The user interface is provided in HTML format. The properties are in JSON format.
+The frontend then tries to map the properties to the HTML UI.
 
