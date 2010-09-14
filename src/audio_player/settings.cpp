@@ -56,6 +56,12 @@ bool settings::get_systray_icon_flag() const
 }
 
 
+bool settings::get_backend_log_dialog_shown_flag() const
+{
+	return value("backend_log_dialog_shown", false).value < bool > ();
+}
+
+
 void settings::set_backend_filepath(QString const &new_filepath)
 {
 	setValue("backend_filepath", new_filepath);
@@ -83,6 +89,12 @@ void settings::set_on_all_workspaces_flag(bool const new_flag)
 void settings::set_systray_icon_flag(bool const new_flag)
 {
 	setValue("systray_icon", new_flag);
+}
+
+
+void settings::set_backend_log_dialog_shown_flag(bool const new_flag)
+{
+	setValue("backend_log_dialog_shown", new_flag);
 }
 
 

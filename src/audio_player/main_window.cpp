@@ -24,6 +24,7 @@
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
 #include "scanner.hpp"
+#include "backend_log_dialog.hpp"
 
 #include "../audio_backend/decoder.hpp"
 
@@ -105,8 +106,12 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	audio_frontend_->get_current_metadata_changed_signal().connect(boost::lambda::bind(&main_window::current_metadata_changed, this, boost::lambda::_1));
 
 
+	backend_log_dialog_ = new backend_log_dialog(this, 1000);
+
+
 	settings_ = new settings(*this, this);
 	apply_flags();
+
 
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
 	settings_dialog_ = new settings_dialog(this, *settings_, *audio_frontend_, playlists_ui_->get_playlists(), boost::lambda::bind(&main_window::change_backend, this));
@@ -324,7 +329,8 @@ void main_window::try_read_stdout_line()
 	while (backend_process->canReadLine())
 	{
 		QString line = backend_process->readLine().trimmed();
-		std::cerr << "backend stdout> " << line.toStdString() << std::endl;
+		if (!line.startsWith("current_position"))
+			backend_log_dialog_->add_line(backend_log_model::log_line_stdout, line);
 		audio_frontend_->parse_incoming_line(line.toStdString());
 	}
 }
@@ -332,7 +338,7 @@ void main_window::try_read_stdout_line()
 
 void main_window::backend_started()
 {
-	std::cerr << "Backend started." << std::endl;
+	backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Backend started");
 	audio_frontend_->backend_started("ion_audio");
 }
 
@@ -340,22 +346,24 @@ void main_window::backend_started()
 void main_window::backend_error(QProcess::ProcessError process_error)
 {
 	bool restart = false, send_signals = true;
-	std::cerr << "BACKEND ERROR: ";
+	std::stringstream sstr;
+	sstr << "BACKEND ERROR: ";
 	switch (process_error)
 	{
-		case QProcess::FailedToStart: std::cerr << "failed to start"; break;
-		case QProcess::Crashed: std::cerr << "crashed"; restart = true; send_signals = false; break;
-		case QProcess::Timedout: std::cerr << "timeout"; break;
-		case QProcess::WriteError: std::cerr << "write error"; restart = true; break;
-		case QProcess::ReadError: std::cerr << "read error"; restart = true; break;
-		default: std::cerr << "<unknown error>"; break;
+		case QProcess::FailedToStart: sstr << "failed to start"; break;
+		case QProcess::Crashed: sstr << "crashed"; restart = true; send_signals = false; break;
+		case QProcess::Timedout: sstr << "timeout"; break;
+		case QProcess::WriteError: sstr << "write error"; restart = true; break;
+		case QProcess::ReadError: sstr << "read error"; restart = true; break;
+		default: sstr << "<unknown error>"; break;
 	}
-	std::cerr << std::endl;
+	backend_log_dialog_->add_line(backend_log_model::log_line_misc, sstr.str().c_str());
+
 	audio_frontend_->backend_terminated();
 
 	if (restart)
 	{
-		std::cerr << "Restarting backend" << std::endl;
+		backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Restarting backend");
 		stop_backend(false, false, send_signals);
 		start_backend(false);
 	}
@@ -364,7 +372,7 @@ void main_window::backend_error(QProcess::ProcessError process_error)
 
 void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_status)
 {
-	std::cerr << "Backend finished." << std::endl;
+	backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Backend finished");
 }
 
 
@@ -475,14 +483,14 @@ void main_window::stop_backend(bool const send_quit_message, bool const stop_sca
 		if (backend_process->state() != QProcess::NotRunning)
 		{
 			backend_process->terminate();
-			std::cerr << "sending backend the TERM signal" << std::endl;
+			backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Sending backend the TERM signal");
 		}
 
 		backend_process->waitForFinished(30000);
 		if (backend_process->state() != QProcess::NotRunning)
 		{
 			backend_process->kill();
-			std::cerr << "sending backend the KILL signal" << std::endl;
+			backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Sending backend the KILL signal");
 		}
 	}
 
@@ -525,7 +533,8 @@ void main_window::print_backend_line(std::string const &line)
 {
 	if (backend_process != 0)
 	{
-		std::cerr << "backend stdin> " << line << std::endl;
+		if (line.find("get_current_position") != 0)
+			backend_log_dialog_->add_line(backend_log_model::log_line_stdin, line.c_str());
 		backend_process->write((line + "\n").c_str());
 	}
 }
@@ -580,6 +589,9 @@ void main_window::apply_flags()
 	else
 		setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
 	show(); // setWindowFlags() hides the window
+
+	// Show or hide the backend log
+	backend_log_dialog_->setVisible(settings_->get_backend_log_dialog_shown_flag());
 
 	// notification area icon
 	//system_tray_icon->setVisible(settings_->get_systray_icon_flag()); // TODO

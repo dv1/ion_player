@@ -98,6 +98,7 @@ int settings_dialog::run_dialog()
 	settings_dialog_ui.always_on_top->setCheckState(settings_.get_always_on_top_flag() ? Qt::Checked : Qt::Unchecked);
 	settings_dialog_ui.on_all_workspaces->setCheckState(settings_.get_on_all_workspaces_flag() ? Qt::Checked : Qt::Unchecked);
 	settings_dialog_ui.notification_area_icon->setCheckState(settings_.get_systray_icon_flag() ? Qt::Checked : Qt::Unchecked);
+	settings_dialog_ui.show_backend_log_dialog->setCheckState(settings_.get_backend_log_dialog_shown_flag() ? Qt::Checked : Qt::Unchecked);
 	settings_dialog_ui.backend_filepath->setText(settings_.get_backend_filepath());
 
 	// in case of the singleplay playlist, fill the combobox with the playlist names
@@ -117,6 +118,7 @@ int settings_dialog::run_dialog()
 	settings_.set_always_on_top_flag(settings_dialog_ui.always_on_top->checkState() == Qt::Checked);
 	settings_.set_on_all_workspaces_flag(settings_dialog_ui.on_all_workspaces->checkState() == Qt::Checked);
 	settings_.set_systray_icon_flag(settings_dialog_ui.notification_area_icon->checkState() == Qt::Checked);
+	settings_.set_backend_log_dialog_shown_flag(settings_dialog_ui.show_backend_log_dialog->checkState() == Qt::Checked);
 
 	// singleplay playlist
 	if (!settings_dialog_ui.singleplay_playlist->currentText().isNull() || !settings_dialog_ui.singleplay_playlist->currentText().isEmpty())

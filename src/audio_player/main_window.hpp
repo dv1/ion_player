@@ -34,6 +34,7 @@ namespace audio_player
 
 class playlists_ui;
 class scanner;
+class backend_log_dialog;
 
 
 class main_window:
@@ -123,6 +124,8 @@ protected:
 	settings_dialog *settings_dialog_;
 
 	search_dialog *search_dialog_;
+
+	backend_log_dialog *backend_log_dialog_;
 
 	QLabel *current_song_title, *current_playback_time, *current_song_length, *current_scan_status;
 	QMovie *busy_indicator;
