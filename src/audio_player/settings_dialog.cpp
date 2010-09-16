@@ -1,6 +1,10 @@
 #include <assert.h>
 #include <QFileDialog>
+#include <QWebFrame>
+#include <QWebSettings>
 #include <boost/foreach.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <ion/playlists.hpp>
 #include "audio_frontend.hpp"
 #include "settings.hpp"
@@ -17,6 +21,13 @@ module_entries_model::module_entries_model(QObject *parent, audio_frontend &audi
 	QAbstractListModel(parent),
 	audio_frontend_(audio_frontend_)
 {
+	module_entries_updated_signal_connection = audio_frontend_.get_module_entries_updated_signal().connect(boost::phoenix::bind(&module_entries_model::reset, this));
+}
+
+
+module_entries_model::~module_entries_model()
+{
+	module_entries_updated_signal_connection.disconnect();
 }
 
 
@@ -60,15 +71,10 @@ int module_entries_model::rowCount(QModelIndex const & parent) const
 }
 
 
-void module_entries_model::reset_module_list()
-{
-	reset();
-}
-
-
 
 settings_dialog::settings_dialog(QWidget *parent, settings &settings_, audio_frontend &audio_frontend_, playlists_t const &playlists_, change_backend_callback_t const &change_backend_callback):
 	QDialog(parent),
+	current_module_entry(0),
 	settings_(settings_),
 	audio_frontend_(audio_frontend_),
 	playlists_(playlists_),
@@ -79,16 +85,16 @@ settings_dialog::settings_dialog(QWidget *parent, settings &settings_, audio_fro
 	module_entries_model_ = new module_entries_model(this, audio_frontend_);
 	settings_dialog_ui.modules_list_view->setModel(module_entries_model_);
 
+	//QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+	
 	connect(settings_dialog_ui.backend_filedialog, SIGNAL(clicked()), this, SLOT(open_backend_filepath_filedialog())); // TODO: better naming of the button
 	connect(settings_dialog_ui.modules_list_view->selectionModel(), SIGNAL(currentChanged(QModelIndex const &, QModelIndex const &)), this, SLOT(selected_module_changed(QModelIndex const &)));
-
+	connect(settings_dialog_ui.module_gui_view->page()->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
 }
 
 
-void settings_dialog::update_module_ui()
+settings_dialog::~settings_dialog()
 {
-	// TODO: it would be better for audio_frontend to emit a signal when the module list has been updated (both because of modules and module_ui events)
-	module_entries_model_->reset_module_list();
 }
 
 
@@ -131,7 +137,11 @@ int settings_dialog::run_dialog()
 		change_backend_callback();
 	}
 
-	// TODO: send module UI properties to backend through the audio frontend
+	{
+		QVariant ui_properties_variant = settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript("uiProperties");
+		std::cerr << ui_properties_variant.typeName() << std::endl;
+		// TODO: send module UI properties to backend through the audio frontend
+	}
 
 	return QDialog::Accepted;
 }
@@ -162,15 +172,25 @@ void settings_dialog::selected_module_changed(QModelIndex const &new_selection)
 		settings_dialog_ui.module_gui_view->setUrl(QUrl("about:blank"));
 		return;
 	}
-
-	settings_dialog_ui.module_gui_view->setHtml(iter->html_code.c_str());
-
-	// TODO: transmit ui properties to WebKit
+	
+	set_module_ui(*iter);
 }
 
 
-settings_dialog::~settings_dialog()
+void settings_dialog::populate_javascript()
 {
+	if (current_module_entry == 0)
+		return;
+
+	// This transmits ui properties to WebKit; uiProperties becomes a global variable in the Javascript
+	settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript(QString("uiProperties = ") + get_metadata_string(current_module_entry->ui_properties).c_str() + ";");
+}
+
+
+void settings_dialog::set_module_ui(audio_frontend::module_entry const &module_entry_)
+{
+	current_module_entry = &module_entry_;
+	settings_dialog_ui.module_gui_view->setHtml(module_entry_.html_code.c_str());	
 }
 
 

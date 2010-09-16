@@ -193,8 +193,6 @@ void main_window::move_to_currently_playing()
 
 void main_window::show_settings()
 {
-	settings_dialog_->update_module_ui();
-
 	if (settings_dialog_->run_dialog() == QDialog::Rejected)
 		return;
 

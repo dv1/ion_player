@@ -7,6 +7,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/member.hpp>
+#include <boost/signals2/signal.hpp>
 
 #include <ion/frontend_base.hpp>
 #include <ion/metadata.hpp>
@@ -62,6 +63,8 @@ public:
 	typedef module_entries_t::index < type_tag > ::type module_entries_by_type_t;
 	typedef module_entries_t::index < id_tag > ::type module_entries_by_id_t;
 
+	typedef boost::signals2::signal < void() > module_entries_updated_signal_t;
+
 
 	explicit audio_frontend(send_line_to_backend_callback_t const &send_line_to_backend_callback);
 
@@ -80,6 +83,8 @@ public:
 
 	module_entries_t const & get_module_entries() const { return module_entries; }
 
+	module_entries_updated_signal_t & get_module_entries_updated_signal() { return module_entries_updated_signal; }
+
 
 protected:
 	void parse_command(std::string const &event_command_name, params_t const &event_params);
@@ -90,6 +95,7 @@ protected:
 	bool paused;
 	unsigned int current_position;
 	module_entries_t module_entries;
+	module_entries_updated_signal_t module_entries_updated_signal;
 };
 
 

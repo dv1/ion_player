@@ -132,6 +132,8 @@ void audio_frontend::parse_modules_list(params_t const &event_params)
 			first_from_pair = true;
 		}
 	}
+
+	module_entries_updated_signal();
 }
 
 
@@ -150,8 +152,13 @@ void audio_frontend::read_module_ui(params_t const &event_params)
 		return;
 
 	module_entry entry = *iter;
-	entry.html_code = event_params[1];
+	entry.html_code = "<html><head> \n\
+		<script type=\"text/javascript\"> \n\
+			setTimeout(\"alert(uiProperties[\\\"somekey\\\"]);\", 1000); \n\
+		</script></head> \n\
+		<body>No user interface for this module available.</body></html>";//event_params[1];
 	entry.ui_properties = *properties;
+	set_metadata_value(entry.ui_properties, "somekey", "somevalue");
 	module_entries_by_id.replace(iter, entry);
 }
 

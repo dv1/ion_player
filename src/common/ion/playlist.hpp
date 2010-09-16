@@ -205,6 +205,12 @@ inline playlist::index_optional_t get_entry_index(playlist const &playlist_, uri
 
 
 
+inline playlist::entry_t create_entry(playlist &, uri const &uri_, metadata_t const &metadata_)
+{
+	return playlist::entry_t(uri_, metadata_);
+}
+
+
 inline void add_entry(playlist &playlist_, playlist::entry_t const &entry_, bool const emit_signal)
 {
 	playlist_.add_entry(entry_, emit_signal);

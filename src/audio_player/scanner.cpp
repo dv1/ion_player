@@ -73,7 +73,7 @@ void scanner::start_process(ion::uri const &uri_to_be_scanned)
 
 void scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t const &new_metadata)
 {
-	add_entry(*current_playlist, playlist_traits < playlist > ::entry_t(new_uri, new_metadata), true); // TODO: make the playlist_traits < playlist > ::entry_t() part more generic
+	add_entry(*current_playlist, create_entry(*current_playlist, new_uri, new_metadata), true);
 }
 
 
