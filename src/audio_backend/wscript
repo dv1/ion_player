@@ -10,13 +10,15 @@ def configure(conf):
 	conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs')
 	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs')
 	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs')
-	conf.check_cfg(package='libbinio', uselib_store='BINIO', args='--cflags --libs')
 	conf.env['CPPPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123")
 	conf.env['LIBPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123/.libs")
-	conf.env['LIB_MPG123'] = 'mpg123'
+	conf.env['STATICLIB_MPG123'] = 'mpg123'
 	conf.env['CPPPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src")
 	conf.env['LIBPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src/.libs")
-	conf.env['LIB_ADPLUG'] = 'adplug'
+	conf.env['STATICLIB_ADPLUG'] = 'adplug'
+	conf.env['CPPPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src")
+	conf.env['LIBPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src/.libs")
+	conf.env['STATICLIB_BINIO'] = 'binio'
 	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC')
 	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC')
 
@@ -35,7 +37,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cprogram'],
-		uselib = 'BOOST_THREAD BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD BOOST MPG123 ADPLUG BINIO BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		uselib_local = 'ion_audio_backend ion_common',
 		includes = '.',

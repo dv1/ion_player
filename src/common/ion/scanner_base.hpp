@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <ion/command_line_tools.hpp>
 #include <ion/metadata.hpp>
@@ -103,8 +104,28 @@ protected:
 					metadata_ = empty_metadata();
 					std::cerr << "Metadata for URI \"" << uri_.get_full() << "\" is invalid!" << std::endl;
 				}
+				else
+				{
+					long num_subsongs = 1;
+					if (has_metadata_value(*metadata_, "num_subsongs"))
+					{
+						num_subsongs = get_metadata_value < long > (*metadata_, "num_subsongs", 1);
+						if (num_subsongs < 1)
+							num_subsongs = 1;
+					}
 
-				static_cast < Derived* > (this)->add_entry_to_playlist(uri_, *metadata_);
+					if ((num_subsongs == 1) || (uri_.get_options().find("subsong_index") != uri_.get_options().end()))
+						static_cast < Derived* > (this)->add_entry_to_playlist(uri_, *metadata_);
+					else
+					{
+						for (long subsong_nr = 0; subsong_nr < num_subsongs; ++subsong_nr)
+						{
+							ion::uri temp_uri(uri_);
+							temp_uri.get_options()["subsong_index"] = boost::lexical_cast < std::string > (subsong_nr);
+							start_scan(*current_playlist, temp_uri);
+						}
+					}
+				}
 			}
 			catch (ion::uri::invalid_uri const &invalid_uri_)
 			{

@@ -33,6 +33,7 @@ OPEN:
 =======================================================================================
 DONE:
 
+* Add libbinio to extern/ folder & build it with waf
 * Add code for scanning folders in background
 * Removing items -> return their IDs to the unique_ids instance
 * Restart playback backend if it crashes

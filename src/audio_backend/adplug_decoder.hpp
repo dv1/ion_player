@@ -2,6 +2,7 @@
 #define ION_AUDIO_BACKEND_BACKEND_ADPLUG_DECODER_HPP
 
 #include <binio.h>
+#include <boost/thread/mutex.hpp>
 #include "decoder.hpp"
 #include "decoder_creator.hpp"
 #include "source.hpp"
@@ -41,6 +42,7 @@ class source_binistream:
 {
 public:
 	source_binistream(source &source_);
+	source_binistream(source_binistream const &other);
 	~source_binistream();
 
 protected:
@@ -93,14 +95,19 @@ public:
 
 
 protected:
-	void initialize_player(bool const stereo, bool const surround, bool const is16bit, unsigned int const frequency);
+	void initialize_player(unsigned int const frequency);
 
 
+	mutable boost::mutex mutex_;
 	Copl *opl;
 	CPlayer *player;
 	source_ptr_t source_;
-	long to_add;
+	long to_add, subsong_nr;
 	playback_properties playback_properties_;
+	bool stereo, surround, is16bit;
+	float current_position;
+	long seek_to, cur_song_length;
+	int loop_mode, cur_num_loops;
 };
 
 
