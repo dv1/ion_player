@@ -467,7 +467,7 @@ dumb_decoder_creator::dumb_decoder_creator()
 }
 
 
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t magic_handle)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
 	long filesize = source_->get_size();
@@ -475,19 +475,8 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 		return decoder_ptr_t();
 
 
-	// TODO: this is a hack. It would be better to extend libmagic to accept the source_ parameter (or at least a bunch of callbacks for custom I/O).
-	if (source_->get_uri().get_type() == "file")
-	{
-		std::string filename = source_->get_uri().get_path();
-		char const *mime_type = magic_file(magic_handle, filename.c_str());
-		if (mime_type != 0)
-		{
-			if (std::string(mime_type) != "audio/x-mod")
-				return decoder_ptr_t();
-		}
-		else
-			return decoder_ptr_t();
-	}
+	if (mime_type != "audio/x-mod")
+		return decoder_ptr_t();
 
 
 	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, metadata);

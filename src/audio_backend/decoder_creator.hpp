@@ -2,7 +2,6 @@
 #define ION_AUDIO_BACKEND_DECODER_CREATOR_HPP
 
 #include <string>
-#include <magic.h>
 #include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 #include <ion/metadata.hpp>
@@ -21,7 +20,8 @@ class decoder_creator:
 	public component_creator < decoder_creator >
 {
 public:
-	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t magic_handle) = 0;
+	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type) = 0;
+	virtual bool uses_magic_handle() const { return true; }
 };
 
 

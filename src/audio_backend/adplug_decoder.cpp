@@ -213,13 +213,13 @@ long adplug_decoder::get_current_position() const
 
 long adplug_decoder::set_current_volume(long const)
 {
-	return max_volume();
+	return max_volume(); // TODO:
 }
 
 
 long adplug_decoder::get_current_volume() const
 {
-	return max_volume();
+	return max_volume(); // TODO:
 }
 
 
@@ -235,7 +235,7 @@ metadata_t adplug_decoder::get_metadata() const
 
 	std::string author_ = player->getauthor();
 	if (!author_.empty())
-		set_metadata_value(metadata_, "author", author_);
+		set_metadata_value(metadata_, "artist", author_);
 
 	std::string desc_ = player->getdesc();
 	if (!desc_.empty())
@@ -307,8 +307,12 @@ void adplug_decoder::initialize_player(unsigned int const frequency)
 		CAdPlug::players,
 		file_provider
 	);
-	cur_song_length = player->songlength(subsong_nr);
-	player->rewind(subsong_nr);
+
+	if (player != 0)
+	{
+		cur_song_length = player->songlength(subsong_nr);
+		player->rewind(subsong_nr);
+	}
 }
 
 
@@ -393,7 +397,7 @@ adplug_decoder_creator::adplug_decoder_creator()
 }
 
 
-decoder_ptr_t adplug_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t)
+decoder_ptr_t adplug_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &)
 {
 	adplug_decoder *adplug_decoder_ = new adplug_decoder(
 		send_command_callback,

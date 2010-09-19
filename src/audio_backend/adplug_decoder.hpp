@@ -119,8 +119,9 @@ class adplug_decoder_creator:
 public:
 	explicit adplug_decoder_creator();
 
-	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, magic_t);
+	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &);
 	virtual std::string get_type() const { return "adplug"; }
+	virtual bool uses_magic_handle() const { return false; }
 };
 
 

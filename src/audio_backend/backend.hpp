@@ -23,9 +23,9 @@ namespace audio_backend
 class backend
 {
 public:
-	typedef decoder_creator::creators_t decoder_creators_t;
-	typedef sink_creator::creators_t    sink_creators_t;
-	typedef source_creator::creators_t  source_creators_t;
+	typedef component_creators < decoder_creator > decoder_creators_t;
+	typedef component_creators < sink_creator >    sink_creators_t;
+	typedef component_creators < source_creator >  source_creators_t;
 
 
 	explicit backend();
@@ -49,9 +49,9 @@ public:
 	void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
 
 
-	decoder_creators_t & get_decoder_creators() { return decoder_creators; }
-	sink_creators_t    & get_sink_creators()    { return sink_creators; }
-	source_creators_t  & get_source_creators()  { return source_creators; }
+	decoder_creators_t::creators_t & get_decoder_creators() { return decoder_creators; }
+	sink_creators_t::creators_t    & get_sink_creators()    { return sink_creators; }
+	source_creators_t::creators_t  & get_source_creators()  { return source_creators; }
 
 
 	// Starts playback with the given params. See the play command in audio.txt for details.
@@ -109,9 +109,9 @@ protected:
 
 	send_command_callback_t send_command_callback;
 
-	decoder_creators_t decoder_creators;
-	sink_creators_t    sink_creators;
-	source_creators_t  source_creators;
+	decoder_creators_t::creators_t decoder_creators;
+	sink_creators_t::creators_t    sink_creators;
+	source_creators_t::creators_t  source_creators;
 
 	decoder_ptr_t current_decoder, next_decoder;
 	sink_ptr_t current_sink;

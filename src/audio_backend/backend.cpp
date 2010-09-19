@@ -173,10 +173,10 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 
 			// TODO: tighten this code; for instance, put the two maps in an MPL sequence, which can be iterated over
 			{
-				decoder_creators_t::iterator iter = decoder_creators.find(params[0]);
-				if (iter != decoder_creators.end())
+				decoder_creators_t::ordered_t::iterator iter = decoder_creators.get < decoder_creators_t::ordered_tag > ().find(params[0]);
+				if (iter != decoder_creators.get < decoder_creators_t::ordered_tag > ().end())
 				{
-					module_ui ui = iter->second->get_ui();
+					module_ui ui = (*iter)->get_ui();
 					response_command = "module_ui";
 					response_params.push_back(params[0]);
 					response_params.push_back(ui.html_code);
@@ -185,10 +185,10 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 			}
 
 			{
-				sink_creators_t::iterator iter = sink_creators.find(params[0]);
-				if (iter != sink_creators.end())
+				sink_creators_t::ordered_t::iterator iter = sink_creators.get < sink_creators_t::ordered_tag > ().find(params[0]);
+				if (iter != sink_creators.get < sink_creators_t::ordered_tag > ().end())
 				{
-					module_ui ui = iter->second->get_ui();
+					module_ui ui = (*iter)->get_ui();
 					response_command = "module_ui";
 					response_params.push_back(params[0]);
 					response_params.push_back(ui.html_code);
@@ -401,22 +401,22 @@ void backend::generate_modules_list(std::string &response_command_out, params_t 
 
 	// TODO: tighten this code; for instance, put the three maps in an MPL sequence, which can be iterated over
 
-	BOOST_FOREACH(source_creators_t::value_type const &value, source_creators)
+	BOOST_FOREACH(source_creators_t::creators_t::value_type const &value, source_creators)
 	{
 		response_params.push_back("source");
-		response_params.push_back(value.first);
+		response_params.push_back(value->get_type());
 	}
 
-	BOOST_FOREACH(decoder_creators_t::value_type const &value, decoder_creators)
+	BOOST_FOREACH(decoder_creators_t::creators_t::value_type const &value, decoder_creators)
 	{
 		response_params.push_back("decoder");
-		response_params.push_back(value.first);
+		response_params.push_back(value->get_type());
 	}
 
-	BOOST_FOREACH(sink_creators_t::value_type const &value, sink_creators)
+	BOOST_FOREACH(sink_creators_t::creators_t::value_type const &value, sink_creators)
 	{
 		response_params.push_back("sink");
-		response_params.push_back(value.first);
+		response_params.push_back(value->get_type());
 	}
 }
 
@@ -425,15 +425,15 @@ void backend::create_sink(std::string const &type)
 {
 	// This call does not use the decoder mutex, since the sink gets paused (and is eventually stopped).
 
-	sink_creators_t::iterator iter = sink_creators.find(type);
-	if (iter == sink_creators.end())
+	sink_creators_t::ordered_t::iterator iter = sink_creators.get < sink_creators_t::ordered_tag > ().find(type);
+	if (iter == sink_creators.get < sink_creators_t::ordered_tag > ().end())
 		return;
 
 	// First, pause any existing sink
 	if (current_sink)
 		current_sink->pause(false); // false means no notification
 
-	sink_ptr_t new_sink = iter->second->create(send_command_callback);
+	sink_ptr_t new_sink = (*iter)->create(send_command_callback);
 	if (new_sink)
 	{
 		/* If control reaches this scope, then the new sink was successfully created, and the
@@ -515,58 +515,78 @@ metadata_t backend::checked_parse_metadata(std::string const &metadata_str, std:
 
 source_ptr_t backend::create_new_source(ion::uri const &uri_)
 {
-	source_creators_t::iterator source_creator_iter = source_creators.find(uri_.get_type());
-	if (source_creator_iter == source_creators.end())
+	source_creators_t::ordered_t::iterator source_creator_iter = source_creators.get < source_creators_t::ordered_tag > ().find(uri_.get_type());
+	if (source_creator_iter == source_creators.get < source_creators_t::ordered_tag > ().end())
 		return source_ptr_t();
 
-	return source_creator_iter->second->create(uri_);
+	return (*source_creator_iter)->create(uri_);
 }
 
 
 decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata)
 {
+	// Read uri and try creating a new source for the decoder
 	ion::uri uri_(uri_str);
-	source_ptr_t new_source = create_new_source(uri_);
+	source_ptr_t new_source = create_new_source(uri_); // no suitable source found -> throw
 	if (!new_source)
 		throw resource_not_found(uri_str);
+
+
+	// Use libmagic to get a MIME type
+	std::string mime_type("<mimetype_not_set>");
+
+	// TODO: this is a hack. It would be better to extend libmagic to accept the new_source instance (or at least a bunch of callbacks for custom I/O).
+	if (uri_.get_type() == "file")
+	{
+		std::string filename = uri_.get_path();
+		char const *mime_type_local = magic_file(magic_handle, filename.c_str());
+		if (mime_type_local != 0)
+			mime_type = mime_type_local;
+	}
+
+
+	// The actual decoder creation
 
 	decoder_ptr_t new_decoder;
 
 	// Try the given decoder type first
 	if (!decoder_type.empty())
 	{
-		decoder_creators_t::iterator iter = decoder_creators.find(decoder_type);
-		if (iter != decoder_creators.end())
+		decoder_creators_t::ordered_t::iterator iter = decoder_creators.get < decoder_creators_t::ordered_tag > ().find(decoder_type);
+		if (iter != decoder_creators.get < decoder_creators_t::ordered_tag > ().end())
 		{
-			new_decoder = iter->second->create(new_source, metadata, send_command_callback, magic_handle);
+			new_decoder = (*iter)->create(new_source, metadata, send_command_callback, mime_type);
 		}
 	}
 
 	// If the given decoder type was not set, or invalid, or the creator failed, try all decoder creators
 	if (!new_decoder)
 	{
-		BOOST_FOREACH(decoder_creators_t::value_type &decoder_creator_pair, decoder_creators)
+		BOOST_FOREACH(decoder_creator *decoder_creator_, decoder_creators.get < decoder_creators_t::sequence_tag > ())
 		{
 			try
 			{
 				new_source->reset();
 
-				new_decoder = decoder_creator_pair.second->create(new_source, metadata, send_command_callback, magic_handle);
+				new_decoder = decoder_creator_->create(new_source, metadata, send_command_callback, mime_type);
 				if (new_decoder)
 					break;
 			}
 			catch (std::exception const &exc)
 			{
-				std::cerr << "Exception thrown while trying out decoder creator " << decoder_creator_pair.second->get_type() << ": " << exc.what() << std::endl;
+				std::cerr << "Exception thrown while trying out decoder creator " << decoder_creator_->get_type() << ": " << exc.what() << std::endl;
 			}
 		}
 	}
 
+
+	// Apply some initial settings on the new decoder
 	if (new_decoder)
 	{
 		new_decoder->set_current_volume(current_volume);
 		new_decoder->set_loop_mode(loop_count);
 	}
+
 
 	return new_decoder;
 }

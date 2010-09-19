@@ -10,26 +10,32 @@ def configure(conf):
 	conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs')
 	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs')
 	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs')
+	conf.check_cfg(package='ogg', uselib_store='OGG', args='--cflags --libs')
+	conf.check_cfg(package='vorbis', uselib_store='VORBIS', args='--cflags --libs')
+	conf.check_cfg(package='flac', uselib_store='FLAC', args='--cflags --libs')
+	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC')
+	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC')
+
 	conf.env['CPPPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123")
 	conf.env['LIBPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123/.libs")
 	conf.env['STATICLIB_MPG123'] = 'mpg123'
+
 	conf.env['CPPPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src")
 	conf.env['LIBPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src/.libs")
 	conf.env['STATICLIB_ADPLUG'] = 'adplug'
+
 	conf.env['CPPPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src")
 	conf.env['LIBPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src/.libs")
 	conf.env['STATICLIB_BINIO'] = 'binio'
-	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC')
-	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC')
 
 
 def build(bld):
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX ADPLUG BINIO MAGIC BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX OGG VORBIS ADPLUG BINIO MAGIC BOOST BUILDMODE STRICT', # excluding FLAC for now since one of its headers is called "assert.h", causing all sorts of trouble in Boost
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
-		uselib_local = 'ion_common dumb jsoncpp',
+		uselib_local = 'ion_common gme dumb jsoncpp',
 		includes = '.'
 	)
 	obj.find_sources_in_dirs('.')

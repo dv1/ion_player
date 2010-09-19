@@ -31,11 +31,11 @@ struct creators
 
 	explicit creators(ion::audio_backend::backend &backend_)
 	{
-		backend_.get_sink_creators()["alsa"] = &alsa_sink_creator_;
-		backend_.get_decoder_creators()["dumb"] = &dumb_decoder_creator_;
-		backend_.get_decoder_creators()["mpg123"] = &mpg123_decoder_creator_;
-		backend_.get_decoder_creators()["adplug"] = &adplug_decoder_creator_;
-		backend_.get_source_creators()["file"] = &file_source_creator_;
+		backend_.get_source_creators().push_back(&file_source_creator_);
+		backend_.get_sink_creators().push_back(&alsa_sink_creator_);
+		backend_.get_decoder_creators().push_back(&dumb_decoder_creator_);
+		backend_.get_decoder_creators().push_back(&mpg123_decoder_creator_);
+		backend_.get_decoder_creators().push_back(&adplug_decoder_creator_);
 	}
 };
 
