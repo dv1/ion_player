@@ -10,6 +10,7 @@ def configure(conf):
 	conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs')
 	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs')
 	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs')
+	conf.check_cfg(package='libbinio', uselib_store='BINIO', args='--cflags --libs')
 	conf.env['CPPPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123")
 	conf.env['LIBPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123/.libs")
 	conf.env['LIB_MPG123'] = 'mpg123'
@@ -23,7 +24,7 @@ def configure(conf):
 def build(bld):
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX MAGIC BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX ADPLUG BINIO MAGIC BOOST BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = 'ion_common dumb jsoncpp',

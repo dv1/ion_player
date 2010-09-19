@@ -37,7 +37,7 @@ playlist_ui::playlist_ui(QObject *parent, playlist &playlist_, playlists_ui &pla
 	tab_widget.addTab(view_widget, get_name(playlist_).c_str());
 
 
-	connect(view_widget, SIGNAL(activated(QModelIndex const &)), this, SLOT(play_song_in_row(QModelIndex const &)));
+	connect(view_widget, SIGNAL(doubleClicked(QModelIndex const &)), this, SLOT(play_song_in_row(QModelIndex const &)));
 }
 
 

@@ -6,6 +6,7 @@
 #include "file_source.hpp"
 #include "dumb_decoder.hpp"
 #include "mpg123_decoder.hpp"
+#include "adplug_decoder.hpp"
 
 
 /*
@@ -25,6 +26,7 @@ struct creators
 	ion::audio_backend::file_source_creator file_source_creator_;
 	ion::audio_backend::dumb_decoder_creator dumb_decoder_creator_;
 	ion::audio_backend::mpg123_decoder_creator mpg123_decoder_creator_;
+	ion::audio_backend::adplug_decoder_creator adplug_decoder_creator_;
 
 
 	explicit creators(ion::audio_backend::backend &backend_)
@@ -32,6 +34,7 @@ struct creators
 		backend_.get_sink_creators()["alsa"] = &alsa_sink_creator_;
 		backend_.get_decoder_creators()["dumb"] = &dumb_decoder_creator_;
 		backend_.get_decoder_creators()["mpg123"] = &mpg123_decoder_creator_;
+		backend_.get_decoder_creators()["adplug"] = &adplug_decoder_creator_;
 		backend_.get_source_creators()["file"] = &file_source_creator_;
 	}
 };

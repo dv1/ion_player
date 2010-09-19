@@ -52,11 +52,16 @@ def get_num_jobs():
 
 
 
-def run_cmd(cmd, dir_):
+def run_cmd(cmd, dir_, env_vars = {}):
 	print "====> Executing: %s    in directory: %s" % (cmd, dir_)
+	if env_vars:
+		local_env = os.environ.copy()
+		local_env.update(env_vars)
+	else:
+		local_env = os.environ
 	olddir = os.getcwd()
 	os.chdir(dir_)
-	os.waitpid(subprocess.Popen(cmd, shell=True).pid, 0)
+	os.waitpid(subprocess.Popen(cmd, shell=True, env=local_env).pid, 0)
 	os.chdir(olddir)
 
 
@@ -114,8 +119,12 @@ def external(ctx):
 	run_cmd("./configure --without-uadefs --without-audacious --without-uade123 --without-xmms --only-uadecore", 'extern/uade-2.13')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/uade-2.13')
 
+	# libbinio (necessary for adplug)
+	run_cmd("./configure --enable-static --disable-shared --with-iso", 'extern/libbinio-1.4')
+	run_cmd("make -j%d" % get_num_jobs(), 'extern/libbinio-1.4')
+
 	# adplug
-	run_cmd("./configure --enable-static --disable-shared", 'extern/adplug-2.2.1')
+	run_cmd("./configure --enable-static --disable-shared", 'extern/adplug-2.2.1', { 'libbinio_CFLAGS' : '-I ' + os.path.abspath('extern/libbinio-1.4/src'), 'libbinio_LIBS' : os.path.abspath('extern/libbinio-1.4/src/.libs') })
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/adplug-2.2.1')
 
 
@@ -123,6 +132,7 @@ def external(ctx):
 def clean_external(ctx):
 	run_cmd("make distclean", 'extern/mpg123-1.12.3')
 	run_cmd("make clean", 'extern/uade-2.13')
+	run_cmd("make distclean", 'extern/libbinio-1.4')
 	run_cmd("make distclean", 'extern/adplug-2.2.1')
 
 
