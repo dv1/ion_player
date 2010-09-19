@@ -1,6 +1,14 @@
 #ifndef ION_AUDIO_BACKEND_BACKEND_VORBIS_DECODER_HPP
 #define ION_AUDIO_BACKEND_BACKEND_VORBIS_DECODER_HPP
 
+
+#include <ogg/ogg.h>
+#include <vorbis/codec.h>
+#include <vorbis/vorbisenc.h>
+#include <vorbis/vorbisfile.h>
+
+#include <boost/thread/mutex.hpp>
+
 #include "decoder.hpp"
 #include "decoder_creator.hpp"
 
@@ -15,7 +23,7 @@ class vorbis_decoder:
 	public decoder
 {
 public:
-	explicit vorbis_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, metadata_t const &initial_metadata);
+	explicit vorbis_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_);
 	~vorbis_decoder();
 
 
@@ -47,6 +55,16 @@ public:
 	virtual unsigned int get_decoder_samplerate() const;
 
 	virtual unsigned int update(void *dest, unsigned int const num_samples_to_write);
+
+
+protected:
+	mutable boost::mutex mutex_;
+	source_ptr_t source_;
+	mutable OggVorbis_File vorbis_file;
+	vorbis_info *info;
+	int current_section;
+	bool initialized;
+	playback_properties playback_properties_;
 };
 
 

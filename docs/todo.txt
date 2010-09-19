@@ -19,12 +19,13 @@ OPEN:
 * add unrecognized_resource event & exception
 * accelerate metadata scan by spawning the backend only at the beginning & when it crashes
 * audio/mods/MOD/Realms.mod causes DUMB to hang
+* change common_sink_base behavior: when the number of actually read samples < number requested samples, it shall NOT immediately move to the next decoder; only do that when 0 is returned
+  (this is necessary for decoders like the vorbis one, since they may only give partial amounts sometimes, for example because the decoder's sample rate suddenly changes)
 * allow for disabling the speex resampler and reconfigure the sink as an alternative (pro: less CPU usage, potentially better sound quality  con: gapless playback only guaranteed if playback frequency does not change)
 * Add shuffle
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * uade decoder (only for file:// URIs!)
 * flac decoder
-* ogg vorbis decoder
 * game music emulator decoder
 * extensive testing
 [* post processing, VST support, UPnP]
@@ -33,6 +34,7 @@ OPEN:
 =======================================================================================
 DONE:
 
+* ogg vorbis decoder
 * adplug decoder
 * Add libbinio to extern/ folder & build it with waf
 * Add code for scanning folders in background
