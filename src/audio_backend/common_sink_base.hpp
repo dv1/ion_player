@@ -263,11 +263,9 @@ protected:
 					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
 					unsigned int num_samples_written = (*resampler_)(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write, *current_decoder);
-					if (num_samples_written < num_samples_to_write) // less samples were written than expected -> adjust offset and num samples to write, and try the next song
-					{
-						num_samples_to_write -= num_samples_written;
-						sample_offset += num_samples_written;
 
+					if (num_samples_written == 0) // no samples were written -> try the next song
+					{
 						std::string current_uri = current_decoder->get_uri().get_full();
 						std::string next_uri;
 						
@@ -292,6 +290,11 @@ protected:
 
 						if (!current_decoder)
 							do_shutdown = true;
+					}
+					else if (num_samples_written < num_samples_to_write) // less samples were written than expected -> adjust offset and num samples to write
+					{
+						num_samples_to_write -= num_samples_written;
+						sample_offset += num_samples_written;
 					}
 					else // rest of buffer fully filled -> exit loop, we are done
 					{

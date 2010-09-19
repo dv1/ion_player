@@ -274,12 +274,13 @@ unsigned int vorbis_decoder::update(void *dest, unsigned int const num_samples_t
 		bytes_per_tick = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 	}
 
+#if 1
 	uint8_t *buf = reinterpret_cast < uint8_t* > (dest);
 	long remaining_samples = num_samples_to_write;
 
 	// TODO: re-read vorbis info when the section changes
 	// since each section can have a different number of channels & different samplerate
-	// Also, once the common sink base has been changed, get rid of the while loop - it wont be necessary anymore
+	// Also, once the resampler works properly with the partial writes, get rid of the while loop - it wont be necessary anymore
 
 	while (remaining_samples > 0)
 	{
@@ -307,6 +308,23 @@ unsigned int vorbis_decoder::update(void *dest, unsigned int const num_samples_t
 	}
 
 	return num_samples_to_write - remaining_samples;
+#else
+	long num_read_bytes = ov_read(&vorbis_file, reinterpret_cast < char* > (dest), num_samples_to_write * bytes_per_tick, 0, 2, 1, &current_section);
+	std::cerr << (num_read_bytes / bytes_per_tick) << ' ' << num_samples_to_write << std::endl;
+
+	switch (num_read_bytes)
+	{
+		case OV_HOLE:
+		case OV_EBADLINK:
+		case OV_EINVAL:
+		case 0:
+			return 0;
+		default:
+			break;
+	}
+
+	return num_read_bytes / bytes_per_tick;
+#endif
 }
 
 

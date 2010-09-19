@@ -13,6 +13,7 @@ namespace audio_backend
 /* TODO:
 - testing; check if the byte <-> sample roundings in the () operator work properly
 - handle bit depths other than 16
+- support decoders that change the sample rate while playing
 */
 
 
@@ -121,9 +122,9 @@ unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to
 			input_buffer.resize(previous_inputbuffer_size + num_samples_decoded * channel_sample_factor);
 		}
 
-		if (num_samples_decoded < num_undecoded_samples)
+		// TODO: is this ok? Check if this causes playback to stop too soon
+		if (num_samples_decoded == 0)
 			loop = false;
-
 		if (input_buffer.size() == 0)
 			return 0;
 
