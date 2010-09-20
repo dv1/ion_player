@@ -8,6 +8,7 @@
 #include "mpg123_decoder.hpp"
 #include "vorbis_decoder.hpp"
 #include "adplug_decoder.hpp"
+#include "flac_decoder.hpp"
 
 
 /*
@@ -29,6 +30,7 @@ struct creators
 	ion::audio_backend::mpg123_decoder_creator mpg123_decoder_creator_;
 	ion::audio_backend::vorbis_decoder_creator vorbis_decoder_creator_;
 	ion::audio_backend::adplug_decoder_creator adplug_decoder_creator_;
+	ion::audio_backend::flac_decoder_creator flac_decoder_creator_;
 
 
 	explicit creators(ion::audio_backend::backend &backend_)
@@ -38,6 +40,7 @@ struct creators
 		backend_.get_decoder_creators().push_back(&dumb_decoder_creator_);
 		backend_.get_decoder_creators().push_back(&mpg123_decoder_creator_);
 		backend_.get_decoder_creators().push_back(&vorbis_decoder_creator_);
+		backend_.get_decoder_creators().push_back(&flac_decoder_creator_);
 		backend_.get_decoder_creators().push_back(&adplug_decoder_creator_);
 	}
 };
