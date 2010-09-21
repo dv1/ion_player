@@ -57,10 +57,15 @@ public:
 protected:
 	virtual ::FLAC__StreamDecoderReadStatus read_callback(FLAC__byte buffer[], size_t *bytes)
 	{
+//		std::cerr << "read_callback " << *bytes << "\n";
 		if (!source_.can_read())
+		{
+			ok = false;
 			return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+		}
 
-		*bytes = source_.read(buffer, *bytes);
+		long l = source_.read(buffer, *bytes);
+		*bytes = std::max(l, long(0));
 		ok = (*bytes > 0);
 
 		return (*bytes == 0) ? FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM : FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
@@ -79,6 +84,7 @@ protected:
 
 	virtual ::FLAC__StreamDecoderTellStatus tell_callback(FLAC__uint64 *absolute_byte_offset)
 	{
+//		std::cerr << "tell_callback\n";
 		*absolute_byte_offset = source_.get_position();
 		return FLAC__STREAM_DECODER_TELL_STATUS_OK;
 	}
@@ -101,12 +107,17 @@ protected:
 
 	virtual bool eof_callback()
 	{
+//		std::cerr << "eof_callback\n";
 		return !source_.can_read();
 	}
 
 
 	virtual ::FLAC__StreamDecoderWriteStatus write_callback(::FLAC__Frame const *frame, const FLAC__int32 * const buffer[])
 	{
+		if ((frame->header.number.sample_number + frame->header.blocksize) >= flac_metadata_.total_samples)
+			ok = false;
+
+//		std::cerr << "write_callback " << (frame->header.number.sample_number + frame->header.blocksize) << " " << flac_metadata_.total_samples << "\n";
 		unsigned long sample_offset = sample_buffer.size();
 		sample_buffer.resize(sample_offset + frame->header.blocksize * frame->header.channels);
 
@@ -155,6 +166,7 @@ flac_decoder::flac_decoder(send_command_callback_t const send_command_callback, 
 	decoder(send_command_callback),
 	source_(source_),
 	custom_flac_decoder_(0),
+	current_position(0),
 	initialized(false)
 {
 	// Misc checks & initializations
@@ -213,15 +225,19 @@ long flac_decoder::set_current_position(long const new_position)
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
 	custom_flac_decoder_->seek_absolute(new_position);
+	current_position = new_position;
+
+	return new_position;
 }
 
 
 long flac_decoder::get_current_position() const
 {
 	boost::lock_guard < boost::mutex > lock(mutex_);
-	FLAC__uint64 position = 0;
+	return current_position;
+/*	FLAC__uint64 position = 0;
 	bool ret = custom_flac_decoder_->get_decode_position(&position);
-	return ret ? long(position) : long(0);
+	return ret ? long(position / 2) : long(0);*/
 }
 
 
@@ -299,6 +315,11 @@ unsigned int flac_decoder::update(void *dest, unsigned int const num_samples_to_
 		if (!custom_flac_decoder_->process_single())
 			break;
 	}
+
+	current_position += std::min(
+		long(custom_flac_decoder_->get_sample_buffer().size()),
+		long(num_samples_to_write)
+	);
 
 	if (custom_flac_decoder_->is_ok())
 	{

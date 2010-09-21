@@ -56,6 +56,7 @@ protected:
 	source_ptr_t source_;
 	class custom_flac_decoder;
 	custom_flac_decoder *custom_flac_decoder_;
+	long current_position;
 	bool initialized;
 	playback_properties playback_properties_;
 };
