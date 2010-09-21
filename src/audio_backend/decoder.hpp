@@ -222,7 +222,7 @@ public:
 			unsigned int num_ticks = get_num_ticks();
 			unsigned int num_ticks_per_second = get_num_ticks_per_second();
 
-			if ((num_ticks == 0) || (num_ticks_per_second == 0))
+			if (num_ticks_per_second == 0)
 				throw resource_corrupted(get_uri().get_full());
 
 			set_metadata_value(metadata_, "decoder_type",         get_type());

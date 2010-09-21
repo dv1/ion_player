@@ -77,6 +77,9 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(position_volume_widget_ui.position, SIGNAL(sliderReleased()), this, SLOT(set_current_position()));
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
 
+	position_volume_widget_ui.position->setEnabled(false);
+	position_volume_widget_ui.volume->setEnabled(false);
+
 	busy_indicator = new QMovie(":/icons/busy_indicator", QByteArray(), this);
 
 	current_song_title = new QLabel(this);
@@ -393,7 +396,8 @@ void main_window::get_current_playback_position()
 {
 	audio_frontend_->issue_get_position_command();
 	unsigned int current_position = audio_frontend_->get_current_position();
-	position_volume_widget_ui.position->set_value(current_position);
+	if (position_volume_widget_ui.position->isEnabled())
+		position_volume_widget_ui.position->set_value(current_position);
 
 	set_current_time_label(current_position);
 }
@@ -598,6 +602,7 @@ void main_window::apply_flags()
 
 void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 {
+	position_volume_widget_ui.volume->setEnabled(new_current_uri);
 	if (new_current_uri)
 		current_position_timer->start();
 	else
@@ -634,6 +639,12 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 				current_playback_time->setText(get_time_string(0, 0));
 				current_song_length->setText(get_time_string(minutes, seconds));
 			}
+		}
+		else
+		{
+			position_volume_widget_ui.position->setEnabled(false);
+			position_volume_widget_ui.position->set_value(0);
+			position_volume_widget_ui.position->setRange(0, 1);
 		}
 	}
 	else
