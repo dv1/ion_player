@@ -62,13 +62,19 @@ public:
 	sample_buffer_t & get_sample_buffer() { return sample_buffer; }
 
 
+	bool end_of_stream() const
+	{
+		return get_state() == FLAC__STREAM_DECODER_END_OF_STREAM;
+	}
+
+
 protected:
 	virtual ::FLAC__StreamDecoderReadStatus read_callback(FLAC__byte buffer[], size_t *bytes)
 	{
 	//	std::cerr << "read_callback " << *bytes << "\n";
 		if (!source_.can_read())
 		{
-			ok = false;
+		//	ok = false;
 			*bytes = 0;
 			return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 		}
@@ -121,7 +127,7 @@ protected:
 			return false;
 		else
 		{
-			ok = false;
+		//	ok = false;
 			return true;
 		}
 	}
@@ -131,8 +137,14 @@ protected:
 	{
 		// apparently, it is necessary to do this check for FLAC streams with known length
 		// (unknown length streams are handled by the checks in the read and eof callback)
-		if ((flac_metadata_.total_samples > 0) && ((frame->header.number.sample_number + frame->header.blocksize) >= flac_metadata_.total_samples))
-			ok = false;
+	//	if ((flac_metadata_.total_samples > 0) && ((frame->header.number.sample_number + frame->header.blocksize) >= flac_metadata_.total_samples))
+	//		ok = false;
+
+		if (end_of_stream())
+		{
+			std::cerr << sample_buffer.size() << ' ' << frame->header.blocksize << ' ' << frame->header.channels << std::endl;
+			return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+		}
 
 	//	std::cerr << "write_callback " << (frame->header.number.sample_number + frame->header.blocksize) << " " << flac_metadata_.total_samples << "\n";
 		unsigned long sample_offset = sample_buffer.size();
@@ -328,30 +340,46 @@ unsigned int flac_decoder::update(void *dest, unsigned int const num_samples_to_
 	if (!is_initialized())
 		return 0;
 
-	while (custom_flac_decoder_->is_ok() && (custom_flac_decoder_->get_sample_buffer().size() < (num_samples_to_write * playback_properties_.num_channels)))
+	while (custom_flac_decoder_->is_ok() && !custom_flac_decoder_->end_of_stream() && (custom_flac_decoder_->get_sample_buffer().size() < (num_samples_to_write * playback_properties_.num_channels)))
 	{
 		if (!custom_flac_decoder_->process_single())
 			break;
 	}
 
-	current_position += std::min(
-		long(custom_flac_decoder_->get_sample_buffer().size()),
+	long num_samples_to_return = std::min(
+		long(custom_flac_decoder_->get_sample_buffer().size() / playback_properties_.num_channels),
 		long(num_samples_to_write)
 	);
 
-	if (custom_flac_decoder_->is_ok())
+	std::cerr
+		<< (custom_flac_decoder_->end_of_stream() ? 'Y' : 'N') << ' '
+		<< custom_flac_decoder_->get_sample_buffer().size() << ' '
+		<< num_samples_to_write << ' '
+		<< playback_properties_.num_channels << ' '
+		<< (num_samples_to_write * playback_properties_.num_channels) << ' '
+		<< num_samples_to_return << ' '
+		<< (long(custom_flac_decoder_->get_sample_buffer().size()) - long(num_samples_to_write * playback_properties_.num_channels)) << std::endl;
+
+	current_position += num_samples_to_return;
+
+	if (custom_flac_decoder_->is_ok()/* && !custom_flac_decoder_->end_of_stream()*/)
 	{
-		unsigned remaining_size = custom_flac_decoder_->get_sample_buffer().size() - num_samples_to_write * playback_properties_.num_channels;
-		std::memcpy(dest, &custom_flac_decoder_->get_sample_buffer()[0], num_samples_to_write * playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_));
-		std::memmove(
-			&custom_flac_decoder_->get_sample_buffer()[0],
-			&custom_flac_decoder_->get_sample_buffer()[num_samples_to_write * playback_properties_.num_channels],
-			remaining_size * get_sample_size(playback_properties_.sample_type_)
-		);
+		long remaining_size = long(custom_flac_decoder_->get_sample_buffer().size()) - long(num_samples_to_return * playback_properties_.num_channels);
+		std::memcpy(dest, &custom_flac_decoder_->get_sample_buffer()[0], num_samples_to_return * playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_));
+		if (remaining_size > 0)
+		{
+			std::memmove(
+				&custom_flac_decoder_->get_sample_buffer()[0],
+				&custom_flac_decoder_->get_sample_buffer()[num_samples_to_write * playback_properties_.num_channels],
+				remaining_size * get_sample_size(playback_properties_.sample_type_)
+			);
 
-		custom_flac_decoder_->get_sample_buffer().resize(remaining_size);
+			custom_flac_decoder_->get_sample_buffer().resize(remaining_size);
+		}
+		else
+			custom_flac_decoder_->get_sample_buffer().resize(0);
 
-		return num_samples_to_write;
+		return num_samples_to_return;
 	}
 	else
 		return 0;
