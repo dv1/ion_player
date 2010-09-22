@@ -10,12 +10,7 @@ namespace audio_backend
 {
 
 
-/*
-TODO:
-- rewrite this cleanly
-- distinguish between end-of-stream and failure (right now, the ok flag is used for both)
-- in addition to can_read(), introduce end_of_data() and is_ok() to source, to distinguish read issues better
-*/
+// TODO: clean up this code, rewrite it if necessary & extract metadata from flac
 
 
 class flac_decoder::custom_flac_decoder:
@@ -47,13 +42,26 @@ public:
 		source_(source_),
 		ok(true)
 	{
-		init();
-		process_until_end_of_metadata();
+		FLAC__StreamDecoderInitStatus init_status = init();
+		switch (init_status)
+		{
+			case FLAC__STREAM_DECODER_INIT_STATUS_OK:
+			case FLAC__STREAM_DECODER_INIT_STATUS_ALREADY_INITIALIZED:
+				ok = true;
+				break;
+			default:
+				ok = false;
+				break;
+		}
+
+		if (ok)
+			process_until_end_of_metadata();
 	}
 
 
 	~custom_flac_decoder()
 	{
+		finish();
 	}
 
 
@@ -71,19 +79,20 @@ public:
 protected:
 	virtual ::FLAC__StreamDecoderReadStatus read_callback(FLAC__byte buffer[], size_t *bytes)
 	{
-	//	std::cerr << "read_callback " << *bytes << "\n";
-		if (!source_.can_read())
+		long l = source_.read(buffer, *bytes);
+
+		if (source_.end_of_data_reached())
 		{
-		//	ok = false;
 			*bytes = 0;
 			return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 		}
-
-		long l = source_.read(buffer, *bytes);
-		*bytes = std::max(l, long(0));
-		ok = (*bytes > 0);
-
-		return (*bytes == 0) ? FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM : FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+		else if (!source_.is_ok())
+			return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+		else
+		{
+			*bytes = std::max(l, long(0));
+			return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+		}
 	}
 
 
@@ -93,22 +102,32 @@ protected:
 			return FLAC__STREAM_DECODER_SEEK_STATUS_UNSUPPORTED;
 
 		source_.seek(absolute_byte_offset, source::seek_absolute);
-		return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+		return source_.is_ok() ? FLAC__STREAM_DECODER_SEEK_STATUS_OK : FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 	}
 
 
 	virtual ::FLAC__StreamDecoderTellStatus tell_callback(FLAC__uint64 *absolute_byte_offset)
 	{
-	//	std::cerr << "tell_callback\n";
-		*absolute_byte_offset = source_.get_position();
-		return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+		long position = source_.get_position();
+		if (!source_.is_ok())
+			return FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
+		else if (position < 0)
+			return FLAC__STREAM_DECODER_TELL_STATUS_UNSUPPORTED;
+		else
+		{
+			*absolute_byte_offset = position;
+			return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+		}
 	}
 
 
 	virtual ::FLAC__StreamDecoderLengthStatus length_callback(FLAC__uint64 *stream_length)
 	{
 		long size = source_.get_size();
-		if (size == -1)
+
+		if (!source_.is_ok())
+			return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
+		else if (size == -1)
 		{
 			return FLAC__STREAM_DECODER_LENGTH_STATUS_UNSUPPORTED;
 		}
@@ -122,31 +141,18 @@ protected:
 
 	virtual bool eof_callback()
 	{
-	//	std::cerr << "eof_callback\n";
-		if (source_.can_read())
-			return false;
-		else
-		{
-		//	ok = false;
-			return true;
-		}
+		return source_.end_of_data_reached();
 	}
 
 
 	virtual ::FLAC__StreamDecoderWriteStatus write_callback(::FLAC__Frame const *frame, const FLAC__int32 * const buffer[])
 	{
-		// apparently, it is necessary to do this check for FLAC streams with known length
-		// (unknown length streams are handled by the checks in the read and eof callback)
-	//	if ((flac_metadata_.total_samples > 0) && ((frame->header.number.sample_number + frame->header.blocksize) >= flac_metadata_.total_samples))
-	//		ok = false;
-
 		if (end_of_stream())
 		{
 			std::cerr << sample_buffer.size() << ' ' << frame->header.blocksize << ' ' << frame->header.channels << std::endl;
 			return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 		}
 
-	//	std::cerr << "write_callback " << (frame->header.number.sample_number + frame->header.blocksize) << " " << flac_metadata_.total_samples << "\n";
 		unsigned long sample_offset = sample_buffer.size();
 		sample_buffer.resize(sample_offset + frame->header.blocksize * frame->header.channels);
 
@@ -177,7 +183,6 @@ protected:
 
 	virtual void error_callback(::FLAC__StreamDecoderErrorStatus status)
 	{
-	//	std::cerr << "error_callback " << status << "\n";
 		ok = false;
 	}
 
@@ -265,9 +270,6 @@ long flac_decoder::get_current_position() const
 {
 	boost::lock_guard < boost::mutex > lock(mutex_);
 	return current_position;
-/*	FLAC__uint64 position = 0;
-	bool ret = custom_flac_decoder_->get_decode_position(&position);
-	return ret ? long(position / 2) : long(0);*/
 }
 
 
@@ -351,18 +353,18 @@ unsigned int flac_decoder::update(void *dest, unsigned int const num_samples_to_
 		long(num_samples_to_write)
 	);
 
-	std::cerr
+/*	std::cerr
 		<< (custom_flac_decoder_->end_of_stream() ? 'Y' : 'N') << ' '
 		<< custom_flac_decoder_->get_sample_buffer().size() << ' '
 		<< num_samples_to_write << ' '
 		<< playback_properties_.num_channels << ' '
 		<< (num_samples_to_write * playback_properties_.num_channels) << ' '
 		<< num_samples_to_return << ' '
-		<< (long(custom_flac_decoder_->get_sample_buffer().size()) - long(num_samples_to_write * playback_properties_.num_channels)) << std::endl;
+		<< (long(custom_flac_decoder_->get_sample_buffer().size()) - long(num_samples_to_write * playback_properties_.num_channels)) << std::endl;*/
 
 	current_position += num_samples_to_return;
 
-	if (custom_flac_decoder_->is_ok()/* && !custom_flac_decoder_->end_of_stream()*/)
+	if (custom_flac_decoder_->is_ok())
 	{
 		long remaining_size = long(custom_flac_decoder_->get_sample_buffer().size()) - long(num_samples_to_return * playback_properties_.num_channels);
 		std::memcpy(dest, &custom_flac_decoder_->get_sample_buffer()[0], num_samples_to_return * playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_));

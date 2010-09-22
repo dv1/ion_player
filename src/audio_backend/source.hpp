@@ -29,8 +29,14 @@ public:
 	};
 
 
+	/*
+	* Resets the source to its original state, resetting any internal statse, flushing any internal buffers and setting the internal read position to the beginning
+	* of the source (if possible). Note that certain source types, such as broadcasts, cannot be fully reset; the contents that are read will be different. In any way,
+	* this call tries to reset as much as possible.
+	* Unlike seek(seek_absolute, 0) this also works when the end-of-data was reached.
+	* @post source will be reset to the state it was when it was created (or as close as possible).
+	*/
 	virtual void reset() = 0;
-
 
 	/*
 	* Reads num_bytes bytes to dest, returning the amount of bytes actually read (this might be less, but never more than num_bytes).
@@ -51,10 +57,32 @@ public:
 	* Determines whether or not it is possible to read from this source, returning true if it is possible, false otherwise.
 	* The return value may differ over time, particularly if an end-of-file/stream is encountered, making it useful for read loops.
 	* For instance, it is a common method to call read() as long as can_read() returns true.
+	* A return value of false can have multiple causes: end of data reached, fatal error occurred etc.
+	* Generally speaking, if end_of_data_reached() returns true, this call will return false.
+	* If is_ok() returns false, this call will return false.
 	*
 	* @return true if it is possible to read from this source, false otherwise
 	*/
 	virtual bool can_read() const = 0;
+
+	/*
+	* Determines whether or not the source reached the end of available data.
+	* Note that this is expected to return true *after a reading operation detected the end-of-data*.
+	* This means that checking this first, and then reading, will fail - it has to be the other way round.
+	* once this returns true, the source may be left in an undefined state, meaning that operations like seeking won't
+	* work properly. From this point on, use reset() to get the source back to a working state.
+	* @return true if end of data was reached, false otherwise.
+	*/
+	virtual bool end_of_data_reached() const = 0;
+
+	/*
+	* Determines whether or not the source is in an operational state (an OK state).
+	* If the source is in a non-operational state, this means an error occurred, and the source is no longer able to handle I/O requests
+	* properly. Try using reset() to get it working again.
+	* Note that end-of-data reached does not imply that the source is in a non-operational state.
+	* @return true if the source is in an operational state, false otherwise.
+	*/
+	virtual bool is_ok() const = 0;
 
 	/*
 	* Seeks to the given position, using the given seek type.
@@ -72,7 +100,7 @@ public:
 	*
 	* @param new_position new position to use; see the explanation above for the meaning of this value
 	* @param type seeking type to use
-	* @pre seeking must be supported for the given type
+	* @pre seeking must be supported for the given type; end-of-stream was not reached yet
 	* @post if the call was successful, the current position will have been adjusted as described above; if the call failed, nothing will have changed
 	*/
 	virtual void seek(long const new_position, seek_type const type) = 0;

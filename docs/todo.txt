@@ -18,13 +18,12 @@ OPEN:
 * make it possible to insert new items in middle of playlist
 * add unrecognized_resource event & exception
 * accelerate metadata scan by spawning the backend only at the beginning & when it crashes
-* audio/mods/MOD/Realms.mod causes DUMB to hang
+* audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
 * allow for disabling the speex resampler at run-time, causing the backend to reinitialize the sink instead
   (pro: less CPU usage, potentially better sound quality  con: gapless playback only guaranteed if playback frequency does not change)
 * Add shuffle
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * uade decoder (only for file:// URIs!)
-* flac decoder
 * game music emulator decoder
 * extensive testing
 [* post processing, VST support, UPnP]
@@ -37,6 +36,7 @@ DONE:
   (this is necessary for decoders like the vorbis one, since they may only give partial amounts sometimes, for example because the decoder's sample rate suddenly changes)
 * ogg vorbis decoder
 * adplug decoder
+* flac decoder
 * Add libbinio to extern/ folder & build it with waf
 * Add code for scanning folders in background
 * Removing items -> return their IDs to the unique_ids instance

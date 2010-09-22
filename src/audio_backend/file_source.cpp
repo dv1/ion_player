@@ -39,6 +39,18 @@ bool file_source::can_read() const
 }
 
 
+bool file_source::end_of_data_reached() const
+{
+	return file.eof();
+}
+
+
+bool file_source::is_ok() const
+{
+	return !file.fail();
+}
+
+
 void file_source::seek(long const num_bytes, seek_type const type)
 {
 	std::ios_base::seekdir dir = std::ios::beg;

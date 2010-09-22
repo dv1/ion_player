@@ -24,6 +24,8 @@ public:
 
 	virtual long read(void *dest, long const num_bytes);
 	virtual bool can_read() const;
+	virtual bool end_of_data_reached() const;
+	virtual bool is_ok() const;
 
 	virtual void seek(long const num_bytes, seek_type const type);
 	virtual bool can_seek(seek_type const type) const;
