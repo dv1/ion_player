@@ -24,7 +24,6 @@ OPEN:
 * Add shuffle
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * uade decoder (only for file:// URIs!)
-* game music emulator decoder
 * extensive testing
 [* post processing, VST support, UPnP]
 
@@ -34,6 +33,7 @@ DONE:
 
 * change common_sink_base behavior: when the number of actually read samples < number requested samples, it shall NOT immediately move to the next decoder; only do that when 0 is returned
   (this is necessary for decoders like the vorbis one, since they may only give partial amounts sometimes, for example because the decoder's sample rate suddenly changes)
+* game music emulator decoder
 * ogg vorbis decoder
 * adplug decoder
 * flac decoder

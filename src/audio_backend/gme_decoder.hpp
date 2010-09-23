@@ -1,12 +1,8 @@
 #ifndef ION_AUDIO_BACKEND_BACKEND_GME_DECODER_HPP
 #define ION_AUDIO_BACKEND_BACKEND_GME_DECODER_HPP
 
-
-#include <gme/Music_Emu.h>
-
-#include <boost/thread/mutex.hpp>
-
 #include "decoder.hpp"
+#include <boost/thread/mutex.hpp>
 #include "decoder_creator.hpp"
 
 
@@ -55,11 +51,16 @@ public:
 
 
 protected:
+	bool reset_emu(unsigned int const sample_rate);
+
+
 	mutable boost::mutex mutex_;
 	source_ptr_t source_;
-	bool initialized;
-	Music_Emu *emu;
 	playback_properties playback_properties_;
+	unsigned int track_nr;
+
+	struct internal_data;
+	internal_data *internal_data_;
 };
 
 

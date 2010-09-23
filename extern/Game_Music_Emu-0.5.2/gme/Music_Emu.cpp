@@ -271,8 +271,9 @@ void Music_Emu::handle_fade( long out_count, sample_t* out )
 	{
 		int const shift = 14;
 		int const unit = 1 << shift;
-		int gain = int_log( (out_time + i - fade_start) / fade_block_size,
-				fade_step, unit );
+		int gain = 0;
+		if ( fade_step > 0 )
+			gain = int_log( (out_time + i - fade_start) / fade_block_size, fade_step, unit );
 		if ( gain < (unit >> fade_shift) )
 			track_ended_ = emu_track_ended_ = true;
 		

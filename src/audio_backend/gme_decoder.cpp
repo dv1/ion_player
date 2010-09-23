@@ -1,9 +1,14 @@
 #include <assert.h>
 #include <iostream>
-#include <boost/thread/locks.hpp>
+#include <stdint.h>
+
+#include "gme_decoder.hpp"
 #include <gme/gme.h>
 #include <gme/Data_Reader.h>
-#include "gme_decoder.hpp"
+#include <gme/Music_Emu.h>
+
+#include <boost/thread/locks.hpp>
+
 
 
 namespace ion
@@ -26,7 +31,7 @@ public:
 	}
 
 
-	virtual long read_avail( void *dest, long n)
+	virtual long read_avail(void *dest, long n)
 	{
 		if (source_.can_read())
 			return source_.read(dest, n);
@@ -43,7 +48,7 @@ public:
 	}
 
 
-	virtual blargg_err_t skip( long count )
+	virtual blargg_err_t skip(long count)
 	{
 		if (source_.can_seek(source::seek_relative))
 		{
@@ -60,52 +65,38 @@ protected:
 };
 
 
-bool gme_open_reader( Data_Reader *reader, Music_Emu** out, long sample_rate )
+}
+
+
+struct gme_decoder::internal_data
 {
-	assert( reader && out );
-	*out = 0;
-	
-	char header [4];
-	int header_size = 0;
-	
-	header_size = sizeof header;
-	if (reader->read( header, sizeof header ) != 0)
-		return false;
+	Music_Emu *emu;
+	track_info_t track_info_;
 
-	gme_type_t file_type = gme_identify_extension( gme_identify_header( header ) );
-	if ( !file_type )
-		return false;
-	
-	Music_Emu* emu = gme_new_emu( file_type, sample_rate );
-	if (!emu)
-		return false;
-	
-	// optimization: avoids seeking/re-reading header
-	Remaining_Reader rem( header, header_size, reader );
-	gme_err_t err = emu->load( rem );
-	
-	if ( err )
+
+	explicit internal_data():
+		emu(0)
 	{
-		std::cerr << err << std::endl;
-		delete emu;
 	}
-	else
-		*out = emu;
-	
-	return true;
-}
 
-
-}
-
+	~internal_data()
+	{
+		if (emu != 0)
+			delete emu;
+	}
+};
 
 
 gme_decoder::gme_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
 	decoder(send_command_callback),
 	source_(source_),
-	initialized(false),
-	emu(0)
+	track_nr(0),
+	internal_data_(0)
 {
+	internal_data_ = new internal_data;
+	if (internal_data_ == 0)
+		return;
+
 	// Misc checks & initializations
 
 	if (!source_)
@@ -115,33 +106,36 @@ gme_decoder::gme_decoder(send_command_callback_t const send_command_callback, so
 	if (source_size <= 0)
 		return; // 0 bytes? or no length? we cannot use this.
 
+	try
 	{
-		source_reader reader(*source_);
-		bool ret = gme_open_reader(&reader, &emu, 48000);
-		if (!ret)
-			return;
+		uri::options_t const &options_ = source_->get_uri().get_options();
+		uri::options_t::const_iterator iter = options_.find("subsong_index");
+		if (iter != options_.end())
+			track_nr = boost::lexical_cast < int > (iter->second);
+	}
+	catch (boost::bad_lexical_cast const &)
+	{
 	}
 
-	initialized = true;
+	reset_emu(48000);
 }
 
 
 gme_decoder::~gme_decoder()
 {
-	if (emu != 0)
-		delete emu;
+	delete internal_data_;
 }
 
 
 bool gme_decoder::is_initialized() const
 {
-	return initialized;
+	return internal_data_->emu;
 }
 
 
 bool gme_decoder::can_playback() const
 {
-	return is_initialized() && (emu != 0);
+	return internal_data_->emu;
 }
 
 
@@ -161,9 +155,9 @@ long gme_decoder::set_current_position(long const new_position)
 		return 0;
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
-	emu->seek(new_position);
+	internal_data_->emu->seek(new_position);
 
-	return emu->tell();
+	return internal_data_->emu->tell();
 }
 
 
@@ -174,7 +168,7 @@ long gme_decoder::get_current_position() const
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
-	return emu->tell();
+	return internal_data_->emu->tell();
 }
 
 
@@ -196,14 +190,27 @@ metadata_t gme_decoder::get_metadata() const
 	if (!is_initialized())
 		return metadata_;
 
-	track_info_t track_info_;
-	emu->track_info( &track_info_ );
+	{
+		std::string str(internal_data_->track_info_.song);
+		if (!str.empty())
+		set_metadata_value(metadata_, "title", str);
+	}
 
-	set_metadata_value(metadata_, "title", track_info_.song);
-	set_metadata_value(metadata_, "artist", track_info_.author);
-	set_metadata_value(metadata_, "album", track_info_.game);
-	if (track_info_.track_count > 1)
-		set_metadata_value(metadata_, "num_subsongs", int(track_info_.track_count));
+	{
+		std::string str(internal_data_->track_info_.author);
+		if (!str.empty())
+		set_metadata_value(metadata_, "artist", str);
+	}
+
+	{
+		std::string str(internal_data_->track_info_.game);
+		if (!str.empty())
+		set_metadata_value(metadata_, "album", str);
+	}
+
+	if (internal_data_->track_info_.track_count > 1)
+		set_metadata_value(metadata_, "num_subsongs", int(internal_data_->track_info_.track_count));
+
 	return metadata_;
 }
 
@@ -225,10 +232,7 @@ long gme_decoder::get_num_ticks() const
 	if (!is_initialized())
 		return 0;
 
-	track_info_t track_info_;
-	emu->track_info( &track_info_ );
-	std::cerr << track_info_.length << std::endl;
-	return std::max(long(track_info_.length), long(0));
+	return std::max(long(internal_data_->track_info_.length), long(0));
 }
 
 
@@ -251,38 +255,58 @@ void gme_decoder::set_playback_properties(playback_properties const &new_playbac
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
 	playback_properties_ = new_playback_properties;
+	reset_emu(playback_properties_.frequency);
+}
 
-	if (emu != 0)
-	{
-		delete emu;
-		emu = 0;
-	}
+
+bool gme_decoder::reset_emu(unsigned int const sample_rate)
+{
+	blargg_err_t error;
 
 	source_->reset();
 	source_reader reader(*source_);
-	bool ret = gme_open_reader(&reader, &emu, playback_properties_.frequency);
-	if (!ret)
-	{
-		std::cerr << "E 2\n";
-		if (emu != 0) delete emu;
-		emu = 0;
-	}
-	else
-	{
-		emu->start_track(0);
 
-		track_info_t track_info_;
-		emu->track_info( &track_info_ );
-		{
-			if ( track_info_.length <= 0 )
-				track_info_.length = track_info_.intro_length +
-					track_info_.loop_length * 2;
-		}
-		if ( track_info_.length <= 0 )
-			track_info_.length = (long) (2.5 * 60 * 1000);
-
-		emu->set_fade(track_info_.length);
+	if (internal_data_->emu != 0)
+	{
+		delete internal_data_->emu;
+		internal_data_->emu = 0;
 	}
+
+	uint8_t header[4];
+
+	if (reader.read(header, sizeof(header)) != 0)
+		return false;
+
+	gme_type_t file_type = gme_identify_extension(gme_identify_header(header));
+	if (!file_type)
+		return false;
+
+	Music_Emu *new_emu = file_type->new_emu();
+	if (new_emu == 0)
+		return false;
+
+	error = new_emu->set_sample_rate(sample_rate);
+	if (error) { delete new_emu; return false; }
+
+	Remaining_Reader remaining_reader(header, sizeof(header), &reader);
+	error = new_emu->load(remaining_reader);
+	if (error) { delete new_emu; return false; }
+
+	error = new_emu->start_track(track_nr);
+	if (error) { delete new_emu; return false; }
+
+	error = new_emu->track_info(&internal_data_->track_info_);
+	if (error) { delete new_emu; return false; }
+
+	if (internal_data_->track_info_.length <= 0)
+		internal_data_->track_info_.length = internal_data_->track_info_.intro_length + internal_data_->track_info_.loop_length * 2;
+	if (internal_data_->track_info_.length <= 0)
+		internal_data_->track_info_.length = long(2.5 * 60 * 1000);
+
+	internal_data_->emu = new_emu;
+	internal_data_->emu->set_fade(internal_data_->track_info_.length, 0);
+
+	return true;
 }
 
 
@@ -299,12 +323,9 @@ unsigned int gme_decoder::update(void *dest, unsigned int const num_samples_to_w
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
-	if (emu == 0)
-		return 0;
+	internal_data_->emu->play(num_samples_to_write * 2, reinterpret_cast < Music_Emu::sample_t* > (dest));
 
-	emu->play(num_samples_to_write * 2, reinterpret_cast < Music_Emu::sample_t* > (dest));
-
-	if (emu->track_ended())
+	if (internal_data_->emu->track_ended())
 		return 0;
 	else
 		return num_samples_to_write;
@@ -318,7 +339,7 @@ gme_decoder_creator::gme_decoder_creator()
 }
 
 
-decoder_ptr_t gme_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
+decoder_ptr_t gme_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &)
 {
 	gme_decoder *gme_decoder_ = new gme_decoder(send_command_callback, source_);
 	if (!gme_decoder_->is_initialized())

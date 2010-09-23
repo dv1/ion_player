@@ -20,7 +20,7 @@
 //#define BLARGG_BIG_ENDIAN 1
 
 // Uncomment if you get errors in the bool section of blargg_common.h
-//#define BLARGG_COMPILER_HAS_BOOL 1
+#define BLARGG_COMPILER_HAS_BOOL 1
 
 // Use standard config.h if present
 #ifdef HAVE_CONFIG_H
