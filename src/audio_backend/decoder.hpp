@@ -226,8 +226,8 @@ public:
 				throw resource_corrupted(get_uri().get_full());
 
 			set_metadata_value(metadata_, "decoder_type",         get_type());
-			set_metadata_value(metadata_, "num_ticks",            static_cast < unsigned int > (num_ticks));
-			set_metadata_value(metadata_, "num_ticks_per_second", static_cast < unsigned int > (num_ticks_per_second));
+			set_metadata_value(metadata_, "num_ticks",            int(num_ticks));
+			set_metadata_value(metadata_, "num_ticks_per_second", int(num_ticks_per_second));
 
 			{
 				std::string title = get_metadata_value(metadata_, "title", std::string(""));

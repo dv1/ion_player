@@ -157,13 +157,24 @@ void gme_decoder::resume()
 
 long gme_decoder::set_current_position(long const new_position)
 {
-	return 0;
+	if (!is_initialized())
+		return 0;
+
+	boost::lock_guard < boost::mutex > lock(mutex_);
+	emu->seek(new_position);
+
+	return emu->tell();
 }
 
 
 long gme_decoder::get_current_position() const
 {
-	return 0;
+	if (!is_initialized())
+		return 0;
+
+	boost::lock_guard < boost::mutex > lock(mutex_);
+
+	return emu->tell();
 }
 
 
@@ -181,7 +192,19 @@ long gme_decoder::get_current_volume() const
 
 metadata_t gme_decoder::get_metadata() const
 {
-	return empty_metadata();
+	metadata_t metadata_ = empty_metadata();
+	if (!is_initialized())
+		return metadata_;
+
+	track_info_t track_info_;
+	emu->track_info( &track_info_ );
+
+	set_metadata_value(metadata_, "title", track_info_.song);
+	set_metadata_value(metadata_, "artist", track_info_.author);
+	set_metadata_value(metadata_, "album", track_info_.game);
+	if (track_info_.track_count > 1)
+		set_metadata_value(metadata_, "num_subsongs", int(track_info_.track_count));
+	return metadata_;
 }
 
 
@@ -199,13 +222,19 @@ uri gme_decoder::get_uri() const
 
 long gme_decoder::get_num_ticks() const
 {
-	return -1;
+	if (!is_initialized())
+		return 0;
+
+	track_info_t track_info_;
+	emu->track_info( &track_info_ );
+	std::cerr << track_info_.length << std::endl;
+	return std::max(long(track_info_.length), long(0));
 }
 
 
 long gme_decoder::get_num_ticks_per_second() const
 {
-	return -1;
+	return 1000;
 }
 
 
