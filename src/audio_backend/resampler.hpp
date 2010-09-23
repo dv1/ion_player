@@ -22,6 +22,7 @@ public:
 	void set_num_channels(unsigned int const new_num_channels);
 	void set_quality(unsigned int const new_quality);
 	void set_output_frequency(unsigned int const new_output_frequency);
+	void reset();
 
 	unsigned int operator()(void *dest, unsigned int const num_samples_to_write, decoder &decoder_);
 

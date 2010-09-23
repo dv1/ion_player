@@ -27,19 +27,19 @@ struct resampler::internal_data
 resampler::resampler(unsigned int const initial_num_channels, unsigned int const initial_quality, unsigned int const initial_output_frequency):
 	internal_data_(new internal_data)
 {
-	int err;
-	internal_data_->speex_resampler = speex_resampler_init(initial_num_channels, initial_output_frequency, initial_output_frequency, initial_quality, &err);
+	internal_data_->speex_resampler = 0;
 	internal_data_->num_channels = initial_num_channels;
 	internal_data_->quality = initial_quality;
 	internal_data_->input_frequency = initial_output_frequency;
 	internal_data_->output_frequency = initial_output_frequency;
-	remaining_input_data = 0;
+	reset();
 }
 
 
 resampler::~resampler()
 {
-	speex_resampler_destroy(internal_data_->speex_resampler);
+	if (internal_data_->speex_resampler != 0)
+		speex_resampler_destroy(internal_data_->speex_resampler);
 	delete internal_data_;
 }
 
@@ -49,10 +49,8 @@ void resampler::set_num_channels(unsigned int const new_num_channels)
 	if (internal_data_->num_channels == new_num_channels)
 		return;
 
-	speex_resampler_destroy(internal_data_->speex_resampler);
 	internal_data_->num_channels = new_num_channels;
-	int err;
-	internal_data_->speex_resampler = speex_resampler_init(internal_data_->num_channels, internal_data_->input_frequency, internal_data_->output_frequency, internal_data_->quality, &err);
+	reset();
 }
 
 
@@ -72,6 +70,8 @@ void resampler::set_input_frequency(unsigned int const new_input_frequency)
 	{
 		internal_data_->input_frequency = new_input_frequency;
 		speex_resampler_set_rate(internal_data_->speex_resampler, new_input_frequency, internal_data_->output_frequency);
+		input_buffer.clear();
+		remaining_input_data = 0;
 	}
 }
 
@@ -82,7 +82,24 @@ void resampler::set_output_frequency(unsigned int const new_output_frequency)
 	{
 		internal_data_->output_frequency = new_output_frequency;
 		speex_resampler_set_rate(internal_data_->speex_resampler, internal_data_->input_frequency, new_output_frequency);
+		output_buffer.clear();
 	}
+}
+
+
+void resampler::reset()
+{
+	if (internal_data_->speex_resampler != 0)
+	{
+		speex_resampler_destroy(internal_data_->speex_resampler);
+		internal_data_->speex_resampler = 0;
+	}
+
+	int err;
+	internal_data_->speex_resampler = speex_resampler_init(internal_data_->num_channels, internal_data_->input_frequency, internal_data_->output_frequency, internal_data_->quality, &err);
+	remaining_input_data = 0;
+	input_buffer.clear();
+	output_buffer.clear();
 }
 
 

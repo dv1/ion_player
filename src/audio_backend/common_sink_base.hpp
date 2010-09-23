@@ -65,7 +65,10 @@ public:
 			return;
 
 		if (run_playback_loop)
+		{
 			pause(false);
+			resampler_->reset();
+		}
 		else
 		{
 			if (!get_derived().initialize_audio_device())
@@ -101,7 +104,11 @@ public:
 					next_decoder = decoder_ptr_t();
 			}
 			else
+			{
+				// TODO: handle the case where the very first playback attempt fails because can_playback() returns false
+				// (current_decoder will still be null, and the whole sink will be left in an undefined state)
 				send_command_callback("error", boost::assign::list_of("given current decoder cannot playback"));
+			}
 		}
 
 		std::string current_uri = current_decoder->get_uri().get_full();
