@@ -1,7 +1,8 @@
 #include <exception>
 #include <iostream>
 #include <boost/assign/list_of.hpp>
-#include <boost/lambda/bind.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/locks.hpp>
 #include <ion/metadata.hpp>
@@ -149,14 +150,14 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		{
 			DECODER_GUARD;
 			if (current_decoder)
-				exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_position, current_decoder.get(), boost::lambda::_1), params);
+				exec_command_set_value < long > (boost::phoenix::bind(&decoder::set_current_position, current_decoder.get(), boost::phoenix::arg_names::arg1), params);
 		}
 		else if (command == "set_current_volume")
 		{
 			DECODER_GUARD;
 			if (current_decoder)
 			{
-				exec_command_set_value < long > (boost::lambda::bind(&decoder::set_current_volume,   current_decoder.get(), boost::lambda::_1), params);
+				exec_command_set_value < long > (boost::phoenix::bind(&decoder::set_current_volume,   current_decoder.get(), boost::phoenix::arg_names::arg1), params);
 				current_volume = current_decoder->get_current_volume();
 			}
 		}
@@ -164,7 +165,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		{
 			DECODER_GUARD;
 			if (current_decoder)
-				exec_command_get_value(current_decoder, "current_position", boost::lambda::bind(&decoder::get_current_position, current_decoder.get()), response_command, response_params);
+				exec_command_get_value(current_decoder, "current_position", boost::phoenix::bind(&decoder::get_current_position, current_decoder.get()), response_command, response_params);
 		}
 		else if (command == "get_current_volume")
 		{
@@ -206,7 +207,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 			// TODO: re-enable this
 			DECODER_GUARD;
 			if (current_decoder)
-				exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_metadata_str,   current_decoder.get(), true), response_command, response_params);
+				exec_command_get_value(current_decoder, "metadata",   boost::phoenix::bind(&decoder::get_metadata_str,   current_decoder.get(), true), response_command, response_params);
 		}*/
 		else
 		{
@@ -469,7 +470,7 @@ void backend::create_sink(std::string const &type)
 		// But before the steps above are taken, do two things:
 
 		// 1) Set the new sink's song finished callback
-		new_sink->set_resource_finished_callback(boost::lambda::bind(&backend::resource_finished_callback, this));
+		new_sink->set_resource_finished_callback(boost::phoenix::bind(&backend::resource_finished_callback, this));
 		
 		// 2) Check for an edge case where the current decoder
 		// is gone but has a succeeding next decoder. If so, set current to next, and then next to

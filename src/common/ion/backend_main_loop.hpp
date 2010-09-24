@@ -6,8 +6,8 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 
 #include <ion/command_line_tools.hpp>
 
@@ -51,7 +51,7 @@ public:
 		out(out),
 		backend_(backend_)
 	{
-		set_send_command_callback(backend_, boost::lambda::bind(&self_t::send_response_command_params, this, boost::lambda::_1, boost::lambda::_2));
+		set_send_command_callback(backend_, boost::phoenix::bind(&self_t::send_response_command_params, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	}
 
 

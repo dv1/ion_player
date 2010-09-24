@@ -13,8 +13,8 @@
 #include <QMetaType>
 
 #include <boost/function.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <boost/spirit/home/phoenix/object/new.hpp>
 #include <boost/spirit/home/phoenix/core/reference.hpp>
 
@@ -104,9 +104,9 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory()));
 
 
-	audio_frontend_ = audio_frontend_ptr_t(new audio_frontend(boost::lambda::bind(&main_window::print_backend_line, this, boost::lambda::_1)));
-	audio_frontend_->get_current_uri_changed_signal().connect(boost::lambda::bind(&main_window::current_uri_changed, this, boost::lambda::_1));
-	audio_frontend_->get_current_metadata_changed_signal().connect(boost::lambda::bind(&main_window::current_metadata_changed, this, boost::lambda::_1));
+	audio_frontend_ = audio_frontend_ptr_t(new audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
+	audio_frontend_->get_current_uri_changed_signal().connect(boost::phoenix::bind(&main_window::current_uri_changed, this, boost::phoenix::arg_names::arg1));
+	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
 
 
 	backend_log_dialog_ = new backend_log_dialog(this, 1000);
@@ -117,7 +117,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
-	settings_dialog_ = new settings_dialog(this, *settings_, *audio_frontend_, playlists_ui_->get_playlists(), boost::lambda::bind(&main_window::change_backend, this));
+	settings_dialog_ = new settings_dialog(this, *settings_, *audio_frontend_, playlists_ui_->get_playlists(), boost::phoenix::bind(&main_window::change_backend, this), boost::phoenix::bind(&main_window::apply_flags, this));
 
 	if (!load_playlists())
 	{
@@ -196,10 +196,7 @@ void main_window::move_to_currently_playing()
 
 void main_window::show_settings()
 {
-	if (settings_dialog_->run_dialog() == QDialog::Rejected)
-		return;
-
-	apply_flags();
+	settings_dialog_->show();
 }
 
 

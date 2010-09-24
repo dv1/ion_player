@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QFont>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <boost/fusion/sequence/intrinsic/at.hpp>
 #include "playlist_qt_model.hpp"
 #include "playlists_ui.hpp"
@@ -20,11 +20,11 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_t &playlists_, 
 {
 	active_playlist = get_active_playlist(playlists_);
 
-	entry_added_signal_connection = get_resource_added_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::entries_added, this, boost::lambda::_1, boost::lambda::_2));
-	entry_removed_signal_connection = get_resource_removed_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::entries_removed, this, boost::lambda::_1, boost::lambda::_2));
-	all_resources_changed_connection = get_all_resources_changed_signal(playlist_).connect(boost::lambda::bind(&playlist_qt_model::all_resources_changed, this, boost::lambda::_1));
+	entry_added_signal_connection = get_resource_added_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::entries_added, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
+	entry_removed_signal_connection = get_resource_removed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::entries_removed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
+	all_resources_changed_connection = get_all_resources_changed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::all_resources_changed, this, boost::phoenix::arg_names::arg1));
 
-	active_playlist_changed_connection = get_active_playlist_changed_signal(playlists_).connect(boost::lambda::bind(&playlist_qt_model::active_playlist_changed, this, boost::lambda::_1));
+	active_playlist_changed_connection = get_active_playlist_changed_signal(playlists_).connect(boost::phoenix::bind(&playlist_qt_model::active_playlist_changed, this, boost::phoenix::arg_names::arg1));
 }
 
 

@@ -16,7 +16,6 @@ OPEN:
   store the URI to be re-scanned in a list, and when the scanner finishes, use this list entry to replace the old playlist entry metadata with the new one
   also mind errors like invalid_uri, resource_not_found etc. in this list's handling
 * Log dialog close button should be handled better
-* Make settings dialog non-modal (necessary for the WebKit inspector dialog to work)
 * Add global loop support to frontend
 * Add resource specific loop support to frontend
 * UI for manual decoder specification for resources (implies a rescan)
@@ -72,6 +71,8 @@ OPEN:
 =======================================================================================
 DONE:
 
+* Change all boost lambda binds to boost phoenix binds
+* Make settings dialog non-modal (necessary for the WebKit inspector dialog to work)
 * add unrecognized_resource event & exception
 * removing many items that succeed the currently playing one causes many unnecessary set_next_resource command calls
 * fix FLAC assert.h problem in configure step (-> do not add the FLAC directory to include paths, only the FLAC++ one)

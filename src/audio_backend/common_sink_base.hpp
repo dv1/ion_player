@@ -4,7 +4,7 @@
 #include <string>
 
 #include <boost/assign/list_of.hpp>
-#include <boost/lambda/bind.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -122,7 +122,7 @@ public:
 		{
 			is_paused = false;
 			run_playback_loop = true;
-			playback_thread = boost::thread(boost::lambda::bind(&self_t::playback_loop, this));
+			playback_thread = boost::thread(boost::phoenix::bind(&self_t::playback_loop, this));
 		}
 
 		send_event_command(started, boost::assign::list_of(current_uri)(next_uri));

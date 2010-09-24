@@ -8,8 +8,8 @@
 #include <boost/optional.hpp>
 #include <boost/function.hpp>
 #include <boost/signals2/signal.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 
 #include <ion/uri.hpp>
 
@@ -92,8 +92,8 @@ public:
 
 		if (current_playlist != 0)
 		{
-			resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_added, this, boost::lambda::_1, boost::lambda::_2));
-			resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::lambda::bind(&self_t::resource_removed, this, boost::lambda::_1, boost::lambda::_2));
+			resource_added_signal_connection = get_resource_added_signal(*current_playlist).connect(boost::phoenix::bind(&self_t::resource_added, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
+			resource_removed_signal_connection = get_resource_removed_signal(*current_playlist).connect(boost::phoenix::bind(&self_t::resource_removed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 		}
 	}
 

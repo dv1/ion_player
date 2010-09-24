@@ -6,8 +6,8 @@
 #include <boost/array.hpp>
 #include <boost/function.hpp>
 #include <boost/tuple/tuple.hpp>
-#include <boost/lambda/bind.hpp>
-#include <boost/lambda/lambda.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 
 #include "dumb_decoder.hpp"
 
@@ -85,10 +85,10 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 
 	typedef std::map < dumb_decoder::module_type, dumb_read_function_entry_t > read_funcs_t;
 	read_funcs_t read_funcs;
-	read_funcs[dumb_decoder::module_type_xm] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_xm, boost::lambda::_1), "xm");
-	read_funcs[dumb_decoder::module_type_it] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_it, boost::lambda::_1), "it");
-	read_funcs[dumb_decoder::module_type_s3m] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_s3m, boost::lambda::_1), "s3m");
-	read_funcs[dumb_decoder::module_type_mod] = dumb_read_function_entry_t(boost::lambda::bind(&dumb_load_mod, boost::lambda::_1), "mod");
+	read_funcs[dumb_decoder::module_type_xm] = dumb_read_function_entry_t(boost::phoenix::bind(&dumb_load_xm, boost::phoenix::arg_names::arg1), "xm");
+	read_funcs[dumb_decoder::module_type_it] = dumb_read_function_entry_t(boost::phoenix::bind(&dumb_load_it, boost::phoenix::arg_names::arg1), "it");
+	read_funcs[dumb_decoder::module_type_s3m] = dumb_read_function_entry_t(boost::phoenix::bind(&dumb_load_s3m, boost::phoenix::arg_names::arg1), "s3m");
+	read_funcs[dumb_decoder::module_type_mod] = dumb_read_function_entry_t(boost::phoenix::bind(&dumb_load_mod, boost::phoenix::arg_names::arg1), "mod");
 
 	{
 		read_funcs_t::iterator read_func_iter = read_funcs.find(module_type_);
