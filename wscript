@@ -118,6 +118,7 @@ def external(ctx):
 	# uade
 	run_cmd("./configure --without-uadefs --without-audacious --without-uade123 --without-xmms --only-uadecore", 'extern/uade-2.13')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/uade-2.13')
+	run_cmd("make -j%d -f Makefile.common_lib" % get_num_jobs(), 'extern/uade-2.13/src/frontends/common')
 
 	# libbinio (necessary for adplug)
 	run_cmd("./configure --enable-static --disable-shared --with-iso", 'extern/libbinio-1.4')
@@ -132,6 +133,7 @@ def external(ctx):
 def clean_external(ctx):
 	run_cmd("make distclean", 'extern/mpg123-1.12.3')
 	run_cmd("make clean", 'extern/uade-2.13')
+	run_cmd("make -f Makefile.common_lib clean", 'extern/uade-2.13/src/frontends/common')
 	run_cmd("make distclean", 'extern/libbinio-1.4')
 	run_cmd("make distclean", 'extern/adplug-2.2.1')
 

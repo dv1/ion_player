@@ -23,9 +23,26 @@ OPEN:
   (pro: less CPU usage, potentially better sound quality  con: gapless playback only guaranteed if playback frequency does not change)
 * Add shuffle
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
+* fix FLAC assert.h problem in configure step (-> do not add the FLAC directory to include paths, only the FLAC++ one)
 * uade decoder (only for file:// URIs!)
-* extensive testing
+* StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
+* timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
+* faad decoder
+* sidplay decoder (http://sidplay2.sourceforge.net/)
+* wavpack decoder (http://www.wavpack.com/)
+* musepack (mpcdec) decoder (http://musepack.net/)
+* modplug decoder (http://gnu.ethz.ch/linuks.mine.nu/modplugplay/)
+* trueaudio (tta) decoder (http://en.true-audio.com/)
+* in_cube or vgmstream decoder for Gamecube audio
+* support mid-play metadata changes (including title, artist, album, song length, ....)
+* volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
+* sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
+* HTTP source
+* RTSP source
+* MMS source
+* SHOUTcast source
 [* post processing, VST support, UPnP]
+* extensive testing
 
 
 =======================================================================================

@@ -1,0 +1,17 @@
+
+CC = gcc
+CFLAGS = -Wall -O2 -I../../include -I../common  -g 
+CLIBS =   -lm
+
+all: libuadefront
+
+include Makefile.common
+
+MODULES = $(COMMONMODULES)
+
+libuadefront:	$(MODULES)
+	ar rcs libuadefront.a $(MODULES)
+
+clean:	
+	rm -f libuadefront.a *.o
+

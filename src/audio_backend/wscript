@@ -29,11 +29,15 @@ def configure(conf):
 	conf.env['LIBPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src/.libs")
 	conf.env['STATICLIB_BINIO'] = 'binio'
 
+	conf.env['CPPPATH_UADE'] = os.path.join(os.getcwd(), "extern/uade-2.13/src/include")
+	conf.env['LIBPATH_UADE'] = os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")
+	conf.env['STATICLIB_UADE'] = 'uadefront'
+
 
 def build(bld):
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO MAGIC BOOST BUILDMODE STRICT', # excluding FLAC for now since one of its headers is called "assert.h", causing all sorts of trouble in Boost
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE MAGIC BOOST BUILDMODE STRICT', # excluding FLAC for now since one of its headers is called "assert.h", causing all sorts of trouble in Boost
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = 'ion_common gme dumb jsoncpp',
@@ -44,7 +48,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cprogram'],
-		uselib = 'BOOST_THREAD BOOST MPG123 ADPLUG BINIO BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD BOOST MPG123 ADPLUG BINIO UADE BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		uselib_local = 'ion_audio_backend ion_common',
 		includes = '.',
