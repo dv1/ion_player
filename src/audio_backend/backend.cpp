@@ -48,11 +48,16 @@ void backend::set_send_command_callback(send_command_callback_t const &new_send_
 
 decoder::metadata_str_optional_t backend::get_metadata(std::string const &uri_str)
 {
-	decoder_ptr_t temp_decoder = create_new_decoder(uri_str, "", empty_metadata());
+	decoder_ptr_t temp_decoder = create_new_decoder(ion::uri(uri_str), "", empty_metadata());
 	if (temp_decoder)
 		return temp_decoder->get_metadata_str();
 	else
+	{
+		// TODO: rethink this; if the only other exit is a throw, is an optional really necessary?
+		// Might depend upon whether or not the get_metadata command is reactivated
+		throw unrecognized_resource(uri_str);
 		return boost::none;
+	}
 }
 
 
@@ -198,6 +203,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		}
 		/*else if (command == "get_metadata")
 		{
+			// TODO: re-enable this
 			DECODER_GUARD;
 			if (current_decoder)
 				exec_command_get_value(current_decoder, "metadata",   boost::lambda::bind(&decoder::get_metadata_str,   current_decoder.get(), true), response_command, response_params);
@@ -215,6 +221,12 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 	catch (resource_not_found const &exc)
 	{
 		response_command = "resource_not_found";
+		response_params.clear();
+		response_params.push_back(exc.what());
+	}
+	catch (unrecognized_resource const &exc)
+	{
+		response_command = "unrecognized_resource";
 		response_params.clear();
 		response_params.push_back(exc.what());
 	}
@@ -258,9 +270,10 @@ void backend::start_playback(params_t const &params)
 	boost::lock_guard < boost::mutex > lock(decoder_mutex);
 
 
-	decoder_ptr_t new_current_decoder = create_new_decoder(uri_str[0], decoder_type[0], metadata[0]);
+	ion::uri uri_(uri_str[0]);
+	decoder_ptr_t new_current_decoder = create_new_decoder(uri_, decoder_type[0], metadata[0]);
 	if (!new_current_decoder)
-		throw std::runtime_error("start_playback failed : no suitable decoder found");
+		throw unrecognized_resource(uri_.get_full());
 
 	if (!new_current_decoder->is_initialized())
 		throw std::runtime_error("succeeded, but created invalid decoder");
@@ -268,9 +281,14 @@ void backend::start_playback(params_t const &params)
 	decoder_ptr_t old_current_decoder = current_decoder;
 	decoder_ptr_t old_next_decoder = next_decoder;
 
+	// This seemingly duplicate try-catch block exists, because an invalid next resource is not a fatal error for the play command - the next resource just isnt set then
 	try
 	{
 		set_next_decoder(uri_str[1], decoder_type[1], metadata[1]);
+	}
+	catch (unrecognized_resource const &exc)
+	{
+		send_command_callback("unrecognized_resource", boost::assign::list_of(uri_str[1]));
 	}
 	catch (resource_not_found const &exc)
 	{
@@ -313,9 +331,14 @@ void backend::set_next_decoder(std::string const &uri_str, std::string const &de
 	if (uri_str.empty())
 	{
 		send_command_callback("info", boost::assign::list_of("no next decoder given -> not setting a next decoder"));
+		return;
 	}
-	else
-		new_next_decoder = create_new_decoder(uri_str, decoder_type, metadata);
+
+	uri uri_(uri_str);
+	new_next_decoder = create_new_decoder(uri_, decoder_type, metadata);
+
+	if (!new_next_decoder)
+		throw unrecognized_resource(uri_.get_full());
 
 	if (new_next_decoder && !new_next_decoder->is_initialized())
 		throw std::runtime_error("created decoder is invalid -> not setting it as next decoder");
@@ -523,13 +546,12 @@ source_ptr_t backend::create_new_source(ion::uri const &uri_)
 }
 
 
-decoder_ptr_t backend::create_new_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata)
+decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string const &decoder_type, metadata_t const &metadata)
 {
 	// Read uri and try creating a new source for the decoder
-	ion::uri uri_(uri_str);
-	source_ptr_t new_source = create_new_source(uri_); // no suitable source found -> throw
+	source_ptr_t new_source = create_new_source(uri_);
 	if (!new_source)
-		throw resource_not_found(uri_str);
+		throw resource_not_found(uri_.get_full()); // no suitable source found -> throw
 
 
 	// Use libmagic to get a MIME type

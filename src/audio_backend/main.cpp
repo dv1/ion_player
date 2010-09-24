@@ -123,6 +123,10 @@ int main(int argc, char **argv)
 					if (metadata_str)
 						std::cout << ion::recombine_command_line("metadata", boost::assign::list_of(url)(*metadata_str)) << std::endl;
 				}
+				catch (ion::unrecognized_resource const &exc)
+				{
+					std::cout << ion::recombine_command_line("unrecognized_resource", boost::assign::list_of(exc.what())) << std::endl;
+				}
 				catch (ion::resource_not_found const &exc)
 				{
 					std::cout << ion::recombine_command_line("resource_not_found", boost::assign::list_of(exc.what())) << std::endl;

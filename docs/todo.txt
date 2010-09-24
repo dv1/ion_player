@@ -12,18 +12,35 @@ OPEN:
 * Playlist sorting
 * Moving/cutting/copying/pasting playlist entries
 * Provide UI for cancelling a directory scan
+* Resource rescan action in UI
+  store the URI to be re-scanned in a list, and when the scanner finishes, use this list entry to replace the old playlist entry metadata with the new one
+  also mind errors like invalid_uri, resource_not_found etc. in this list's handling
+* Log dialog close button should be handled better
+* Make settings dialog non-modal (necessary for the WebKit inspector dialog to work)
+* Add global loop support to frontend
+* Add resource specific loop support to frontend
+* UI for manual decoder specification for resources (implies a rescan)
 * Handle I/O failures (for example, SMB share + network cable disconnected)
+* Clicks on the scan indicator icon should open the scanner dialog in case of left clicks; right clicks shall show a context menu containing a "Cancel" and a "Show scanner dialog" item
 * Save/restore playback status when changing backend
+* change crash behavior to mark the existing one as broken + immediately move to the next resource (instead of retrying to play the existing one N times)
 * Mark crashed/corrupt entries in playlist
+* File/directory names are corrupt sometimes when adding them (they have a file:// prefix already sometimes)
+* What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
+  (Note: this does NOT refer to backend crashes)
 * make it possible to insert new items in middle of playlist
-* add unrecognized_resource event & exception
+* Implement playback history as described in design doc
 * accelerate metadata scan by spawning the backend only at the beginning & when it crashes
+* introduce a PING to scan and playback backends to detect hung up backends
+* dragonsfunk.mod cannot be read by DUMB -> check that other decoders do not wrongly recognize it (mpg123 is particularly tolerant, and "recognizes" a lot of file types which it cannot play)
 * audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
 * allow for disabling the speex resampler at run-time, causing the backend to reinitialize the sink instead
   (pro: less CPU usage, potentially better sound quality  con: gapless playback only guaranteed if playback frequency does not change)
 * Add shuffle
+* Investigate shared memory for passing audio data to a visualizer
+* Store in/restore from config the currently visible playlist
+* Store in/restore from config the overall UI states (like column widths in the playlists)
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
-* fix FLAC assert.h problem in configure step (-> do not add the FLAC directory to include paths, only the FLAC++ one)
 * uade decoder (only for file:// URIs!)
 * StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
 * timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
@@ -37,17 +54,29 @@ OPEN:
 * support mid-play metadata changes (including title, artist, album, song length, ....)
 * volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
+* mono->stereo conversion if source is mono - combine this with the resampler if possible, to minimize the amount of intermediate steps
+* handle different sample formats and channel counts in decoders
+* implement decoder deletion thread
+* Windows waveout sink
+* Pulseaudio sink
+* JACK sink
 * HTTP source
 * RTSP source
 * MMS source
 * SHOUTcast source
 [* post processing, VST support, UPnP]
-* extensive testing
+* Examine code for undefined cases
+* extensive testing (esp. fault tolerance)
 
 
 =======================================================================================
 DONE:
 
+* add unrecognized_resource event & exception
+* removing many items that succeed the currently playing one causes many unnecessary set_next_resource command calls
+* fix FLAC assert.h problem in configure step (-> do not add the FLAC directory to include paths, only the FLAC++ one)
+  possible solutions: (1) remove the FLAC include path from the config environment  (2) isolate the FLAC decoder further, to avoid FLAC <-> boost collisions
+  [solved by letting go of the pkg-config package and manually finding flac++ headers/lib instead]
 * change common_sink_base behavior: when the number of actually read samples < number requested samples, it shall NOT immediately move to the next decoder; only do that when 0 is returned
   (this is necessary for decoders like the vorbis one, since they may only give partial amounts sometimes, for example because the decoder's sample rate suddenly changes)
 * game music emulator decoder
@@ -62,6 +91,12 @@ DONE:
 * Save/restore playlists
 * Renaming and erasing of playlists
 * Write custom sliders that allow for an instant jump to where the user clicked (instead of the "paged" jump style the default QSliders have)
+
+
+=======================================================================================
+BUG: resource_* signals cause crashes
+
+This happens rarely. It is unknown why as of yet - signals2 uses shared_ptr, in which the crash originates. Observed using boost 1.40 - perhaps fixed in newer versions.
 
 
 =======================================================================================

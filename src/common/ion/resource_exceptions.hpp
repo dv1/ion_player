@@ -31,6 +31,17 @@ public:
 };
 
 
+class unrecognized_resource:
+	public std::runtime_error
+{
+public:
+	explicit unrecognized_resource(std::string const &resource_uri):
+		runtime_error(resource_uri)
+	{
+	}
+};
+
+
 }
 
 

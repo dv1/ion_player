@@ -264,6 +264,10 @@ Reports an invalid URI.
 The URI is valid, but refers to an unknown resource.
 
 
+--- unrecognized_resource <uri>
+The URI is valid, but the referred resource cannot be recognized by any decoder.
+
+
 --- error <description> [<failed_command> [<failed_command_param>] [<failed_command_param>] ...]
 Reports an error. <description> describes the error. The failed command will be passed in as a second parameter. *Its* parameters will be appended.
 Note that everything past <description> is optional. If no failed command is given, the error is assumed to be a general one.

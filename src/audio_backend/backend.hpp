@@ -101,7 +101,7 @@ public:
 protected:
 	void set_next_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata);
 	source_ptr_t create_new_source(ion::uri const &uri_);
-	decoder_ptr_t create_new_decoder(std::string const &uri_str, std::string const &decoder_type, metadata_t const &metadata);
+	decoder_ptr_t create_new_decoder(ion::uri const &uri_, std::string const &decoder_type, metadata_t const &metadata);
 	void resource_finished_callback();
 
 	metadata_t checked_parse_metadata(std::string const &metadata_str, std::string const &error_msg);
