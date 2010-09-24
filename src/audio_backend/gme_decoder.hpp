@@ -52,6 +52,7 @@ public:
 
 protected:
 	bool reset_emu(unsigned int const sample_rate);
+	void set_fade();
 
 
 	mutable boost::mutex mutex_;

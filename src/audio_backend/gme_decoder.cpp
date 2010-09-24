@@ -156,6 +156,7 @@ long gme_decoder::set_current_position(long const new_position)
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 	internal_data_->emu->seek(new_position);
+	set_fade(); // this is necessary, since GME resets the fade time when seeking backwards
 
 	return internal_data_->emu->tell();
 }
@@ -298,15 +299,32 @@ bool gme_decoder::reset_emu(unsigned int const sample_rate)
 	error = new_emu->track_info(&internal_data_->track_info_);
 	if (error) { delete new_emu; return false; }
 
+	std::cerr
+		<< internal_data_->track_info_.length << " "
+		<< internal_data_->track_info_.intro_length << " "
+		<< internal_data_->track_info_.loop_length << std::endl;
+
 	if (internal_data_->track_info_.length <= 0)
 		internal_data_->track_info_.length = internal_data_->track_info_.intro_length + internal_data_->track_info_.loop_length * 2;
 	if (internal_data_->track_info_.length <= 0)
 		internal_data_->track_info_.length = long(2.5 * 60 * 1000);
 
 	internal_data_->emu = new_emu;
-	internal_data_->emu->set_fade(internal_data_->track_info_.length, 0);
+	set_fade();
 
 	return true;
+}
+
+
+void gme_decoder::set_fade()
+{
+	internal_data_->emu->set_fade(
+		(internal_data_->track_info_.length != 0)
+			? long(internal_data_->track_info_.length)
+			: long(2.5 * 60 * 1000)
+		,
+		0
+	);
 }
 
 
