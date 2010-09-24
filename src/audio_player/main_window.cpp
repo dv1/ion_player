@@ -80,8 +80,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	position_volume_widget_ui.position->setEnabled(false);
 	position_volume_widget_ui.volume->setEnabled(false);
 
-	busy_indicator = new QMovie(":/icons/busy_indicator", QByteArray(), this);
-
 	current_song_title = new QLabel(this);
 	current_playback_time = new QLabel(this);
 	current_song_length = new QLabel(this);
@@ -94,6 +92,11 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	main_window_ui.statusbar->addPermanentWidget(current_song_title);
 	main_window_ui.statusbar->addPermanentWidget(current_playback_time);
 	main_window_ui.statusbar->addPermanentWidget(current_song_length);
+
+
+	busy_indicator = new QMovie(":/icons/busy_indicator", QByteArray(), this);
+	current_scan_status->setMovie(busy_indicator);
+	scan_running(false);
 
 
 	current_position_timer = new QTimer(this);
@@ -117,7 +120,15 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
-	settings_dialog_ = new settings_dialog(this, *settings_, *audio_frontend_, playlists_ui_->get_playlists(), boost::phoenix::bind(&main_window::change_backend, this), boost::phoenix::bind(&main_window::apply_flags, this));
+	settings_dialog_ = new settings_dialog(
+		this,
+		*settings_,
+		*audio_frontend_,
+		playlists_ui_->get_playlists(),
+		boost::phoenix::bind(&main_window::change_backend, this),
+		boost::phoenix::bind(&main_window::apply_flags, this),
+		boost::phoenix::bind(&backend_log_dialog::show, backend_log_dialog_)
+	);
 
 	if (!load_playlists())
 	{
@@ -378,13 +389,17 @@ void main_window::scan_running(bool state)
 {
 	if (state)
 	{
-		current_scan_status->setMovie(busy_indicator);
+		current_scan_status->setToolTip("Scanning");
+		current_scan_status->setEnabled(true);
+		busy_indicator->jumpToFrame(0);
 		busy_indicator->start();
 	}
 	else
 	{
+		current_scan_status->setToolTip("Not scanning");
 		busy_indicator->stop();
-		current_scan_status->clear();
+		busy_indicator->jumpToFrame(0);
+		current_scan_status->setEnabled(false);
 	}
 }
 
@@ -588,9 +603,6 @@ void main_window::apply_flags()
 	else
 		setWindowFlags(windowFlags() & ~Qt::WindowStaysOnTopHint);
 	show(); // setWindowFlags() hides the window
-
-	// Show or hide the backend log
-	backend_log_dialog_->setVisible(settings_->get_backend_log_dialog_shown_flag());
 
 	// notification area icon
 	//system_tray_icon->setVisible(settings_->get_systray_icon_flag()); // TODO

@@ -15,7 +15,6 @@ OPEN:
 * Resource rescan action in UI
   store the URI to be re-scanned in a list, and when the scanner finishes, use this list entry to replace the old playlist entry metadata with the new one
   also mind errors like invalid_uri, resource_not_found etc. in this list's handling
-* Log dialog close button should be handled better
 * Add global loop support to frontend
 * Add resource specific loop support to frontend
 * UI for manual decoder specification for resources (implies a rescan)
@@ -36,7 +35,7 @@ OPEN:
 * allow for disabling the speex resampler at run-time, causing the backend to reinitialize the sink instead
   (pro: less CPU usage, potentially better sound quality  con: gapless playback only guaranteed if playback frequency does not change)
 * Add shuffle
-* Investigate shared memory for passing audio data to a visualizer
+* Investigate shared memory for passing audio data to a visualizer (use boost.interprocess for this)
 * Store in/restore from config the currently visible playlist
 * Store in/restore from config the overall UI states (like column widths in the playlists)
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
@@ -71,6 +70,9 @@ OPEN:
 =======================================================================================
 DONE:
 
+* Do not hide the scan indicator icon; disable it instead
+* Give the scan indicator icon a tooltip showing the current status
+* Log dialog close button should be handled better
 * Change all boost lambda binds to boost phoenix binds
 * Make settings dialog non-modal (necessary for the WebKit inspector dialog to work)
 * add unrecognized_resource event & exception
