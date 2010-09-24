@@ -8,7 +8,6 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
-#include <QMovie>
 #include <QProcess>
 #include <QMetaType>
 
@@ -25,6 +24,7 @@
 #include "playlists_ui.hpp"
 #include "scanner.hpp"
 #include "backend_log_dialog.hpp"
+#include "scan_indicator_icon.hpp"
 
 #include "../audio_backend/decoder.hpp"
 
@@ -83,7 +83,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	current_song_title = new QLabel(this);
 	current_playback_time = new QLabel(this);
 	current_song_length = new QLabel(this);
-	current_scan_status = new QLabel(this);
+	current_scan_status = new scan_indicator_icon(this);
 	current_song_title->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	current_playback_time->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 	current_song_length->setFrameStyle(QFrame::Panel | QFrame::Sunken);
@@ -92,11 +92,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	main_window_ui.statusbar->addPermanentWidget(current_song_title);
 	main_window_ui.statusbar->addPermanentWidget(current_playback_time);
 	main_window_ui.statusbar->addPermanentWidget(current_song_length);
-
-
-	busy_indicator = new QMovie(":/icons/busy_indicator", QByteArray(), this);
-	current_scan_status->setMovie(busy_indicator);
-	scan_running(false);
 
 
 	current_position_timer = new QTimer(this);
@@ -385,25 +380,6 @@ void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_stat
 }
 
 
-void main_window::scan_running(bool state)
-{
-	if (state)
-	{
-		current_scan_status->setToolTip("Scanning");
-		current_scan_status->setEnabled(true);
-		busy_indicator->jumpToFrame(0);
-		busy_indicator->start();
-	}
-	else
-	{
-		current_scan_status->setToolTip("Not scanning");
-		busy_indicator->stop();
-		busy_indicator->jumpToFrame(0);
-		current_scan_status->setEnabled(false);
-	}
-}
-
-
 void main_window::get_current_playback_position()
 {
 	audio_frontend_->issue_get_position_command();
@@ -417,6 +393,9 @@ void main_window::get_current_playback_position()
 
 void main_window::scan_directory()
 {
+	if (scanner_ == 0)
+		return;
+
 	if (!dir_iterator || !dir_iterator_playlist)
 		return;
 
@@ -450,7 +429,9 @@ void main_window::start_backend(bool const start_scanner)
 	if (start_scanner)
 	{
 		scanner_ = new scanner(this, backend_filepath);
-		connect(scanner_, SIGNAL(scan_running(bool)), this, SLOT(scan_running(bool)));
+		connect(scanner_, SIGNAL(scan_running(bool)), current_scan_status, SLOT(set_running(bool)));
+		connect(current_scan_status->get_cancel_action(), SIGNAL(triggered()), scanner_, SLOT(cancel_scan_slot()));
+		connect(current_scan_status->get_cancel_action(), SIGNAL(triggered()), &scan_directory_timer, SLOT(stop()));
 	}
 
 	backend_process = new QProcess(this);
@@ -516,6 +497,7 @@ void main_window::stop_backend(bool const send_quit_message, bool const stop_sca
 
 	if (stop_scanner)
 	{
+		scan_directory_timer.stop();		
 		if (scanner_ != 0)
 			delete scanner_;
 		scanner_ = 0;

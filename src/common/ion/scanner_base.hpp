@@ -69,6 +69,12 @@ public:
 	}
 
 
+	void cancel_scan()
+	{
+		scan_queue.clear();
+	}
+
+
 protected:
 	void init_scanning()
 	{

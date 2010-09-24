@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_PLAYER_QT4_MAIN_WINDOW_HPP
-#define ION_AUDIO_PLAYER_QT4_MAIN_WINDOW_HPP
+#ifndef ION_AUDIO_PLAYER_MAIN_WINDOW_HPP
+#define ION_AUDIO_PLAYER_MAIN_WINDOW_HPP
 
 #include <QMainWindow>
 #include <QProcess>
@@ -23,7 +23,6 @@
 
 
 class QLabel;
-class QMovie;
 
 
 namespace ion
@@ -35,6 +34,7 @@ namespace audio_player
 class playlists_ui;
 class scanner;
 class backend_log_dialog;
+class scan_indicator_icon;
 
 
 class main_window:
@@ -73,8 +73,6 @@ protected slots:
 	void backend_started();
 	void backend_error(QProcess::ProcessError process_error);
 	void backend_finished(int exit_code, QProcess::ExitStatus exit_status);
-
-	void scan_running(bool state);
 
 	void get_current_playback_position();
 
@@ -127,8 +125,8 @@ protected:
 
 	backend_log_dialog *backend_log_dialog_;
 
-	QLabel *current_song_title, *current_playback_time, *current_song_length, *current_scan_status;
-	QMovie *busy_indicator;
+	QLabel *current_song_title, *current_playback_time, *current_song_length;
+	scan_indicator_icon *current_scan_status;
 	unsigned int current_num_ticks_per_second;
 
 	Ui_main_window main_window_ui;

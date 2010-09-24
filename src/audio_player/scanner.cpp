@@ -77,6 +77,12 @@ void scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t con
 }
 
 
+void scanner::cancel_scan_slot()
+{
+	cancel_scan();
+}
+
+
 void scanner::try_read_stdout_line()
 {
 	while (backend_process.canReadLine())

@@ -39,6 +39,10 @@ signals:
 	void scan_running(bool);
 
 
+public slots:
+	void cancel_scan_slot();
+
+
 protected slots:
 	void try_read_stdout_line();
 	void started();
