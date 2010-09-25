@@ -43,6 +43,8 @@ OPEN:
 * StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
 * timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
 * faad decoder
+* monkey's audio decoder
+* vqf decoder (decoding library not found yet)
 * sidplay decoder (http://sidplay2.sourceforge.net/)
 * wavpack decoder (http://www.wavpack.com/)
 * musepack (mpcdec) decoder (http://musepack.net/)

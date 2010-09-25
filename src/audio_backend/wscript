@@ -13,11 +13,19 @@ def configure(conf):
 	conf.check_cfg(package='ogg', uselib_store='OGG', args='--cflags --libs')
 	conf.check_cfg(package='vorbis', uselib_store='VORBIS', args='--cflags --libs')
 	conf.check_cfg(package='vorbisfile', uselib_store='VORBISFILE', args='--cflags --libs')
+	conf.check_cfg(package='libsidplay2', uselib_store='SIDPLAY2', args='--cflags --libs')
+	conf.check_cfg(package='wavpack', uselib_store='WAVPACK', args='--cflags --libs')
 	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC')
 	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC')
 
 	conf.check_cxx(header_name = 'FLAC++/decoder.h', uselib_store = 'FLACPP')
 	conf.check_cxx(lib = 'FLAC++', uselib_store = 'FLACPP')
+
+	conf.check_cc(header_name = 'faad.h', uselib_store = 'FAAD')
+	conf.check_cc(lib = 'faad', uselib_store = 'FAAD')
+
+	conf.check_cc(header_name = 'mpcdec/mpcdec.h', uselib_store = 'MPCDEC')
+	conf.check_cc(lib = 'mpcdec', uselib_store = 'MPCDEC')
 
 	conf.env['CPPPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123")
 	conf.env['LIBPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123/.libs")
