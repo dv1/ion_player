@@ -23,7 +23,8 @@
 #include "main_window.hpp"
 #include "playlists_ui.hpp"
 #include "scanner.hpp"
-#include "backend_log_dialog.hpp"
+#include "logger_dialog.hpp"
+#include "scan_dialog.hpp"
 #include "scan_indicator_icon.hpp"
 
 #include "../audio_backend/decoder.hpp"
@@ -107,7 +108,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
 
 
-	backend_log_dialog_ = new backend_log_dialog(this, 1000);
+	backend_log_dialog_ = new logger_dialog(this, 1000);
 
 
 	settings_ = new settings(*this, this);
@@ -122,7 +123,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		playlists_ui_->get_playlists(),
 		boost::phoenix::bind(&main_window::change_backend, this),
 		boost::phoenix::bind(&main_window::apply_flags, this),
-		boost::phoenix::bind(&backend_log_dialog::show, backend_log_dialog_)
+		boost::phoenix::bind(&logger_dialog::show, backend_log_dialog_)
 	);
 
 	if (!load_playlists())
@@ -131,6 +132,10 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		set_name(*new_playlist, "Default");
 		add_playlist(playlists_ui_->get_playlists(), new_playlist);
 	}
+
+
+	scan_dialog_ = new scan_dialog(this, 0);
+	connect(current_scan_status->get_open_scanner_dialog_action(), SIGNAL(triggered()), scan_dialog_, SLOT(show()));
 
 
 	search_dialog_ = new search_dialog(this, playlists_ui_->get_playlists(), *audio_frontend_);
@@ -334,7 +339,7 @@ void main_window::try_read_stdout_line()
 	{
 		QString line = backend_process->readLine().trimmed();
 		if (!line.startsWith("current_position"))
-			backend_log_dialog_->add_line(backend_log_model::log_line_stdout, line);
+			backend_log_dialog_->add_line("stdout", line);
 		audio_frontend_->parse_incoming_line(line.toStdString());
 	}
 }
@@ -342,7 +347,7 @@ void main_window::try_read_stdout_line()
 
 void main_window::backend_started()
 {
-	backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Backend started");
+	backend_log_dialog_->add_line("misc", "Backend started");
 	audio_frontend_->backend_started("ion_audio");
 }
 
@@ -361,13 +366,13 @@ void main_window::backend_error(QProcess::ProcessError process_error)
 		case QProcess::ReadError: sstr << "read error"; restart = true; break;
 		default: sstr << "<unknown error>"; break;
 	}
-	backend_log_dialog_->add_line(backend_log_model::log_line_misc, sstr.str().c_str());
+	backend_log_dialog_->add_line("misc", sstr.str().c_str());
 
 	audio_frontend_->backend_terminated();
 
 	if (restart)
 	{
-		backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Restarting backend");
+		backend_log_dialog_->add_line("misc", "Restarting backend");
 		stop_backend(false, false, send_signals);
 		start_backend(false);
 	}
@@ -376,7 +381,7 @@ void main_window::backend_error(QProcess::ProcessError process_error)
 
 void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_status)
 {
-	backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Backend finished");
+	backend_log_dialog_->add_line("misc", "Backend finished");
 }
 
 
@@ -394,7 +399,10 @@ void main_window::get_current_playback_position()
 void main_window::scan_directory()
 {
 	if (scanner_ == 0)
+	{
+		dir_iterator = dir_iterator_ptr_t();
 		return;
+	}
 
 	if (!dir_iterator || !dir_iterator_playlist)
 		return;
@@ -411,6 +419,14 @@ void main_window::scan_directory()
 		dir_iterator = dir_iterator_ptr_t();
 		scan_directory_timer.stop();
 	}
+}
+
+
+void main_window::scan_canceled()
+{
+	dir_iterator_playlist = 0;
+	dir_iterator = dir_iterator_ptr_t();
+	scan_directory_timer.stop();
 }
 
 
@@ -431,7 +447,8 @@ void main_window::start_backend(bool const start_scanner)
 		scanner_ = new scanner(this, backend_filepath);
 		connect(scanner_, SIGNAL(scan_running(bool)), current_scan_status, SLOT(set_running(bool)));
 		connect(current_scan_status->get_cancel_action(), SIGNAL(triggered()), scanner_, SLOT(cancel_scan_slot()));
-		connect(current_scan_status->get_cancel_action(), SIGNAL(triggered()), &scan_directory_timer, SLOT(stop()));
+		connect(scanner_, SIGNAL(scan_canceled()), this, SLOT(scan_canceled()));
+		scan_dialog_->set_scanner(scanner_);
 	}
 
 	backend_process = new QProcess(this);
@@ -478,14 +495,14 @@ void main_window::stop_backend(bool const send_quit_message, bool const stop_sca
 		if (backend_process->state() != QProcess::NotRunning)
 		{
 			backend_process->terminate();
-			backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Sending backend the TERM signal");
+			backend_log_dialog_->add_line("misc", "Sending backend the TERM signal");
 		}
 
 		backend_process->waitForFinished(30000);
 		if (backend_process->state() != QProcess::NotRunning)
 		{
 			backend_process->kill();
-			backend_log_dialog_->add_line(backend_log_model::log_line_misc, "Sending backend the KILL signal");
+			backend_log_dialog_->add_line("misc", "Sending backend the KILL signal");
 		}
 	}
 
@@ -497,7 +514,8 @@ void main_window::stop_backend(bool const send_quit_message, bool const stop_sca
 
 	if (stop_scanner)
 	{
-		scan_directory_timer.stop();		
+		scan_directory_timer.stop();
+		scan_dialog_->set_scanner(0);
 		if (scanner_ != 0)
 			delete scanner_;
 		scanner_ = 0;
@@ -530,7 +548,7 @@ void main_window::print_backend_line(std::string const &line)
 	if (backend_process != 0)
 	{
 		if (line.find("get_current_position") != 0)
-			backend_log_dialog_->add_line(backend_log_model::log_line_stdin, line.c_str());
+			backend_log_dialog_->add_line("stdin", line.c_str());
 		backend_process->write((line + "\n").c_str());
 	}
 }

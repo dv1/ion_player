@@ -33,7 +33,8 @@ namespace audio_player
 
 class playlists_ui;
 class scanner;
-class backend_log_dialog;
+class logger_dialog;
+class scan_dialog;
 class scan_indicator_icon;
 
 
@@ -77,6 +78,7 @@ protected slots:
 	void get_current_playback_position();
 
 	void scan_directory();
+	void scan_canceled();
 
 
 protected:
@@ -123,7 +125,9 @@ protected:
 
 	search_dialog *search_dialog_;
 
-	backend_log_dialog *backend_log_dialog_;
+	logger_dialog *backend_log_dialog_;
+
+	scan_dialog *scan_dialog_;
 
 	QLabel *current_song_title, *current_playback_time, *current_song_length;
 	scan_indicator_icon *current_scan_status;

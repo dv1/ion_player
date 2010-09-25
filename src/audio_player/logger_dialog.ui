@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>backend_log_dialog</class>
- <widget class="QDialog" name="backend_log_dialog">
+ <class>logger_dialog</class>
+ <widget class="QDialog" name="logger_dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTreeView" name="log_view">
+    <widget class="ion::audio_player::logger_view" name="log_view">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
      </property>
@@ -51,12 +51,19 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ion::audio_player::logger_view</class>
+   <extends>QTreeView</extends>
+   <header>logger_view.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>backend_log_dialog</receiver>
+   <receiver>logger_dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -72,7 +79,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>backend_log_dialog</receiver>
+   <receiver>logger_dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

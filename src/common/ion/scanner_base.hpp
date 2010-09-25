@@ -19,6 +19,8 @@ Derived must contain:
 - bool is_process_running() const
 - void start_process(ion::uri const &uri_to_be_scanned)
 - void add_entry_to_playlist(ion::uri const &new_uri, metadata_t const &new_metadata)
+- void report_general_error(std::string const &error_string)
+- void report_resource_error(std::string const &error_event, std::string const &uri)
 */
 
 
@@ -108,7 +110,7 @@ protected:
 				if (!metadata_)
 				{
 					metadata_ = empty_metadata();
-					std::cerr << "Metadata for URI \"" << uri_.get_full() << "\" is invalid!" << std::endl;
+					static_cast < Derived* > (this)->report_general_error(std::string("Metadata for URI \"") + uri_.get_full() + "\" is invalid!");
 				}
 				else
 				{
@@ -135,9 +137,19 @@ protected:
 			}
 			catch (ion::uri::invalid_uri const &invalid_uri_)
 			{
-				std::cerr << "Caught invalid URI \"" << invalid_uri_.what() << '"' << std::endl;
+				static_cast < Derived* > (this)->report_resource_error("invalid_uri", invalid_uri_.what());
 			}
 		}
+		else if ((event_command_name == "unrecognized_resource")  && (event_params.size() >= 1))
+			static_cast < Derived* > (this)->report_resource_error("unrecognized_resource", event_params[0]);
+		else if ((event_command_name == "resource_not_found")  && (event_params.size() >= 1))
+			static_cast < Derived* > (this)->report_resource_error("resource_not_found", event_params[0]);
+		else if ((event_command_name == "resource_corrupted")  && (event_params.size() >= 1))
+			static_cast < Derived* > (this)->report_resource_error("resource_corrupted", event_params[0]);
+		else if (event_command_name == "error")
+			static_cast < Derived* > (this)->report_general_error(line);
+		else
+			static_cast < Derived* > (this)->report_general_error(line);
 	}
 
 

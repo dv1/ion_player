@@ -18,7 +18,6 @@ OPEN:
 * Add resource specific loop support to frontend
 * UI for manual decoder specification for resources (implies a rescan)
 * Handle I/O failures (for example, SMB share + network cable disconnected)
-* Implement scan dialog and add it to the scan indicator icon's "show dialog" action
 * Left clicks on the scan indicator icon shall open the scanner dialog
 * Save/restore playback status when changing backend
 * change crash behavior to mark the existing one as broken + immediately move to the next resource (instead of retrying to play the existing one N times)
@@ -72,6 +71,8 @@ OPEN:
 =======================================================================================
 DONE:
 
+* Add error reporting to scanner_base + support it in scan dialog
+* Implement scan dialog and add it to the scan indicator icon's "show dialog" action
 * Right clicks shall show a context menu containing a "Cancel" and a "Show scanner dialog" item
 * Allow for canceling scans through the scan indicator icon's context menu
 * Do not hide the scan indicator icon; disable it instead

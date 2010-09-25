@@ -74,6 +74,18 @@ void test_scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_
 }
 
 
+void test_scanner::report_general_error(std::string const &error_string)
+{
+	std::cerr << "General scan error: " << error_string << std::endl;
+}
+
+
+void test_scanner::report_resource_error(std::string const &error_event, std::string const &uri)
+{
+	std::cerr << "Resource scan error for " << uri << ": " << error_event << std::endl;
+}
+
+
 void test_scanner::try_read_stdout_line()
 {
 	while (backend_process.canReadLine())

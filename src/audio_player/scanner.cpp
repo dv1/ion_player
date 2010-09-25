@@ -77,9 +77,22 @@ void scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t con
 }
 
 
+void scanner::report_general_error(std::string const &error_string)
+{
+	emit general_scan_error(QString(error_string.c_str()));
+}
+
+
+void scanner::report_resource_error(std::string const &error_event, std::string const &uri)
+{
+	emit resource_scan_error(QString(error_event.c_str()), QString(uri.c_str()));
+}
+
+
 void scanner::cancel_scan_slot()
 {
 	cancel_scan();
+	emit scan_canceled();
 }
 
 
@@ -88,11 +101,6 @@ void scanner::try_read_stdout_line()
 	while (backend_process.canReadLine())
 	{
 		QString line = backend_process.readLine().trimmed();
-		if (!line.isNull())
-			std::cerr << "scan backend stdout> " << line.toStdString() << std::endl;
-		else
-			std::cerr << "scan backend received null line?" << std::endl;
-
 		read_process_stdin_line(line.toStdString());
 	}
 }

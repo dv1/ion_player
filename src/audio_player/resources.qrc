@@ -1,7 +1,7 @@
 <RCC>
   <qresource prefix="icons">
     <file alias="find">resources/icons/system-search.png</file>
-    <file alias="busy_indicator">resources/icons/circle-ball-dark-antialiased.gif</file>
+    <file alias="busy_indicator">resources/icons/13-1.gif</file>
     <file alias="ion">resources/icons/ion.png</file>
     <file alias="new_playlist">resources/icons/document-new.png</file>
     <file alias="delete_playlist">resources/icons/edit-delete.png</file>
