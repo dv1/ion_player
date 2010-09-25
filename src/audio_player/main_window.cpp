@@ -444,7 +444,7 @@ void main_window::start_backend(bool const start_scanner)
 
 	if (start_scanner)
 	{
-		scanner_ = new scanner(this, backend_filepath);
+		scanner_ = new scanner(this, playlists_ui_->get_playlists(), backend_filepath);
 		connect(scanner_, SIGNAL(scan_running(bool)), current_scan_status, SLOT(set_running(bool)));
 		connect(current_scan_status->get_cancel_action(), SIGNAL(triggered()), scanner_, SLOT(cancel_scan_slot()));
 		connect(scanner_, SIGNAL(scan_canceled()), this, SLOT(scan_canceled()));

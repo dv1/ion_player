@@ -18,7 +18,6 @@ OPEN:
 * Add resource specific loop support to frontend
 * UI for manual decoder specification for resources (implies a rescan)
 * Handle I/O failures (for example, SMB share + network cable disconnected)
-* Left clicks on the scan indicator icon shall open the scanner dialog
 * Save/restore playback status when changing backend
 * change crash behavior to mark the existing one as broken + immediately move to the next resource (instead of retrying to play the existing one N times)
 * Mark crashed/corrupt entries in playlist
@@ -37,7 +36,6 @@ OPEN:
 * Investigate shared memory for passing audio data to a visualizer (use boost.interprocess for this)
 * Store in/restore from config the currently visible playlist
 * Store in/restore from config the overall UI states (like column widths in the playlists)
-* Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * uade decoder (only for file:// URIs!)
 * StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
 * timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
@@ -71,6 +69,7 @@ OPEN:
 =======================================================================================
 DONE:
 
+* Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * Add error reporting to scanner_base + support it in scan dialog
 * Implement scan dialog and add it to the scan indicator icon's "show dialog" action
 * Right clicks shall show a context menu containing a "Cancel" and a "Show scanner dialog" item

@@ -3,15 +3,20 @@
 
 #include <QProcess>
 #include <ion/scanner_base.hpp>
+#include <ion/playlists.hpp>
+#include <ion/playlist.hpp>
 
 
 class test_scanner:
         public QObject,
-	public ion::scanner_base < test_scanner, int >
+	public ion::scanner_base < test_scanner, ion::playlists < ion::playlist > >
 {
         Q_OBJECT
 public:
-	explicit test_scanner(int const max_num_entries_added);
+	typedef ion::scanner_base < test_scanner, ion::playlists < ion::playlist > > base_t;
+
+
+	explicit test_scanner(playlists_t &playlists_, int const max_num_entries_added);
 	~test_scanner();
 
 

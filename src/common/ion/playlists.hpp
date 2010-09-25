@@ -91,6 +91,14 @@ public:
 	}
 
 
+	bool has_playlist(playlist_t const &playlist_) const
+	{
+		ordered_t const &ordered = playlists_.template get < ordered_tag > ();
+		typename ordered_t::const_iterator iter = ordered.find(&playlist_);
+		return iter != ordered.end();
+	}
+
+
 	playlist_event_signal_t & get_playlist_added_signal() { return playlist_added_signal; }
 	playlist_event_signal_t & get_playlist_removed_signal() { return playlist_removed_signal; }
 	active_playlist_changed_signal_t & get_active_playlist_changed_signal() { return active_playlist_changed_signal; }
@@ -162,6 +170,13 @@ template < typename Playlist >
 inline void remove_playlist(playlists < Playlist > &playlists_, typename playlists < Playlist > ::playlist_t const &playlist_to_be_removed)
 {
 	playlists_.remove_playlist(playlist_to_be_removed);
+}
+
+
+template < typename Playlist >
+inline bool has_playlist(playlists < Playlist > const &playlists_, typename playlists < Playlist > ::playlist_t const &playlist_)
+{
+	return playlists_.has_playlist(playlist_);
 }
 
 

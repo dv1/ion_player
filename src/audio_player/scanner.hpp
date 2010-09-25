@@ -3,7 +3,7 @@
 
 #include <QProcess>
 #include <ion/scanner_base.hpp>
-#include <ion/playlist.hpp>
+#include "misc_types.hpp"
 
 
 namespace ion
@@ -14,14 +14,14 @@ namespace audio_player
 
 class scanner:
         public QObject,
-	public scanner_base < scanner, playlist >
+	public scanner_base < scanner, ion::audio_player::playlists_t >
 {
         Q_OBJECT
 public:
-	typedef scanner_base < scanner, playlist > base_t;
+	typedef scanner_base < scanner, ion::audio_player::playlists_t > base_t;
 	typedef base_t::scan_queue_t scan_queue_t;
 
-	explicit scanner(QObject *parent, QString const &backend_filepath);
+	explicit scanner(QObject *parent, playlists_t &playlists_, QString const &backend_filepath);
 	~scanner();
 
 

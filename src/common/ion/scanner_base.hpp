@@ -1,13 +1,18 @@
 #ifndef ION_SCANNER_BASE_HPP
 #define ION_SCANNER_BASE_HPP
 
+#include <algorithm>
 #include <deque>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/signals2/connection.hpp>
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <ion/command_line_tools.hpp>
 #include <ion/metadata.hpp>
 #include <ion/uri.hpp>
+#include <ion/playlists_traits.hpp>
 
 
 namespace ion
@@ -43,23 +48,28 @@ Crashes & scan failures:
 */
 
 
-template < typename Derived, typename Playlist >
+template < typename Derived, typename Playlists >
 class scanner_base:
 	private boost::noncopyable
 {
 public:
+	typedef scanner_base < Derived, Playlists > self_t;
 	typedef Derived derived_t;
-	typedef Playlist playlist_t;
+	typedef Playlists playlists_t;
+	typedef typename playlists_traits < Playlists > ::playlist_t playlist_t;
 
 
-	explicit scanner_base():
-		current_playlist(0)
+	explicit scanner_base(playlists_t &playlists_):
+		current_playlist(0),
+		playlists_(playlists_)
 	{
+		playlist_removed_connection = playlists_.get_playlist_removed_signal().connect(boost::phoenix::bind(&self_t::playlist_removed, this, boost::phoenix::arg_names::arg1));
 	}
 
 
 	~scanner_base()
 	{
+		playlist_removed_connection.disconnect();
 	}
 
 
@@ -78,6 +88,10 @@ public:
 
 
 protected:
+	typedef std::pair < playlist_t *, ion::uri > scan_entry_t;
+	typedef std::deque < scan_entry_t > scan_queue_t;
+
+
 	void init_scanning()
 	{
 		if (scan_queue.empty())
@@ -91,9 +105,25 @@ protected:
 	}
 
 
+	static bool is_from_playlist(playlist_t *playlist_, scan_entry_t const &scan_entry)
+	{
+		return scan_entry.first == playlist_;
+	}
+
+
+	void playlist_removed(playlist_t &playlist_)
+	{
+		typename scan_queue_t::iterator iter = std::remove_if(scan_queue.begin(), scan_queue.end(), boost::phoenix::bind(&is_from_playlist, &playlist_, boost::phoenix::arg_names::arg1));
+		scan_queue.erase(iter, scan_queue.end());
+	}
+
+
 	void read_process_stdin_line(std::string const &line)
 	{
 		if (current_playlist == 0)
+			return;
+
+		if (!has_playlist(playlists_, *current_playlist))
 			return;
 
 		std::string event_command_name;
@@ -178,10 +208,10 @@ protected:
 
 
 
-	typedef std::pair < playlist_t *, ion::uri > scan_entry_t;
-	typedef std::deque < scan_entry_t > scan_queue_t;
 	scan_queue_t scan_queue;
 	playlist_t *current_playlist;
+	playlists_t &playlists_;
+	boost::signals2::connection playlist_removed_connection;
 };
 
 

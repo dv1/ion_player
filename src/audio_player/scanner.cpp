@@ -7,8 +7,9 @@ namespace audio_player
 {
 
 
-scanner::scanner(QObject *parent, QString const &backend_filepath):
+scanner::scanner(QObject *parent, playlists_t &playlists_, QString const &backend_filepath):
 	QObject(parent),
+	base_t(playlists_),
 	backend_filepath(backend_filepath)
 {
 	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));

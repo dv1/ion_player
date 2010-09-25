@@ -4,7 +4,8 @@
 #include "test_scanner.hpp"
 
 
-test_scanner::test_scanner(int const max_num_entries_added):
+test_scanner::test_scanner(playlists_t &playlists_, int const max_num_entries_added):
+	base_t(playlists_),
 	num_entries_added(max_num_entries_added)
 {
 	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));
