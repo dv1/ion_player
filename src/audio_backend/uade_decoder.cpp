@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <vector>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 #include "uade_decoder.hpp"
 
@@ -21,8 +24,7 @@ extern "C"
 }
 
 
-// TODO: the uadecore is not shut down properly, it sticks in the
-// system as a process until the backend process is shutdown. This must be fixed.
+// TODO: review & cleanup this code; especially check for correct behavior in S and R states
 
 
 namespace ion
@@ -145,6 +147,16 @@ struct uade_decoder::internal_data
 
 		control_state = UADE_S_STATE;
 		sample_buffer.clear();
+
+		if ((state.pid != 0) && (state.pid != -1))
+		{
+			pid_t pid = state.pid;
+			kill(pid, SIGTERM);
+			waitpid(pid, 0, 0);
+		}
+
+		//um->size = 0;
+		//uade_send_message(um, ipc);
 	}
 
 
