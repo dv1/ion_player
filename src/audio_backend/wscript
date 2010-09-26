@@ -39,7 +39,7 @@ def configure(conf):
 	conf.env['LIBPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src/.libs")
 	conf.env['STATICLIB_BINIO'] = 'binio'
 
-	conf.env['CPPPATH_UADE'] = os.path.join(os.getcwd(), "extern/uade-2.13/src/include")
+	conf.env['CPPPATH_UADE'] = [os.path.join(os.getcwd(), "extern/uade-2.13/src/include"), os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")]
 	conf.env['LIBPATH_UADE'] = os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")
 	conf.env['STATICLIB_UADE'] = 'uadefront'
 

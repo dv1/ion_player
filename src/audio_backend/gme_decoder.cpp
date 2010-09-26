@@ -299,10 +299,10 @@ bool gme_decoder::reset_emu(unsigned int const sample_rate)
 	error = new_emu->track_info(&internal_data_->track_info_);
 	if (error) { delete new_emu; return false; }
 
-	std::cerr
+	/*std::cerr
 		<< internal_data_->track_info_.length << " "
 		<< internal_data_->track_info_.intro_length << " "
-		<< internal_data_->track_info_.loop_length << std::endl;
+		<< internal_data_->track_info_.loop_length << std::endl;*/
 
 	if (internal_data_->track_info_.length <= 0)
 		internal_data_->track_info_.length = internal_data_->track_info_.intro_length + internal_data_->track_info_.loop_length * 2;

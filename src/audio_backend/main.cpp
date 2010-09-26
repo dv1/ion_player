@@ -10,6 +10,7 @@
 #include "adplug_decoder.hpp"
 #include "flac_decoder.hpp"
 #include "gme_decoder.hpp"
+#include "uade_decoder.hpp"
 
 
 /*
@@ -33,6 +34,7 @@ struct creators
 	ion::audio_backend::adplug_decoder_creator adplug_decoder_creator_;
 	ion::audio_backend::gme_decoder_creator gme_decoder_creator_;
 	ion::audio_backend::flac_decoder_creator flac_decoder_creator_;
+	ion::audio_backend::uade_decoder_creator uade_decoder_creator_;
 
 
 	explicit creators(ion::audio_backend::backend &backend_)
@@ -45,6 +47,7 @@ struct creators
 		backend_.get_decoder_creators().push_back(&flac_decoder_creator_);
 		backend_.get_decoder_creators().push_back(&adplug_decoder_creator_);
 		backend_.get_decoder_creators().push_back(&gme_decoder_creator_);
+		backend_.get_decoder_creators().push_back(&uade_decoder_creator_);
 	}
 };
 
