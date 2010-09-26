@@ -21,6 +21,10 @@ extern "C"
 }
 
 
+// TODO: the uadecore is not shut down properly, it sticks in the
+// system as a process until the backend process is shutdown. This must be fixed.
+
+
 namespace ion
 {
 namespace audio_backend
@@ -34,7 +38,7 @@ struct uade_decoder::internal_data
 	std::string config_name, player_name, score_name, uade_name;
 	std::string module_name, song_name;
 	std::string title;
-	bool uadeconf_loaded, spawned, file_loaded, subsong_ended, subsong_info_read;
+	bool uadeconf_loaded, spawned, file_loaded, subsong_ended, subsong_info_read, manual_songend;
 
 	struct uade_ipc *ipc;
 	struct uade_song *us;
@@ -69,6 +73,8 @@ struct uade_decoder::internal_data
 		tailbytes(0),
 		subsong_bytes(0)
 	{
+		playbytes = 0;
+		manual_songend = false;
 		subsong_ended = false;
 		subsong_info_read = false;
 		ipc = &state.ipc;
@@ -114,6 +120,15 @@ struct uade_decoder::internal_data
 	{
 		if (file_loaded)
 		{
+			if (control_state == UADE_R_STATE)
+			{
+				do
+				{
+					uade_receive_message(um, sizeof(space), ipc);
+				}
+				while (um->msgtype != UADE_COMMAND_TOKEN);
+			}
+
 			uade_unalloc_song(&state);
 			file_loaded = false;
 		}
@@ -233,10 +248,30 @@ struct uade_decoder::internal_data
 
 	bool iterate()
 	{
+		bool retval = iterate_impl();
+
+		if (!retval && (control_state == UADE_S_STATE))
+		{
+			if (uade_send_short_message(UADE_COMMAND_REBOOT, ipc))
+			{
+				std::cerr << "Cannot send reboot" << std::endl;
+				return false;
+			}
+		}
+
+		return retval;
+	}
+
+
+	bool iterate_impl()
+	{
 		switch (control_state)
 		{
 			case UADE_S_STATE:
 			{
+				if (manual_songend)
+					return false;
+
 				left = uade_read_request(ipc);
 				if (uade_send_short_message(UADE_COMMAND_TOKEN, ipc))
 				{
@@ -255,12 +290,19 @@ struct uade_decoder::internal_data
 					}
 					else
 						playbytes = what_was_left;
-				}
 
-				uade_effect_run(ue, (int16_t *)sample_data, playbytes / framesize);
-				unsigned long offset = sample_buffer.size();
-				sample_buffer.resize(offset + playbytes / 2);
-				std::memcpy(&sample_buffer[offset], sample_data, playbytes);
+					us->out_bytes += playbytes;
+
+					uade_effect_run(ue, (int16_t *)sample_data, playbytes / framesize);
+					unsigned long offset = sample_buffer.size();
+					sample_buffer.resize(offset + playbytes / 2);
+					std::memcpy(&sample_buffer[offset], sample_data, playbytes);
+
+					// TODO: timeout
+					//if ((us->out_bytes / (UADE_BYTES_PER_FRAME * state.config.frequency)) >= 4)
+					//	subsong_ended = true;
+
+				}
 
 				if (subsong_ended)
 					return false;
@@ -367,22 +409,9 @@ uade_decoder::uade_decoder(send_command_callback_t const send_command_callback, 
 	if (internal_data_ == 0)
 		return;
 
-	int subsong_offset = 0;
-
 	try
 	{
-		uri::options_t const &options_ = source_->get_uri().get_options();
-		uri::options_t::const_iterator iter = options_.find("min_subsong_index");
-		if (iter != options_.end())
-			subsong_offset = boost::lexical_cast < long > (iter->second);
-	}
-	catch (boost::bad_lexical_cast const &)
-	{
-	}
-
-	try
-	{
-		uri::options_t const &options_ = source_->get_uri().get_options();
+		uri::options_t options_ = source_->get_uri().get_options();
 		uri::options_t::const_iterator iter = options_.find("subsong_index");
 		if (iter != options_.end())
 			subsong_nr = boost::lexical_cast < long > (iter->second);
@@ -390,9 +419,6 @@ uade_decoder::uade_decoder(send_command_callback_t const send_command_callback, 
 	catch (boost::bad_lexical_cast const &)
 	{
 	}
-
-	if (subsong_nr != -1)
-		subsong_nr += subsong_offset;
 
 	internal_data_->spawn_core(48000);
 	internal_data_->try_load_file(source_->get_uri().get_path(), subsong_nr);

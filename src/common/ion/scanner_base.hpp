@@ -152,6 +152,10 @@ protected:
 							num_subsongs = 1;
 					}
 
+					long min_subsong_index = 0;
+					if (has_metadata_value(*metadata_, "min_subsong_index"))
+						min_subsong_index = get_metadata_value < long > (*metadata_, "min_subsong_index", 1);
+
 					if ((num_subsongs == 1) || (uri_.get_options().find("subsong_index") != uri_.get_options().end()))
 						static_cast < Derived* > (this)->add_entry_to_playlist(uri_, *metadata_);
 					else
@@ -159,7 +163,7 @@ protected:
 						for (long subsong_nr = 0; subsong_nr < num_subsongs; ++subsong_nr)
 						{
 							ion::uri temp_uri(uri_);
-							temp_uri.get_options()["subsong_index"] = boost::lexical_cast < std::string > (subsong_nr);
+							temp_uri.get_options()["subsong_index"] = boost::lexical_cast < std::string > (subsong_nr + min_subsong_index);
 							start_scan(*current_playlist, temp_uri);
 						}
 					}
