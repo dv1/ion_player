@@ -36,7 +36,6 @@ OPEN:
 * Investigate shared memory for passing audio data to a visualizer (use boost.interprocess for this)
 * Store in/restore from config the currently visible playlist
 * Store in/restore from config the overall UI states (like column widths in the playlists)
-* uade decoder (only for file:// URIs!)
 * StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
 * timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
 * faad decoder
@@ -69,6 +68,7 @@ OPEN:
 =======================================================================================
 DONE:
 
+* uade decoder (only for file:// URIs!)
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * Add error reporting to scanner_base + support it in scan dialog
 * Implement scan dialog and add it to the scan indicator icon's "show dialog" action
