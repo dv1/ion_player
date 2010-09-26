@@ -42,6 +42,7 @@ public:
 		send_line_to_backend_callback(send_line_to_backend_callback),
 		current_playlist(0),
 		crash_count(0),
+		num_allowed_crashes(1),
 		backend_broken(false)
 	{
 	}
@@ -196,7 +197,7 @@ public:
 
 		if (current_uri)
 		{
-			if (crash_count < 3)
+			if (crash_count < num_allowed_crashes)
 			{
 				uri current_uri_ = *current_uri;
 				play(current_uri_);
@@ -443,6 +444,7 @@ protected:
 	// Misc
 	metadata_optional_t current_metadata;
 	unsigned int crash_count;
+	unsigned int const num_allowed_crashes;
 	bool backend_broken;
 	std::string current_backend_type;
 };

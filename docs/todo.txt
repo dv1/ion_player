@@ -19,7 +19,6 @@ OPEN:
 * UI for manual decoder specification for resources (implies a rescan)
 * Handle I/O failures (for example, SMB share + network cable disconnected)
 * Save/restore playback status when changing backend
-* change crash behavior to mark the existing one as broken + immediately move to the next resource (instead of retrying to play the existing one N times)
 * Mark crashed/corrupt entries in playlist
 * File/directory names are corrupt sometimes when adding them (they have a file:// prefix already sometimes)
 * What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
@@ -68,6 +67,7 @@ OPEN:
 =======================================================================================
 DONE:
 
+* change crash behavior to mark the existing one as broken + immediately move to the next resource (instead of retrying to play the existing one N times)
 * uade decoder (only for file:// URIs!)
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions
 * Add error reporting to scanner_base + support it in scan dialog
