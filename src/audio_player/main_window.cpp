@@ -27,7 +27,7 @@
 #include "scan_dialog.hpp"
 #include "scan_indicator_icon.hpp"
 
-#include "../audio_backend/decoder.hpp"
+#include "../audio_common/decoder.hpp"
 
 
 namespace ion
@@ -72,8 +72,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(main_window_ui.action_delete_playlist, SIGNAL(triggered()), this, SLOT(delete_playlist()));
 	connect(main_window_ui.action_rename_playlist, SIGNAL(triggered()), this, SLOT(rename_playlist()));
 
-	position_volume_widget_ui.volume->setRange(ion::audio_backend::decoder::min_volume(), ion::audio_backend::decoder::max_volume());
-	position_volume_widget_ui.volume->setSliderPosition(ion::audio_backend::decoder::max_volume());
+	position_volume_widget_ui.volume->setRange(ion::audio_common::decoder::min_volume(), ion::audio_common::decoder::max_volume());
+	position_volume_widget_ui.volume->setSliderPosition(ion::audio_common::decoder::max_volume());
 
 	connect(position_volume_widget_ui.position, SIGNAL(sliderReleased()), this, SLOT(set_current_position()));
 	connect(position_volume_widget_ui.volume,   SIGNAL(sliderReleased()), this, SLOT(set_current_volume()));
@@ -225,7 +225,7 @@ void main_window::set_current_volume()
 	audio_frontend_->set_current_volume(new_volume);
 	position_volume_widget_ui.volume->set_tooltip_text(
 		QString("%1%").arg(
-			int(float(new_volume) / float(ion::audio_backend::decoder::max_volume()) * 100.0f)
+			int(float(new_volume) / float(ion::audio_common::decoder::max_volume()) * 100.0f)
 		)
 	);
 }

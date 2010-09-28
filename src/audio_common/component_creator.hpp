@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_COMPONENT_CREATOR_HPP
-#define ION_AUDIO_BACKEND_COMPONENT_CREATOR_HPP
+#ifndef ION_AUDIO_COMMON_COMPONENT_CREATOR_HPP
+#define ION_AUDIO_COMMON_COMPONENT_CREATOR_HPP
 
 #include <string>
 #include <boost/multi_index_container.hpp>
@@ -10,7 +10,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 

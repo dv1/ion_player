@@ -12,6 +12,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class uade_decoder:
 	public decoder
 {

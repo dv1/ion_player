@@ -44,7 +44,7 @@ The backend can be called in three ways:
 
 struct creators
 {
-	typedef boost::ptr_vector < ion::audio_backend::decoder_creator > decoder_creators_container_t;
+	typedef boost::ptr_vector < ion::audio_common::decoder_creator > decoder_creators_container_t;
 	decoder_creators_container_t decoder_creators_container;
 
 #ifdef WITH_ALSA_SINK
@@ -82,7 +82,7 @@ struct creators
 		decoder_creators_container.push_back(new ion::audio_backend::uade_decoder_creator);
 #endif
 
-		BOOST_FOREACH(ion::audio_backend::decoder_creator &decoder_creator_, decoder_creators_container)
+		BOOST_FOREACH(ion::audio_common::decoder_creator &decoder_creator_, decoder_creators_container)
 		{
 			backend_.get_decoder_creators().push_back(&decoder_creator_);
 		}
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 				try
 				{
 					std::string const &url = params[i];
-					ion::audio_backend::decoder::metadata_str_optional_t metadata_str = backend_.get_metadata(url);
+					ion::audio_common::decoder::metadata_str_optional_t metadata_str = backend_.get_metadata(url);
 					if (metadata_str)
 						std::cout << ion::recombine_command_line("metadata", boost::assign::list_of(url)(*metadata_str)) << std::endl;
 				}

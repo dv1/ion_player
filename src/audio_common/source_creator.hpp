@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_SOURCE_CREATOR_HPP
-#define ION_AUDIO_BACKEND_SOURCE_CREATOR_HPP
+#ifndef ION_AUDIO_COMMON_SOURCE_CREATOR_HPP
+#define ION_AUDIO_COMMON_SOURCE_CREATOR_HPP
 
 #include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
@@ -9,7 +9,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 
@@ -22,14 +22,14 @@ public:
 
 
 // This is used for plugins
-#define DEFINE_ION_AUDIO_BACKEND_SOURCE_CREATOR(SOURCE_CREATOR_TYPE) \
+#define DEFINE_ION_AUDIO_COMMON_SOURCE_CREATOR(SOURCE_CREATOR_TYPE) \
 namespace \
 { \
 SOURCE_CREATOR_TYPE source_creator_instance_internal; \
 } \
 \
 extern "C" { \
-::ion::backend::source_creator *source_creator_instance = &source_creator_instance_internal; \
+::ion::audio_common::source_creator *source_creator_instance = &source_creator_instance_internal; \
 } 
 
 

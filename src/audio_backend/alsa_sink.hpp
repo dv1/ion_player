@@ -13,6 +13,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class alsa_sink:
 	public common_sink_base < alsa_sink >
 {

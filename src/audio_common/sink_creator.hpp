@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_SINK_CREATOR_HPP
-#define ION_AUDIO_BACKEND_SINK_CREATOR_HPP
+#ifndef ION_AUDIO_COMMON_SINK_CREATOR_HPP
+#define ION_AUDIO_COMMON_SINK_CREATOR_HPP
 
 #include <string>
 #include <ion/send_command_callback.hpp>
@@ -10,7 +10,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 
@@ -23,14 +23,14 @@ public:
 
 
 // This is used for plugins
-#define DEFINE_ION_AUDIO_BACKEND_SINK_CREATOR(SINK_CREATOR_TYPE) \
+#define DEFINE_ION_AUDIO_COMMON_SINK_CREATOR(SINK_CREATOR_TYPE) \
 namespace \
 { \
 SINK_CREATOR_TYPE sink_creator_instance_internal; \
 } \
 \
 extern "C" { \
-::ion::backend::sink_creator *sink_creator_instance = &sink_creator_instance_internal; \
+::ion::audio_common::sink_creator *sink_creator_instance = &sink_creator_instance_internal; \
 } 
 
 

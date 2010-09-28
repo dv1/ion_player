@@ -10,6 +10,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 mpg123_decoder::mpg123_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
 	decoder(send_command_callback),
 	source_(source_),

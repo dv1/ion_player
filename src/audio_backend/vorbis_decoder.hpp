@@ -19,6 +19,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class vorbis_decoder:
 	public decoder
 {

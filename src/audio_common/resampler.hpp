@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_RESAMPLER_HPP
-#define ION_AUDIO_BACKEND_RESAMPLER_HPP
+#ifndef ION_AUDIO_COMMON_RESAMPLER_HPP
+#define ION_AUDIO_COMMON_RESAMPLER_HPP
 
 #include <stdint.h>
 #include <vector>
@@ -8,7 +8,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 

@@ -13,6 +13,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class file_source:
 	public source
 {

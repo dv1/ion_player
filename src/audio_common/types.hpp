@@ -1,12 +1,12 @@
-#ifndef ION_AUDIO_BACKEND_TYPES_HPP
-#define ION_AUDIO_BACKEND_TYPES_HPP
+#ifndef ION_AUDIO_COMMON_TYPES_HPP
+#define ION_AUDIO_COMMON_TYPES_HPP
 
 #include <ion/metadata.hpp>
 
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 

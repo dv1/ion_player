@@ -17,6 +17,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class mpg123_decoder:
 	public decoder
 {

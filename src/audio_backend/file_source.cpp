@@ -7,6 +7,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 file_source::file_source(uri const &uri_):
 	uri_(uri_)
 {

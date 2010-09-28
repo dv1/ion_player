@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_BACKEND_DECODER_HPP
-#define ION_AUDIO_BACKEND_BACKEND_DECODER_HPP
+#ifndef ION_AUDIO_COMMON_BACKEND_DECODER_HPP
+#define ION_AUDIO_COMMON_BACKEND_DECODER_HPP
 
 #include <string>
 
@@ -19,7 +19,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 

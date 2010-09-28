@@ -10,6 +10,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 // TODO: clean up this code, rewrite it if necessary & extract metadata from flac
 
 

@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_BACKEND_COMMON_SINK_BASE_HPP
-#define ION_AUDIO_BACKEND_BACKEND_COMMON_SINK_BASE_HPP
+#ifndef ION_AUDIO_COMMON_COMMON_SINK_BASE_HPP
+#define ION_AUDIO_COMMON_COMMON_SINK_BASE_HPP
 
 #include <string>
 
@@ -15,7 +15,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 

@@ -12,6 +12,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class gme_decoder:
 	public decoder
 {

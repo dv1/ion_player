@@ -42,6 +42,7 @@ def set_options(opt):
 	opt.add_option('--without-audio-backend', action='store_true', default=False, help='do not build audio backend')
 	opt.add_option('--without-qt4-audio-player-frontend', action='store_true', default=False, help='do not build the Qt4-based audio player frontend')
 	opt.recurse('src/audio_backend')
+	opt.recurse('src/audio_common')
 	opt.recurse('src/common')
 	opt.recurse('src/audio_player')
 
@@ -91,6 +92,7 @@ def configure(conf):
 	if not Options.options.without_audio_backend:
 		conf.define('WITH_AUDIO_BACKEND', 1)
 		conf.recurse('src/audio_backend')
+		conf.recurse('src/audio_common')
 
 	# add debug variant
 	if 'debug' in conf.env['BUILD_VARIANTS']:
@@ -147,6 +149,7 @@ def build(bld):
 
 	if bld.env['WITH_AUDIO_BACKEND']:
 		bld.recurse('src/audio_backend')
+		bld.recurse('src/audio_common')
 	bld.recurse('src/common')
 	if bld.env['WITH_QT4_AUDIO_PLAYER']:
 		bld.recurse('src/audio_player')
@@ -176,7 +179,7 @@ def build(bld):
 		for unit_test in unit_tests:
 			bld(
 				features = ['cxx', 'cprogram', 'test'],
-				uselib_local = 'ion_audio_backend ion_common',
+				uselib_local = 'ion_audio_backend ion_audio_common ion_common',
 				uselib = 'BOOST_THREAD BOOST BUILDMODE STRICT',
 				target = r_test.sub('.test', unit_test),
 				includes = '. test',

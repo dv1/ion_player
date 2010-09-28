@@ -24,14 +24,14 @@ static void* custom_dumb_stream_open(char const * source_ptr)
 
 static int custom_dumb_stream_skip(void *f, long n)
 {
-        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
-        source_->seek(n, ion::audio_backend::source::seek_relative);
+        ion::audio_common::source *source_ = reinterpret_cast < ion::audio_common::source* > (f);
+        source_->seek(n, ion::audio_common::source::seek_relative);
         return 0;
 }
 
 static int custom_dumb_stream_getc(void *f)
 {
-        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
+        ion::audio_common::source *source_ = reinterpret_cast < ion::audio_common::source* > (f);
         uint8_t b;
         source_->read(reinterpret_cast < char* > (&b), 1);
         return int(b);
@@ -39,15 +39,15 @@ static int custom_dumb_stream_getc(void *f)
 
 static long custom_dumb_stream_getnc(char *ptr, long n, void *f)
 {
-        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
+        ion::audio_common::source *source_ = reinterpret_cast < ion::audio_common::source* > (f);
         source_->read(ptr, n);
         return n;
 }
 
 static void custom_dumb_stream_close(void *f)
 {
-        ion::audio_backend::source *source_ = reinterpret_cast < ion::audio_backend::source* > (f);
-        source_->seek(0, ion::audio_backend::source::seek_absolute);
+        ion::audio_common::source *source_ = reinterpret_cast < ion::audio_common::source* > (f);
+        source_->seek(0, ion::audio_common::source::seek_absolute);
 }
 
 }
@@ -58,6 +58,9 @@ namespace ion
 {
 namespace audio_backend
 {
+
+
+using namespace audio_common;
 
 
 

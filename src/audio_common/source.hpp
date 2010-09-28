@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_BACKEND_SOURCE_HPP
-#define ION_AUDIO_BACKEND_BACKEND_SOURCE_HPP
+#ifndef ION_AUDIO_COMMON_BACKEND_SOURCE_HPP
+#define ION_AUDIO_COMMON_BACKEND_SOURCE_HPP
 
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
@@ -9,7 +9,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 

@@ -18,6 +18,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 namespace adplug_detail
 {
 

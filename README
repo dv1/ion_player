@@ -1,12 +1,48 @@
-ION PLAYER
+ION
 v0.1a
+
+This is ion, an audio player with support for video game music formats and a multi-process design for increased stability.
 
 THIS SOFTWARE IS STILL IN ALPHA STATUS. USE AT YOUR OWN RISK.
 The setup is still not very convenient and somewhat cumbersome. It will become easier as work progresses.
 
 
+
 =======================
-Dependencies
+LICENSING
+
+externals
+---------
+
+jsoncpp 0.5.0                - Public Domain (according to http://jsoncpp.sourceforge.net/)
+dumb 0.9.3                   - DUMB license (similar to zlib)
+adplug 2.2.1                 - LGPL v2.1
+libbinio 1.4                 - LGPL v2.1
+mpg123 1.12.3                - LGPL v2.1
+Game Music Emulator 0.5.2    - LGPL v2.1
+uade 2.13                    - GPL v2
+
+With the exception of jsoncpp, these externals are all used in the respective decoders only,
+and ultimately are NOT essential parts of ion.
+
+
+main code
+---------
+
+src/audio_backend            - GPL v2 (including all decoders, sources, sinks)
+src/common                   - zlib license
+src/audio_player             - GPL v2
+
+
+The files LICENSE.GPL2 and LICENSE.zlib contain copies of the respective licenses.
+GPL2-licensed source codes from src/ contain a header at the beginning referring to the GPL.
+zlib-licensed source codes from src/ contain a full copy of the zlib license as the header.
+
+
+
+=======================
+DEPENDENCIES
+
 (in all cases, libraries and C/C++ headers are required, so try to get the development packages;
 earlier versions may work, but are untested)
 
@@ -30,9 +66,8 @@ libasound2-dev  libogg-dev  libvorbis-dev  libmagic-dev  libflac++-dev
 
 
 
-
 =======================
-Build instructions:
+BUILD INSTRUCTIONS
 
 Enter the main ion directory (the directory where this README and the "waf" file is located).
 
@@ -62,11 +97,9 @@ After configuration finished, build the player:
 (-jX is the same flag used in the externals build step for parallel building.)
 
 
-
 To execute the player, run
 
 build/release/src/audio_backend/ion_player
-
 
 
 In the initial run, the backend needs to be configured. Click on the configuration button and set the backend executable filename. The executable can be found at build/release/src/audio_backend/ion_audio_backend .

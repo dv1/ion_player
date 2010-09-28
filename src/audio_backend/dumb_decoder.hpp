@@ -14,6 +14,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 class dumb_decoder:
 	public decoder
 {

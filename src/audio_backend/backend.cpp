@@ -16,6 +16,9 @@ namespace audio_backend
 {
 
 
+using namespace audio_common;
+
+
 backend::backend():
 	current_volume(decoder::max_volume()),
 	loop_count(-1)

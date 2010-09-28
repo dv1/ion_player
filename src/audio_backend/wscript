@@ -19,8 +19,6 @@ def set_options(opt):
 
 
 def configure(conf):
-	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs', mandatory=1)
-	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs', mandatory=1)
 	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC', mandatory=1)
 	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC', mandatory=1)
 
@@ -129,12 +127,10 @@ def configure(conf):
 def build(bld):
 	core_sources = [
 'backend.cpp',
-'file_source.cpp',
-'resampler.cpp',
-'types.cpp'
+'file_source.cpp'
 ]
 	sources = core_sources
-	uselib_locals = 'ion_common jsoncpp '
+	uselib_locals = 'ion_audio_common ion_common jsoncpp '
 
 	if bld.env['WITH_FLAC_DECODER']:
 		sources += ['flac_decoder.cpp']

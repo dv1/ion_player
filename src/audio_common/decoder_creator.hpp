@@ -1,5 +1,5 @@
-#ifndef ION_AUDIO_BACKEND_DECODER_CREATOR_HPP
-#define ION_AUDIO_BACKEND_DECODER_CREATOR_HPP
+#ifndef ION_AUDIO_COMMON_DECODER_CREATOR_HPP
+#define ION_AUDIO_COMMON_DECODER_CREATOR_HPP
 
 #include <string>
 #include <ion/send_command_callback.hpp>
@@ -12,7 +12,7 @@
 
 namespace ion
 {
-namespace audio_backend
+namespace audio_common
 {
 
 
@@ -26,14 +26,14 @@ public:
 
 
 // This is used for plugins
-#define DEFINE_ION_AUDIO_BACKEND_DECODER_CREATOR(DECODER_CREATOR_TYPE) \
+#define DEFINE_ION_AUDIO_COMMON_DECODER_CREATOR(DECODER_CREATOR_TYPE) \
 namespace \
 { \
 DECODER_CREATOR_TYPE decoder_creator_instance_internal; \
 } \
 \
 extern "C" { \
-::ion::backend::decoder_creator *decoder_creator_instance = &decoder_creator_instance_internal; \
+::ion::audio_common::decoder_creator *decoder_creator_instance = &decoder_creator_instance_internal; \
 } 
 
 
