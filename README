@@ -30,8 +30,9 @@ and ultimately are NOT essential parts of ion.
 main code
 ---------
 
-src/audio_backend            - GPL v2 (including all decoders, sources, sinks)
 src/common                   - zlib license
+src/audio_common             - zlib license
+src/audio_backend            - GPL v2
 src/audio_player             - GPL v2
 
 
