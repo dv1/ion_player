@@ -1,16 +1,34 @@
+#include "ion_config.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <ion/backend_main_loop.hpp>
 #include <ion/resource_exceptions.hpp>
 #include "backend.hpp"
-#include "alsa_sink.hpp"
 #include "file_source.hpp"
+#ifdef WITH_DUMB_DECODER
 #include "dumb_decoder.hpp"
+#endif
+#ifdef WITH_MPG123_DECODER
 #include "mpg123_decoder.hpp"
+#endif
+#ifdef WITH_VORBIS_DECODER
 #include "vorbis_decoder.hpp"
+#endif
+#ifdef WITH_ADPLUG_DECODER
 #include "adplug_decoder.hpp"
+#endif
+#ifdef WITH_FLAC_DECODER
 #include "flac_decoder.hpp"
+#endif
+#ifdef WITH_GME_DECODER
 #include "gme_decoder.hpp"
+#endif
+#ifdef WITH_UADE_DECODER
 #include "uade_decoder.hpp"
+#endif
+#ifdef WITH_ALSA_SINK
+#include "alsa_sink.hpp"
+#endif
 
 
 /*
@@ -26,28 +44,48 @@ The backend can be called in three ways:
 
 struct creators
 {
-	ion::audio_backend::alsa_sink_creator alsa_sink_creator_;
-	ion::audio_backend::file_source_creator file_source_creator_;
-	ion::audio_backend::dumb_decoder_creator dumb_decoder_creator_;
-	ion::audio_backend::mpg123_decoder_creator mpg123_decoder_creator_;
-	ion::audio_backend::vorbis_decoder_creator vorbis_decoder_creator_;
-	ion::audio_backend::adplug_decoder_creator adplug_decoder_creator_;
-	ion::audio_backend::gme_decoder_creator gme_decoder_creator_;
-	ion::audio_backend::flac_decoder_creator flac_decoder_creator_;
-	ion::audio_backend::uade_decoder_creator uade_decoder_creator_;
+	typedef boost::ptr_vector < ion::audio_backend::decoder_creator > decoder_creators_container_t;
+	decoder_creators_container_t decoder_creators_container;
 
+#ifdef WITH_ALSA_SINK
+	ion::audio_backend::alsa_sink_creator alsa_sink_creator_;
+#endif
+	ion::audio_backend::file_source_creator file_source_creator_;
 
 	explicit creators(ion::audio_backend::backend &backend_)
 	{
 		backend_.get_source_creators().push_back(&file_source_creator_);
+
+#ifdef WITH_ALSA_SINK
 		backend_.get_sink_creators().push_back(&alsa_sink_creator_);
-		backend_.get_decoder_creators().push_back(&dumb_decoder_creator_);
-		backend_.get_decoder_creators().push_back(&mpg123_decoder_creator_);
-		backend_.get_decoder_creators().push_back(&vorbis_decoder_creator_);
-		backend_.get_decoder_creators().push_back(&flac_decoder_creator_);
-		backend_.get_decoder_creators().push_back(&adplug_decoder_creator_);
-		backend_.get_decoder_creators().push_back(&gme_decoder_creator_);
-		backend_.get_decoder_creators().push_back(&uade_decoder_creator_);
+#endif
+
+#ifdef WITH_DUMB_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::dumb_decoder_creator);
+#endif
+#ifdef WITH_MPG123_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::mpg123_decoder_creator);
+#endif
+#ifdef WITH_VORBIS_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::vorbis_decoder_creator);
+#endif
+#ifdef WITH_ADPLUG_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::adplug_decoder_creator);
+#endif
+#ifdef WITH_GME_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::gme_decoder_creator);
+#endif
+#ifdef WITH_FLAC_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::flac_decoder_creator);
+#endif
+#ifdef WITH_UADE_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::uade_decoder_creator);
+#endif
+
+		BOOST_FOREACH(ion::audio_backend::decoder_creator &decoder_creator_, decoder_creators_container)
+		{
+			backend_.get_decoder_creators().push_back(&decoder_creator_);
+		}
 	}
 };
 
@@ -97,7 +135,11 @@ int main(int argc, char **argv)
 
 			ion::backend_main_loop < ion::audio_backend::backend > backend_main_loop(std::cin, std::cout, backend_);
 			creators_ = creators_ptr_t(new creators(backend_));
+#ifdef WITH_ALSA_SINK
 			backend_.create_sink("alsa"); // Use the alsa sink for sound output (TODO: this is platform specific; on Windows, one would use Waveout, on OSX it would be CoreAudio etc.)
+#else
+#error Currently, only ALSA output is supported. Please build the backend with the ALSA sink.
+#endif
 
 			backend_main_loop.run();
 

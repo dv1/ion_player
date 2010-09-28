@@ -38,7 +38,9 @@ def set_options(opt):
 	opt.tool_options('compiler_cc compiler_cxx gas')
 	opt.tool_options('boost_', '.')
 	opt.add_option('--build-variants', action='store', default='debug,release', help='build the selected variants')
-	opt.add_option('--enable-extra-warnings', action='store_true', default='', help='enable warnings that are usually disabled')
+	opt.add_option('--disable-extra-warnings', action='store_true', default=False, help='disable some extra warnings that are not essential')
+	opt.add_option('--without-audio-backend', action='store_true', default=False, help='do not build audio backend')
+	opt.add_option('--without-qt4-audio-player-frontend', action='store_true', default=False, help='do not build the Qt4-based audio player frontend')
 	opt.recurse('src/audio_backend')
 	opt.recurse('src/common')
 	opt.recurse('src/audio_player')
@@ -78,17 +80,17 @@ def configure(conf):
 	# add common compiler flags that will be used in both variants
 	add_compiler_flags(conf, conf.env, ['-Wextra', '-Wall', ('-std=c++0x', '-std=c++98'), '-pedantic'], 'CXX', 'STRICT')
 	# add flags that disable some warnings (which occur in boost)
-	if not Options.options.enable_extra_warnings:
+	if not Options.options.disable_extra_warnings:
 		add_compiler_flags(conf, conf.env, ['-Wno-missing-field-initializers', '-Wno-long-long', '-Wno-empty-body', '-Wno-unused-parameter', '-Wno-ignored-qualifiers', '-Wno-strict-aliasing'], 'CXX', 'STRICT')
 
-	# externals configured by waf
-	conf.recurse('extern/dumb-0.9.3')
-	conf.recurse('extern/Game_Music_Emu-0.5.2')
-
 	# sources
-	conf.recurse('src/audio_backend')
 	conf.recurse('src/common')
-	conf.recurse('src/audio_player')
+	if not Options.options.without_qt4_audio_player_frontend:
+		conf.define('WITH_QT4_AUDIO_PLAYER', 1)
+		conf.recurse('src/audio_player')
+	if not Options.options.without_audio_backend:
+		conf.define('WITH_AUDIO_BACKEND', 1)
+		conf.recurse('src/audio_backend')
 
 	# add debug variant
 	if 'debug' in conf.env['BUILD_VARIANTS']:
@@ -97,7 +99,7 @@ def configure(conf):
 		conf.set_env_name('debug', dbg_env)
 		add_compiler_flags(conf, dbg_env, ['-O0', '-g3', '-ggdb'], 'CC', 'BUILDMODE')
 		add_compiler_flags(conf, dbg_env, ['-O0', '-g3', '-ggdb'], 'CXX', 'BUILDMODE')
-		conf.write_config_header('config.h', dbg_env)
+		conf.write_config_header('ion_config.h', dbg_env)
 
 	# add release variant
 	if 'release' in conf.env['BUILD_VARIANTS']:
@@ -106,7 +108,7 @@ def configure(conf):
 		conf.set_env_name('release', rel_env)
 		add_compiler_flags(conf, rel_env, ['-O2', '-s', '-fomit-frame-pointer', '-pipe'], 'CC', 'BUILDMODE')
 		add_compiler_flags(conf, rel_env, ['-O2', '-s', '-fomit-frame-pointer', '-pipe'], 'CXX', 'BUILDMODE')
-		conf.write_config_header('config.h', rel_env)
+		conf.write_config_header('ion_config.h', rel_env)
 
 
 
@@ -141,13 +143,13 @@ def clean_external(ctx):
 
 def build(bld):
 	# externals built by waf
-	bld.recurse('extern/dumb-0.9.3')
-	bld.recurse('extern/Game_Music_Emu-0.5.2')
 	bld.recurse('extern/jsoncpp')
 
-	bld.recurse('src/audio_backend')
+	if bld.env['WITH_AUDIO_BACKEND']:
+		bld.recurse('src/audio_backend')
 	bld.recurse('src/common')
-	bld.recurse('src/audio_player')
+	if bld.env['WITH_QT4_AUDIO_PLAYER']:
+		bld.recurse('src/audio_player')
 
 
 	# unit test utility functions
@@ -170,19 +172,21 @@ def build(bld):
 
 
 	# create build task generators for all trivial unit tests
-	for unit_test in unit_tests:
-		bld(
-			features = ['cxx', 'cprogram', 'test'],
-			uselib_local = 'ion_audio_backend ion_common',
-			uselib = 'BOOST_THREAD BOOST BUILDMODE STRICT',
-			target = r_test.sub('.test', unit_test),
-			includes = '. test',
-			source = unit_test
-		)
+	if bld.env['WITH_AUDIO_BACKEND']:
+		for unit_test in unit_tests:
+			bld(
+				features = ['cxx', 'cprogram', 'test'],
+				uselib_local = 'ion_audio_backend ion_common',
+				uselib = 'BOOST_THREAD BOOST BUILDMODE STRICT',
+				target = r_test.sub('.test', unit_test),
+				includes = '. test',
+				source = unit_test
+			)
 
 
 	# non-trivial tests
-	bld.recurse('test/scanner_base')
+	if bld.env['WITH_AUDIO_BACKEND'] and bld.env['WITH_QT4_AUDIO_PLAYER']:
+		bld.recurse('test/scanner_base')
 
 
 	# get the list of variants

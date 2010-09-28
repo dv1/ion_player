@@ -1,67 +1,180 @@
 #!/usr/bin/env python
-import os
+import os, Utils, Options
 
 
 def set_options(opt):
-	pass
+	opt.add_option('--without-dumb-decoder', action='store_true', default=False, help='build without DUMB decoder')
+	opt.add_option('--without-adplug-decoder', action='store_true', default=False, help='build without AdPlug decoder')
+	opt.add_option('--without-mpg123-decoder', action='store_true', default=False, help='build without MPG123 decoder')
+	opt.add_option('--without-uade-decoder', action='store_true', default=False, help='build without UADE decoder')
+	opt.add_option('--without-gme-decoder', action='store_true', default=False, help='build without Game Music Emulator decoder')
+	opt.add_option('--without-flac-decoder', action='store_true', default=False, help='build without FLAC decoder')
+	opt.add_option('--without-oggvorbis-decoder', action='store_true', default=False, help='build without Ogg Vorbis decoder')
+	opt.add_option('--without-faad-decoder', action='store_true', default=False, help='build without FAAD AAC decoder')
+	opt.add_option('--without-musepack-decoder', action='store_true', default=False, help='build without Musepack decoder')
+	opt.add_option('--without-wavpack-decoder', action='store_true', default=False, help='build without WavPack decoder')
+	opt.add_option('--without-sidplay2-decoder', action='store_true', default=False, help='build without Sidplay2 decoder')
+
+	opt.add_option('--without-alsa-sink', action='store_true', default=False, help='build without ALSA sink')
 
 
 def configure(conf):
-	conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs')
-	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs')
-	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs')
-	conf.check_cfg(package='ogg', uselib_store='OGG', args='--cflags --libs')
-	conf.check_cfg(package='vorbis', uselib_store='VORBIS', args='--cflags --libs')
-	conf.check_cfg(package='vorbisfile', uselib_store='VORBISFILE', args='--cflags --libs')
-	conf.check_cfg(package='libsidplay2', uselib_store='SIDPLAY2', args='--cflags --libs')
-	conf.check_cfg(package='wavpack', uselib_store='WAVPACK', args='--cflags --libs')
-	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC')
-	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC')
+	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs', mandatory=1)
+	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs', mandatory=1)
+	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC', mandatory=1)
+	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC', mandatory=1)
 
-	conf.check_cxx(header_name = 'FLAC++/decoder.h', uselib_store = 'FLACPP')
-	conf.check_cxx(lib = 'FLAC++', uselib_store = 'FLACPP')
 
-	conf.check_cc(header_name = 'faad.h', uselib_store = 'FAAD')
-	conf.check_cc(lib = 'faad', uselib_store = 'FAAD')
+	if not Options.options.without_dumb_decoder:
+		conf.recurse('../../extern/dumb-0.9.3')
+		conf.define('WITH_DUMB_DECODER', 1)
 
-	conf.check_cc(header_name = 'mpcdec/mpcdec.h', uselib_store = 'MPCDEC')
-	conf.check_cc(lib = 'mpcdec', uselib_store = 'MPCDEC')
+	if not Options.options.without_adplug_decoder:
+		conf.define('WITH_ADPLUG_DECODER', 1)
 
-	conf.env['CPPPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123")
-	conf.env['LIBPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123/.libs")
-	conf.env['STATICLIB_MPG123'] = 'mpg123'
+		conf.env['CPPPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src")
+		conf.env['LIBPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src/.libs")
+		conf.env['STATICLIB_ADPLUG'] = 'adplug'
 
-	conf.env['CPPPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src")
-	conf.env['LIBPATH_ADPLUG'] = os.path.join(os.getcwd(), "extern/adplug-2.2.1/src/.libs")
-	conf.env['STATICLIB_ADPLUG'] = 'adplug'
+		conf.env['CPPPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src")
+		conf.env['LIBPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src/.libs")
+		conf.env['STATICLIB_BINIO'] = 'binio'
 
-	conf.env['CPPPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src")
-	conf.env['LIBPATH_BINIO'] = os.path.join(os.getcwd(), "extern/libbinio-1.4/src/.libs")
-	conf.env['STATICLIB_BINIO'] = 'binio'
+	if not Options.options.without_mpg123_decoder:
+		conf.define('WITH_MPG123_DECODER', 1)
 
-	conf.env['CPPPATH_UADE'] = [os.path.join(os.getcwd(), "extern/uade-2.13/src/include"), os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")]
-	conf.env['LIBPATH_UADE'] = os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")
-	conf.env['STATICLIB_UADE'] = 'uadefront'
+		conf.env['CPPPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123")
+		conf.env['LIBPATH_MPG123'] = os.path.join(os.getcwd(), "extern/mpg123-1.12.3/src/libmpg123/.libs")
+		conf.env['STATICLIB_MPG123'] = 'mpg123'
+
+	if not Options.options.without_uade_decoder:
+		conf.define('WITH_UADE_DECODER', 1)
+
+		conf.env['CPPPATH_UADE'] = [os.path.join(os.getcwd(), "extern/uade-2.13/src/include"), os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")]
+		conf.env['LIBPATH_UADE'] = os.path.join(os.getcwd(), "extern/uade-2.13/src/frontends/common")
+		conf.env['STATICLIB_UADE'] = 'uadefront'
+
+	if not Options.options.without_gme_decoder:
+		conf.recurse('../../extern/Game_Music_Emu-0.5.2')
+		conf.define('WITH_GME_DECODER', 1)
+
+	if not Options.options.without_flac_decoder:
+		flac_ret_1 = conf.check_cxx(header_name = 'FLAC++/decoder.h', uselib_store = 'FLACPP')
+		flac_ret_2 = conf.check_cxx(lib = 'FLAC++', uselib_store = 'FLACPP')
+		if flac_ret_1 and flac_ret_2:
+			conf.define('WITH_FLAC_DECODER', 1)
+			conf.define('HAVE_FLACPP', 1)
+
+	if not Options.options.without_oggvorbis_decoder:
+		conf.check_cfg(package='ogg', uselib_store='OGG', args='--cflags --libs')
+		conf.check_cfg(package='vorbis', uselib_store='VORBIS', args='--cflags --libs')
+		conf.check_cfg(package='vorbisfile', uselib_store='VORBISFILE', args='--cflags --libs')
+		if conf.env['HAVE_OGG'] and conf.env['HAVE_VORBIS'] and conf.env['HAVE_VORBISFILE']:
+			conf.define('WITH_VORBIS_DECODER', 1)
+			conf.define('HAVE_OGG_VORBIS', 1)
+
+	if not Options.options.without_faad_decoder:
+		faad_ret_1 = conf.check_cc(header_name = 'faad.h', uselib_store = 'FAAD')
+		faad_ret_2 = conf.check_cc(lib = 'faad', uselib_store = 'FAAD')
+		if faad_ret_1 and faad_ret_2:
+			conf.define('WITH_FAAD_DECODER', 1)
+
+	if not Options.options.without_musepack_decoder:
+		mpcdec_ret_1 = conf.check_cc(header_name = 'mpcdec/mpcdec.h', uselib_store = 'MPCDEC')
+		mpcdec_ret_2 = conf.check_cc(lib = 'mpcdec', uselib_store = 'MPCDEC')
+		if mpcdec_ret_1 and mpcdec_ret_2:
+			conf.define('WITH_MUSEPACK_DECODER', 1)
+
+	if not Options.options.without_wavpack_decoder:
+		conf.check_cfg(package='wavpack', uselib_store='WAVPACK', args='--cflags --libs')
+		if conf.env['HAVE_WAVPACK']:
+			conf.define('WITH_WAVPACK_DECODER', 1)
+
+	if not Options.options.without_sidplay2_decoder:
+		conf.check_cfg(package='libsidplay2', uselib_store='SIDPLAY2', args='--cflags --libs')
+		if conf.env['HAVE_SIDPLAY2']:
+			conf.define('WITH_SIDPLAY2_DECODER', 1)
+
+	if not Options.options.without_alsa_sink:
+		conf.check_cfg(package='alsa', uselib_store='ALSA', args='--cflags --libs', mandatory=1)
+		if conf.env['HAVE_ALSA']:
+			conf.define('WITH_ALSA_SINK', 1)
+
+	Utils.pprint('NORMAL', '----------------')
+
+	
+	def log_build_status(lib_name, will_be_built):
+		Utils.pprint('NORMAL', lib_name + ':', sep='')
+		if will_be_built:
+			Utils.pprint('GREEN', 'yes')
+		else:
+			Utils.pprint('YELLOW', 'no')
+
+	log_build_status('DUMB decoder', conf.env['WITH_DUMB_DECODER'])
+	log_build_status('AdPlug decoder', conf.env['WITH_ADPLUG_DECODER'])
+	log_build_status('mpg123 decoder', conf.env['WITH_MPG123_DECODER'])
+	log_build_status('UADE decoder', conf.env['WITH_UADE_DECODER'])
+	log_build_status('Game Music Emulator decoder', conf.env['WITH_GME_DECODER'])
+	log_build_status('FLAC decoder', conf.env['WITH_FLAC_DECODER'])
+	log_build_status('Ogg Vorbis decoder', conf.env['WITH_VORBIS_DECODER'])
+	log_build_status('FAAD decoder', conf.env['WITH_FAAD_DECODER'])
+	log_build_status('Musepack decoder', conf.env['WITH_MUSEPACK_DECODER'])
+	log_build_status('WavPack decoder', conf.env['WITH_WAVPACK_DECODER'])
+	log_build_status('Sidplay2 decoder', conf.env['WITH_SIDPLAY2_DECODER'])
+	log_build_status('ALSA sink', conf.env['WITH_ALSA_SINK'])
+
+	Utils.pprint('NORMAL', '----------------')
 
 
 def build(bld):
+	core_sources = [
+'backend.cpp',
+'file_source.cpp',
+'resampler.cpp',
+'types.cpp'
+]
+	sources = core_sources
+	uselib_locals = 'ion_common jsoncpp '
+
+	if bld.env['WITH_FLAC_DECODER']:
+		sources += ['flac_decoder.cpp']
+	if bld.env['WITH_VORBIS_DECODER']:
+		sources += ['vorbis_decoder.cpp']
+	if bld.env['WITH_MPG123_DECODER']:
+		sources += ['mpg123_decoder.cpp']
+	if bld.env['WITH_GME_DECODER']:
+		bld.recurse('../../extern/Game_Music_Emu-0.5.2')
+		sources += ['gme_decoder.cpp']
+		uselib_locals += 'gme '
+	if bld.env['WITH_DUMB_DECODER']:
+		bld.recurse('../../extern/dumb-0.9.3')
+		sources += ['dumb_decoder.cpp']
+		uselib_locals += 'dumb '
+	if bld.env['WITH_ADPLUG_DECODER']:
+		sources += ['adplug_decoder.cpp']
+	if bld.env['WITH_UADE_DECODER']:
+		sources += ['uade_decoder.cpp']
+
+	if bld.env['WITH_ALSA_SINK']:
+		sources += ['alsa_sink.cpp']
+
+
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE MAGIC BOOST BUILDMODE STRICT', # excluding FLAC for now since one of its headers is called "assert.h", causing all sorts of trouble in Boost
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE MAGIC BOOST BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
-		uselib_local = 'ion_common gme dumb jsoncpp',
-		includes = '.'
+		uselib_local = uselib_locals,
+		includes = '.',
+		source = sources
 	)
-	obj.find_sources_in_dirs('.')
-	obj.source.remove('./main.cpp')
 
 	obj = bld(
 		features = ['cxx', 'cprogram'],
 		uselib = 'BOOST_THREAD BOOST MPG123 ADPLUG BINIO UADE BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		uselib_local = 'ion_audio_backend ion_common',
-		includes = '.',
+		includes = '. ../..',
 		source = 'main.cpp'
 	)
 

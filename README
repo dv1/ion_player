@@ -1,0 +1,75 @@
+ION PLAYER
+v0.1a
+
+THIS SOFTWARE IS STILL IN ALPHA STATUS. USE AT YOUR OWN RISK.
+The setup is still not very convenient and somewhat cumbersome. It will become easier as work progresses.
+
+
+=======================
+Dependencies
+(in all cases, libraries and C/C++ headers are required, so try to get the development packages;
+earlier versions may work, but are untested)
+
+g++ >= 4.1
+libstdc++ >= 6
+speex >= 1.2
+speexdsp >= 1.2
+Qt >= 4.6
+boost >= 1.40 (with boost-thread built)
+alsa >= 1.0
+ogg >= 1.1
+vorbis >= 1.2
+magic (the library used by the "file" command) >= 5.0
+flac++ >= 1.2
+
+
+Ubuntu/Debian package list:
+
+g++  libstdc++-dev  libspeex-dev  libspeexdsp-dev  libqt4-dev  libboost-dev  libboost-thread-dev
+libasound2-dev  libogg-dev  libvorbis-dev  libmagic-dev  libflac++-dev
+
+
+
+
+=======================
+Build instructions:
+
+Enter the main ion directory (the directory where this README and the "waf" file is located).
+
+First, build the included externals:
+
+./waf external -jX
+
+where X is a number. -j1 means normal sequential build, -j2 or higher builds in parallel.
+This is useful with multicore processors.
+
+
+After the externals are built, the actual project configuration is done:
+
+./waf configure --build-variants=<release/debug>
+
+Choose one build variant. release builds faster and smaller code, which is what most people will want to.
+debug is for developers, allowing the proper use of gdb and friends.
+
+If boost is installed in a nonstandard location, use the --boost-includes and --boost-libs options to
+specify where boost headers and libraries reside. For additional options, use ./waf --help .
+
+
+After configuration finished, build the player:
+
+./waf -jX
+
+(-jX is the same flag used in the externals build step for parallel building.)
+
+
+
+To execute the player, run
+
+build/release/src/audio_backend/ion_player
+
+
+
+In the initial run, the backend needs to be configured. Click on the configuration button and set the backend executable filename. The executable can be found at build/release/src/audio_backend/ion_audio_backend .
+
+After that, the player is ready to go.
+
