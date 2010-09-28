@@ -132,24 +132,26 @@ def build(bld):
 	sources = core_sources
 	uselib_locals = 'ion_audio_common ion_common jsoncpp '
 
-	if bld.env['WITH_FLAC_DECODER']:
-		sources += ['flac_decoder.cpp']
-	if bld.env['WITH_VORBIS_DECODER']:
-		sources += ['vorbis_decoder.cpp']
-	if bld.env['WITH_MPG123_DECODER']:
-		sources += ['mpg123_decoder.cpp']
-	if bld.env['WITH_GME_DECODER']:
-		bld.recurse('../../extern/Game_Music_Emu-0.5.2')
-		sources += ['gme_decoder.cpp']
-		uselib_locals += 'gme '
 	if bld.env['WITH_DUMB_DECODER']:
 		bld.recurse('../../extern/dumb-0.9.3')
 		sources += ['dumb_decoder.cpp']
 		uselib_locals += 'dumb '
 	if bld.env['WITH_ADPLUG_DECODER']:
 		sources += ['adplug_decoder.cpp']
+	if bld.env['WITH_MPG123_DECODER']:
+		sources += ['mpg123_decoder.cpp']
 	if bld.env['WITH_UADE_DECODER']:
 		sources += ['uade_decoder.cpp']
+	if bld.env['WITH_GME_DECODER']:
+		bld.recurse('../../extern/Game_Music_Emu-0.5.2')
+		sources += ['gme_decoder.cpp']
+		uselib_locals += 'gme '
+	if bld.env['WITH_FLAC_DECODER']:
+		sources += ['flac_decoder.cpp']
+	if bld.env['WITH_VORBIS_DECODER']:
+		sources += ['vorbis_decoder.cpp']
+	if bld.env['WITH_FAAD_DECODER']:
+		sources += ['faad_decoder.cpp']
 
 	if bld.env['WITH_ALSA_SINK']:
 		sources += ['alsa_sink.cpp']

@@ -19,8 +19,8 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_BACKEND_BACKEND_ADPLUG_DECODER_HPP
-#define ION_AUDIO_BACKEND_BACKEND_ADPLUG_DECODER_HPP
+#ifndef ION_AUDIO_BACKEND_ADPLUG_DECODER_HPP
+#define ION_AUDIO_BACKEND_ADPLUG_DECODER_HPP
 
 #include <binio.h>
 #include <boost/thread/mutex.hpp>

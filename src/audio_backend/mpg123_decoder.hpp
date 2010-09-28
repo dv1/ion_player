@@ -19,8 +19,8 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_BACKEND_BACKEND_MPG123_DECODER_HPP
-#define ION_AUDIO_BACKEND_BACKEND_MPG123_DECODER_HPP
+#ifndef ION_AUDIO_BACKEND_MPG123_DECODER_HPP
+#define ION_AUDIO_BACKEND_MPG123_DECODER_HPP
 
 #include <stdint.h>
 #include <vector>

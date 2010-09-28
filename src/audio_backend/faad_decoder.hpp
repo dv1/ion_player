@@ -19,12 +19,14 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_BACKEND_DUMB_DECODER_HPP
-#define ION_AUDIO_BACKEND_DUMB_DECODER_HPP
+#if 0
+#ifndef ION_AUDIO_BACKEND_FAAD_DECODER_HPP
+#define ION_AUDIO_BACKEND_FAAD_DECODER_HPP
 
-#include <boost/thread/mutex.hpp>
-#include <dumb.h>
-#include "source.hpp"
+
+#include <faad.h>
+#include <boost/optional.hpp>
+
 #include "decoder.hpp"
 #include "decoder_creator.hpp"
 
@@ -38,23 +40,12 @@ namespace audio_backend
 using namespace audio_common;
 
 
-class dumb_decoder:
+class faad_decoder:
 	public decoder
 {
 public:
-	enum module_type
-	{
-		module_type_unknown,
-
-		module_type_xm,
-		module_type_it,
-		module_type_s3m,
-		module_type_mod
-	};
-
-
-	explicit dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize, metadata_t const &initial_metadata);
-	~dumb_decoder();
+	explicit faad_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_);
+	~faad_decoder();
 
 
 	virtual bool is_initialized() const;
@@ -87,42 +78,34 @@ public:
 	virtual unsigned int update(void *dest, unsigned int const num_samples_to_write);
 
 
-	struct loop_data
-	{
-		long loop_mode, cur_num_loops;
-	};
-
-
 protected:
-	bool test_if_module_file();
-	void reinitialize_sigrenderer(unsigned const int new_num_channels, long const new_position);
-	void set_loop_mode_impl(int const new_loop_mode);
+	typedef boost::optional < faacDecHandle > faad_handle_optional_t;
+
+	void initialize(unsigned int const frequency);
+	void close();
 
 
 	mutable boost::mutex mutex_;
-	DUH *duh;
-	DUH_SIGRENDERER *duh_sigrenderer;
-	playback_properties playback_properties_;
-	module_type module_type_;
-	long current_volume;
-	loop_data loop_data_;
 	source_ptr_t source_;
+	faad_handle_optional_t faad_handle;
+	bool initialized;
+	playback_properties playback_properties_;
+
+	unsigned long sample_rate;
+	unsigned char channels;
 };
 
 
 
 
-class dumb_decoder_creator:
+class faad_decoder_creator:
 	public decoder_creator
 {
 public:
-	explicit dumb_decoder_creator();
+	explicit faad_decoder_creator();
 
 	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type);
-	virtual std::string get_type() const { return "dumb"; }
-
-protected:
-	DUMBFILE_SYSTEM fs;
+	virtual std::string get_type() const { return "faad"; }
 };
 
 
@@ -130,5 +113,6 @@ protected:
 }
 
 
+#endif
 #endif
 

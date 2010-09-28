@@ -19,8 +19,8 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_BACKEND_BACKEND_GME_DECODER_HPP
-#define ION_AUDIO_BACKEND_BACKEND_GME_DECODER_HPP
+#ifndef ION_AUDIO_BACKEND_GME_DECODER_HPP
+#define ION_AUDIO_BACKEND_GME_DECODER_HPP
 
 #include "decoder.hpp"
 #include <boost/thread/mutex.hpp>

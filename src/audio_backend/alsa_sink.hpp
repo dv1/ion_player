@@ -19,8 +19,8 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_BACKEND_BACKEND_ALSA_SINK_HPP
-#define ION_AUDIO_BACKEND_BACKEND_ALSA_SINK_HPP
+#ifndef ION_AUDIO_BACKEND_ALSA_SINK_HPP
+#define ION_AUDIO_BACKEND_ALSA_SINK_HPP
 
 #include <stdint.h>
 #include <vector>

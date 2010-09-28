@@ -19,8 +19,8 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_BACKEND_BACKEND_FILE_SOURCE_HPP
-#define ION_AUDIO_BACKEND_BACKEND_FILE_SOURCE_HPP
+#ifndef ION_AUDIO_BACKEND_FILE_SOURCE_HPP
+#define ION_AUDIO_BACKEND_FILE_SOURCE_HPP
 
 #include <fstream>
 #include <ion/uri.hpp>
