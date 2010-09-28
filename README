@@ -11,6 +11,7 @@ The setup is still not very convenient and somewhat cumbersome. It will become e
 =======================
 LICENSING
 
+
 externals
 ---------
 
@@ -46,6 +47,10 @@ DEPENDENCIES
 (in all cases, libraries and C/C++ headers are required, so try to get the development packages;
 earlier versions may work, but are untested)
 
+
+essential
+---------
+
 g++ >= 4.1
 libstdc++ >= 6
 speex >= 1.2
@@ -53,13 +58,18 @@ speexdsp >= 1.2
 Qt >= 4.6
 boost >= 1.40 (with boost-thread built)
 alsa >= 1.0
+magic (the library used by the "file" command) >= 5.0
+
+
+optional (these can be missing, but then corresponding parts will not be built & included):
+-------------------------------------------------------------------------------------------
 ogg >= 1.1
 vorbis >= 1.2
-magic (the library used by the "file" command) >= 5.0
 flac++ >= 1.2
 
 
-Ubuntu/Debian package list:
+Ubuntu/Debian package list (including optionals):
+-------------------------------------------------
 
 g++  libstdc++-dev  libspeex-dev  libspeexdsp-dev  libqt4-dev  libboost-dev  libboost-thread-dev
 libasound2-dev  libogg-dev  libvorbis-dev  libmagic-dev  libflac++-dev
