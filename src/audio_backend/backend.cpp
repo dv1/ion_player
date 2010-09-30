@@ -356,6 +356,7 @@ void backend::set_next_decoder(std::string const &uri_str, std::string const &de
 	if (uri_str.empty())
 	{
 		send_command_callback("info", boost::assign::list_of("no next decoder given -> not setting a next decoder"));
+		next_decoder = decoder_ptr_t();
 		return;
 	}
 
