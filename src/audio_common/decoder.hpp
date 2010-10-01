@@ -172,7 +172,7 @@ public:
 	* would be the resource length in seconds. In cases where the amount of ticks is unavailable (as described for get_num_ticks()), this function returns -1.
 	*
 	* @pre the decoder must be correctly initialized
-	* @return Amount of ticks that make up one second, or -1 if this information is unavailable
+	* @return Amount of ticks that make up one second, or 0 if this information is unavailable
 	*/
 	virtual long get_num_ticks_per_second() const = 0;
 

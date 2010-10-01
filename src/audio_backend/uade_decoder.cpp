@@ -554,7 +554,7 @@ long uade_decoder::get_num_ticks() const
 
 long uade_decoder::get_num_ticks_per_second() const
 {
-	return -1;
+	return 0;
 }
 
 

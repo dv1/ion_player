@@ -147,10 +147,16 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 				{
 					unsigned int num_ticks = get_metadata_value < unsigned int > (metadata, "num_ticks", 0);
 					unsigned int num_ticks_per_second = get_metadata_value < unsigned int > (metadata, "num_ticks_per_second", 1);
-					unsigned int length_in_seconds = num_ticks / num_ticks_per_second;
-					unsigned int minutes = length_in_seconds / 60;
-					unsigned int seconds = length_in_seconds % 60;
-					return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
+
+					if ((num_ticks == 0) || (num_ticks_per_second == 0))
+						return QString("--");
+					else
+					{
+						unsigned int length_in_seconds = num_ticks / num_ticks_per_second;
+						unsigned int minutes = length_in_seconds / 60;
+						unsigned int seconds = length_in_seconds % 60;
+						return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
+					}
 				}
 				default: return QVariant();
 			}
