@@ -45,20 +45,27 @@ public:
 
 
 	bool is_initialized() const;
-	bool initialize_audio_device();
+	bool initialize_audio_device(unsigned int const playback_frequency);
+	bool reinitialize_audio_device(unsigned int const playback_frequency);
 	void shutdown_audio_device();
 	bool render_samples(unsigned int const num_samples_to_render);
+
+	inline unsigned int get_default_playback_frequency() const { return 48000; }
 
 	inline std::size_t get_sample_buffer_size() const { return sample_buffer.size(); }
 	inline uint8_t* get_sample_buffer() { return &sample_buffer[0]; }
 
 
 protected:
+	bool initialize_audio_device_impl(unsigned int const playback_frequency);
+
+
 	snd_pcm_t *pcm_handle;
 	snd_pcm_hw_params_t *hw_params;
 
 	typedef std::vector < uint8_t > sample_buffer_t;
 	sample_buffer_t sample_buffer;
+	boost::mutex alsa_mutex;
 };
 
 

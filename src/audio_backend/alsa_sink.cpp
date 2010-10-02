@@ -58,13 +58,20 @@ inline void checked_alsa_call(T const &t, std::string const &error_msg)
 }
 
 
-bool alsa_sink::initialize_audio_device()
+bool alsa_sink::initialize_audio_device(unsigned int const playback_frequency)
+{
+	boost::lock_guard < boost::mutex > lock(alsa_mutex);
+	return initialize_audio_device_impl(playback_frequency);
+}
+
+
+bool alsa_sink::initialize_audio_device_impl(unsigned int const playback_frequency)
 {
 	if (pcm_handle != 0)
 		return true;
 
 
-	playback_properties new_playback_properties(48000, 2048, 2, sample_s16);
+	playback_properties new_playback_properties(playback_frequency, 2048, 2, sample_s16);
 
 
 	checked_alsa_call(snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0), "unable to open alsa pcm");
@@ -124,6 +131,15 @@ bool alsa_sink::initialize_audio_device()
 }
 
 
+bool alsa_sink::reinitialize_audio_device(unsigned int const playback_frequency)
+{
+	boost::lock_guard < boost::mutex > lock(alsa_mutex);
+
+	shutdown_audio_device();
+	return initialize_audio_device_impl(playback_frequency);
+}
+
+
 void alsa_sink::shutdown_audio_device()
 {
 	// Even though both the playback thread and stop_impl() call shutdown_audio_device, there is no need to synchronize this function
@@ -149,6 +165,8 @@ void alsa_sink::shutdown_audio_device()
 
 bool alsa_sink::render_samples(unsigned int const num_samples_to_render)
 {
+	boost::lock_guard < boost::mutex > lock(alsa_mutex);
+
 	int ret = snd_pcm_writei(pcm_handle, &sample_buffer[0], num_samples_to_render);
 	if (ret < 0)
 	{

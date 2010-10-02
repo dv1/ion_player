@@ -27,6 +27,7 @@ freely, subject to the following restrictions:
 #ifndef ION_AUDIO_COMMON_COMMON_SINK_BASE_HPP
 #define ION_AUDIO_COMMON_COMMON_SINK_BASE_HPP
 
+#include <assert.h>
 #include <string>
 
 #include <boost/assign/list_of.hpp>
@@ -48,12 +49,15 @@ namespace audio_common
 /*
 Base code for sinks, using CRTP. Most sinks should use this and implement only a few necessary member functions:
 	bool is_initialized() const
-	bool initialize_audio_device()
+	bool initialize_audio_device(unsigned int const playback_frequency)
 	void shutdown_audio_device()
 	bool render_samples(unsigned int const num_samples_to_render)
+	unsigned int get_default_playback_frequency() const
 
 	std::size_t get_sample_buffer_size() const
 	uint8_t* get_sample_buffer()
+
+IMPORTANT: initialize_audio_device(), reinitialize_audio_device(), and render_samples() must be synchronized by the derived class!
 
 
 This code makes extensive use of smart pointers. The reason for this is that the assignments current_song_decoder = next_song_decoder;
@@ -85,6 +89,13 @@ public:
 	}
 
 
+	void set_reinitialize_on_demand(bool const state)
+	{
+		boost::lock_guard < boost::mutex > lock(mutex);
+		reinitialize_on_demand = state;
+	}
+
+
 	virtual void start(decoder_ptr_t decoder_, decoder_ptr_t next_decoder_)
 	{
 		if (!decoder_)
@@ -97,7 +108,7 @@ public:
 		}
 		else
 		{
-			if (!get_derived().initialize_audio_device())
+			if (!get_derived().initialize_audio_device(get_playback_frequency(*decoder_)))
 			{
 				send_command_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
 				return;
@@ -108,6 +119,22 @@ public:
 
 		{
 			boost::lock_guard < boost::mutex > lock(mutex);
+
+			if (reinitialize_on_demand && run_playback_loop)
+			{
+				unsigned int new_frequency = get_playback_frequency(*decoder_);
+				if (new_frequency != playback_properties_.frequency)
+				{
+					if (!get_derived().reinitialize_audio_device(new_frequency))
+					{
+						run_playback_loop = false;	
+						is_paused = false;
+						return;
+					}
+
+					resampler_->set_output_frequency(playback_properties_.frequency);
+				}
+			}
 
 			decoder_->set_playback_properties(playback_properties_);
 
@@ -233,8 +260,20 @@ protected:
 	explicit common_sink_base(send_command_callback_t const &send_command_callback):
 		sink(send_command_callback),
 		run_playback_loop(false),
-		is_paused(false)
+		is_paused(false),
+		reinitialize_on_demand(true)
 	{
+	}
+
+
+	unsigned int get_playback_frequency(decoder &decoder_) const
+	{
+		unsigned int frequency = 0;
+		if (reinitialize_on_demand)
+			frequency = decoder_.get_decoder_samplerate();
+		if (frequency == 0)
+			frequency = get_derived().get_default_playback_frequency();
+		return frequency;
 	}
 
 
@@ -265,6 +304,7 @@ protected:
 	void playback_loop()
 	{
 		bool do_shutdown = false;
+		bool restart_device = false;
 
 		while (true)
 		{
@@ -279,6 +319,15 @@ protected:
 					is_paused = false;
 					get_derived().shutdown_audio_device();
 					return;
+				}
+
+				if (restart_device && current_decoder)
+				{
+					restart_device = false;
+					if (!get_derived().reinitialize_audio_device(get_playback_frequency(*current_decoder)))
+						return;
+					resampler_->set_output_frequency(playback_properties_.frequency);
+					current_decoder->set_playback_properties(playback_properties_);
 				}
 
 				if (!run_playback_loop)
@@ -303,7 +352,18 @@ protected:
 						std::string next_uri;
 						
 						if (next_decoder)
+						{
 							next_uri = next_decoder->get_uri().get_full();
+
+							if (reinitialize_on_demand)
+							{
+								unsigned int current_actual_frequency = get_playback_frequency(*current_decoder);
+								unsigned int next_actual_frequency = get_playback_frequency(*next_decoder);
+								restart_device =
+									(current_actual_frequency != next_actual_frequency) &&
+									(playback_properties_.frequency != next_actual_frequency);
+							}
+						}
 
 						// if (next_song_decoder == null) deallocation_queue.push(current_song_decoder); // TODO: see deferred shutdown note at the beginning of this file for details
 						current_decoder = next_decoder;
@@ -313,16 +373,21 @@ protected:
 							resource_finished_callback();
 
 						if (!next_uri.empty())
+						{
 							send_event_command(transition,
 								boost::assign::list_of
 									(current_uri)
 									(next_uri)
 							);
+						}
 						else
 							send_event_command(resource_finished, boost::assign::list_of(current_uri));
 
 						if (!current_decoder)
 							do_shutdown = true;
+
+						if (restart_device)
+							break;
 					}
 					else if (num_samples_written < num_samples_to_write) // less samples were written than expected -> adjust offset and num samples to write
 					{
@@ -359,7 +424,7 @@ protected:
 
 	decoder_ptr_t current_decoder, next_decoder;
 	playback_properties playback_properties_;
-	bool run_playback_loop, is_paused;
+	bool run_playback_loop, is_paused, reinitialize_on_demand;
 	boost::thread playback_thread;
 	boost::mutex mutex;
 	resampler_ptr_t resampler_;
