@@ -1,0 +1,17 @@
+Makefile
+config.log
+config.status
+libbinio.pc
+libtool
+src/.deps
+src/.libs
+src/binfile.lo
+src/binfile.o
+src/binio.h
+src/binio.lo
+src/binio.o
+src/binstr.lo
+src/binstr.o
+src/binwrap.lo
+src/binwrap.o
+src/libbinio.la

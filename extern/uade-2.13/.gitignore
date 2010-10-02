@@ -8,3 +8,4 @@ uadecore
 *.o
 Makefile
 uade.pc
+src/frontends/common/libuadefront.a
