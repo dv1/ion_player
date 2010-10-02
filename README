@@ -22,6 +22,7 @@ libbinio 1.4                 - LGPL v2.1
 mpg123 1.12.3                - LGPL v2.1
 Game Music Emulator 0.5.2    - LGPL v2.1
 uade 2.13                    - GPL v2
+speex (only the resampler)   - 3-clause BSD license
 
 With the exception of jsoncpp, these externals are all used in the respective decoders only,
 and ultimately are NOT essential parts of ion.
@@ -31,6 +32,7 @@ main code
 ---------
 
 src/common                   - zlib license
+src/speex-resampler          - 3-clause BSD license / zlib license *
 src/audio_common             - zlib license
 src/audio_backend            - GPL v2
 src/audio_player             - GPL v2
@@ -39,6 +41,11 @@ src/audio_player             - GPL v2
 The files LICENSE.GPL2 and LICENSE.zlib contain copies of the respective licenses.
 GPL2-licensed source codes from src/ contain a header at the beginning referring to the GPL.
 zlib-licensed source codes from src/ contain a full copy of the zlib license as the header.
+
+
+* The speex resampler code is located in src/speex-resampler . The files resampler.cpp and resampler.hpp
+are not part of Speex, they are zlib licensed custom adapter code. The rest of the files are
+part of the Speex resampler, and 3-clause BSD licensed.
 
 
 
@@ -54,12 +61,9 @@ essential
 
 g++ >= 4.1
 libstdc++ >= 6
-speex >= 1.2
-speexdsp >= 1.2
 Qt >= 4.6
 boost >= 1.40 (with boost-thread built)
 alsa >= 1.0
-magic (the library used by the "file" command) >= 5.0
 
 
 optional (these can be missing, but then corresponding parts will not be built & included):
@@ -72,8 +76,7 @@ flac++ >= 1.2
 Ubuntu/Debian package list (including optionals):
 -------------------------------------------------
 
-g++  libstdc++-dev  libspeex-dev  libspeexdsp-dev  libqt4-dev  libboost-dev  libboost-thread-dev
-libasound2-dev  libogg-dev  libvorbis-dev  libmagic-dev  libflac++-dev
+g++  libstdc++-dev  libqt4-dev  libboost-dev  libboost-thread-dev  libasound2-dev  libogg-dev  libvorbis-dev  libflac++-dev
 
 
 
