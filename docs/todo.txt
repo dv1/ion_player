@@ -29,7 +29,7 @@ OPEN:
 * introduce a PING to scan and playback backends to detect hung up backends
 * dragonsfunk.mod cannot be read by DUMB -> check that other decoders do not wrongly recognize it (mpg123 is particularly tolerant, and "recognizes" a lot of file types which it cannot play)
 * audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
-* include libmagic (with magicfile fixes for audio/mpeg mime type) and speex resampler in extern/
+* include speex resampler in extern/
 * fix status bar indicators for current time & length; it doesnt work properly with resources of unknown length
   also, the played time should be always visible, even with an unknown length, that is, get_current_position should do something
 * allow for disabling the speex resampler at run-time, causing the backend to reinitialize the sink instead
@@ -70,6 +70,7 @@ OPEN:
 =======================================================================================
 DONE:
 
+* include libmagic (with magicfile fixes for audio/mpeg mime type)   - removed libmagic instead; manually recreated relevant libmagic checks
 * change crash behavior to mark the existing one as broken + immediately move to the next resource (instead of retrying to play the existing one N times)
 * uade decoder (only for file:// URIs!)
 * Removing a playlist while the metadata scanner is adding entries to it causes a crash; solution: let the scanner listen for playlist removed signal emissions

@@ -44,8 +44,6 @@ backend::backend():
 	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
-	magic_handle = magic_open(MAGIC_MIME_TYPE | MAGIC_NO_CHECK_COMPRESS | MAGIC_NO_CHECK_TAR | MAGIC_NO_CHECK_APPTYPE | MAGIC_NO_CHECK_ELF | MAGIC_NO_CHECK_TEXT | MAGIC_NO_CHECK_CDF | MAGIC_NO_CHECK_ENCODING | MAGIC_NO_CHECK_FORTRAN | MAGIC_NO_CHECK_TROFF);
-	magic_load(magic_handle, 0);
 }
 
 
@@ -61,7 +59,6 @@ backend::~backend()
 {
 	if (current_sink)
 		current_sink->stop();
-	magic_close(magic_handle);
 }
 
 
@@ -580,19 +577,6 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 		throw resource_not_found(uri_.get_full()); // no suitable source found -> throw
 
 
-	// Use libmagic to get a MIME type
-	std::string mime_type("<mimetype_not_set>");
-
-	// TODO: this is a hack. It would be better to extend libmagic to accept the new_source instance (or at least a bunch of callbacks for custom I/O).
-	if (uri_.get_type() == "file")
-	{
-		std::string filename = uri_.get_path();
-		char const *mime_type_local = magic_file(magic_handle, filename.c_str());
-		if (mime_type_local != 0)
-			mime_type = mime_type_local;
-	}
-
-
 	// The actual decoder creation
 
 	decoder_ptr_t new_decoder;
@@ -603,7 +587,7 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 		decoder_creators_t::ordered_t::iterator iter = decoder_creators.get < decoder_creators_t::ordered_tag > ().find(decoder_type);
 		if (iter != decoder_creators.get < decoder_creators_t::ordered_tag > ().end())
 		{
-			new_decoder = (*iter)->create(new_source, metadata, send_command_callback, mime_type);
+			new_decoder = (*iter)->create(new_source, metadata, send_command_callback);
 		}
 	}
 
@@ -616,7 +600,7 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 			{
 				new_source->reset();
 
-				new_decoder = decoder_creator_->create(new_source, metadata, send_command_callback, mime_type);
+				new_decoder = decoder_creator_->create(new_source, metadata, send_command_callback);
 				if (new_decoder)
 					break;
 			}

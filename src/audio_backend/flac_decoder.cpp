@@ -419,15 +419,17 @@ flac_decoder_creator::flac_decoder_creator()
 }
 
 
-decoder_ptr_t flac_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
+decoder_ptr_t flac_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
-	if (
-		(mime_type != "application/flac") &&
-		(mime_type != "application/x-flac") &&
-		(mime_type != "audio/flac") &&
-		(mime_type != "audio/x-flac")
-	)
-		return decoder_ptr_t();
+	{
+		char buf[4];
+		source_->read(buf, 4);
+		if ((buf[0] == 'f') && (buf[1] == 'L') && (buf[2] == 'a') && (buf[3] == 'C'))
+			source_->reset();
+		else
+			return decoder_ptr_t();
+	}
+
 
 
 	flac_decoder *flac_decoder_ = new flac_decoder(send_command_callback, source_);

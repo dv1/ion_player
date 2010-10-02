@@ -359,11 +359,23 @@ vorbis_decoder_creator::vorbis_decoder_creator()
 }
 
 
-decoder_ptr_t vorbis_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
+decoder_ptr_t vorbis_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
-	if ((mime_type != "application/ogg") && (mime_type != "application/x-ogg"))
-		return decoder_ptr_t();
+	{
+		std::string magic_id;
+		magic_id.resize(4);
+		source_->read(&magic_id[0], 4);
+		if (magic_id != "OggS")
+			return decoder_ptr_t();
 
+		source_->seek(25, source::seek_relative);
+		magic_id.resize(6);
+		source_->read(&magic_id[0], 6);
+		if (magic_id != "vorbis")
+			return decoder_ptr_t();
+
+		source_->reset();
+	}
 
 	vorbis_decoder *vorbis_decoder_ = new vorbis_decoder(send_command_callback, source_);
 	if (!vorbis_decoder_->is_initialized())

@@ -19,9 +19,6 @@ def set_options(opt):
 
 
 def configure(conf):
-	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC', mandatory=1)
-	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC', mandatory=1)
-
 	if not Options.options.without_dumb_decoder:
 		conf.recurse('../../extern/dumb-0.9.3')
 		conf.define('WITH_DUMB_DECODER', 1)
@@ -158,7 +155,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE MAGIC BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE BOOST BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = uselib_locals,

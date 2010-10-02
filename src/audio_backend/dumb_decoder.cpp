@@ -145,11 +145,11 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 
 
 
-dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize, metadata_t const &initial_metadata):
+dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize, module_type const module_type_):
 	decoder(send_command_callback),
 	duh(0),
 	duh_sigrenderer(0),
-	module_type_(module_type_unknown),
+	module_type_(module_type_),
 	current_volume(max_volume()),
 	source_(source_)
 {
@@ -159,19 +159,7 @@ dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, 
 	loop_data_.loop_mode = -1;
 	loop_data_.cur_num_loops = 0;
 
-	// retrieve the format from the metadata if present (MOD/S3M/XM/IT/...), to allow for quicker loading
-	// (if the format is not present, the code needs to test what module type it is)
-	if (has_metadata_value(initial_metadata, "dumb_module_type"))
-	{
-		std::string type_str = get_metadata_value < std::string > (initial_metadata, "dumb_module_type", "");
-		if (type_str == "mod") module_type_ = dumb_decoder::module_type_mod;
-		else if (type_str == "s3m") module_type_ = dumb_decoder::module_type_s3m;
-		else if (type_str == "xm") module_type_ = dumb_decoder::module_type_xm;
-		else if (type_str == "it") module_type_ = dumb_decoder::module_type_it;
-	}
-
-	if (test_if_module_file())
-		duh = read_module(*source_, filesize, module_type_);
+	duh = read_module(*source_, filesize, this->module_type_);
 }
 
 
@@ -318,69 +306,6 @@ void dumb_decoder::set_loop_mode(int const new_loop_mode)
 }
 
 
-bool dumb_decoder::test_if_module_file()
-{
-	if (!source_->can_seek(source::seek_absolute))
-		return false;
-
-
-	typedef boost::array < uint8_t, 4 > fourcc_t;
-
-	struct fourcc_entry
-	{
-		int offset;
-		module_type module_type_;
-		fourcc_t fourcc;
-	};
-
-	static fourcc_entry const fourcc_entries[] = {
-		{ 0, module_type_xm, {{ 0x45, 0x78, 0x74, 0x65 }} }, // XM
-		{ 0, module_type_it, {{ 0x49, 0x4D, 0x50, 0x4D }} }, // IT
-
-		{ 44, module_type_s3m, {{ 0x53, 0x43, 0x52, 0x4D }} }, // S3M
-
-		// Fasttracker MOD (4/6/8 channels)
-		{ 1080, module_type_mod, {{ '4', 'C', 'H', 'N' }} },
-		{ 1080, module_type_mod, {{ '6', 'C', 'H', 'N' }} },
-		{ 1080, module_type_mod, {{ '8', 'C', 'H', 'N' }} },
-
-		// Mahoney & Kaktus Protracker 4 channel
-		{ 1080, module_type_mod, {{ 'M', '.', 'K', '.' }} },
-		{ 1080, module_type_mod, {{ 'M', '&', 'K', '!' }} },
-		{ 1080, module_type_mod, {{ 'M', '!', 'K', '!' }} },
-
-		// Startracker 4/8 channel
-		{ 1080, module_type_mod, {{ 'F', 'L', 'T', '4' }} },
-		{ 1080, module_type_mod, {{ 'F', 'L', 'T', '8' }} },
-
-		// Startracker 4/8 channel
-		{ 1080, module_type_mod, {{ 'E', 'X', '0', '4' }} },
-		{ 1080, module_type_mod, {{ 'E', 'X', '0', '8' }} },
-
-
-
-		{ -1, module_type_unknown, {{ 0, 0, 0, 0 }} }
-	};
-
-
-	for (fourcc_entry const *fourcc_entry_ = fourcc_entries; fourcc_entry_->offset >= 0; ++fourcc_entry_)
-	{
-		source_->seek(fourcc_entry_->offset, source::seek_absolute);
-		fourcc_t read_fourcc;
-		source_->read(&read_fourcc[0], 4);
-		if (read_fourcc == fourcc_entry_->fourcc)
-		{
-			source_->seek(0, source::seek_absolute);
-			module_type_ = fourcc_entry_->module_type_;
-			return true;
-		}
-	}
-
-
-	return false;
-}
-
-
 namespace
 {
 
@@ -477,6 +402,76 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 
 
 
+namespace
+{
+
+
+dumb_decoder::module_type test_if_module_file(source_ptr_t source_)
+{
+	if (!source_->can_seek(source::seek_absolute))
+		return dumb_decoder::module_type_unknown;
+
+
+	typedef boost::array < uint8_t, 4 > fourcc_t;
+
+	struct fourcc_entry
+	{
+		int offset;
+		dumb_decoder::module_type module_type_;
+		fourcc_t fourcc;
+	};
+
+	static fourcc_entry const fourcc_entries[] = {
+		{ 0, dumb_decoder::module_type_xm, {{ 0x45, 0x78, 0x74, 0x65 }} }, // XM
+		{ 0, dumb_decoder::module_type_it, {{ 0x49, 0x4D, 0x50, 0x4D }} }, // IT
+
+		{ 44, dumb_decoder::module_type_s3m, {{ 0x53, 0x43, 0x52, 0x4D }} }, // S3M
+
+		// Fasttracker MOD (4/6/8 channels)
+		{ 1080, dumb_decoder::module_type_mod, {{ '4', 'C', 'H', 'N' }} },
+		{ 1080, dumb_decoder::module_type_mod, {{ '6', 'C', 'H', 'N' }} },
+		{ 1080, dumb_decoder::module_type_mod, {{ '8', 'C', 'H', 'N' }} },
+
+		// Mahoney & Kaktus Protracker 4 channel
+		{ 1080, dumb_decoder::module_type_mod, {{ 'M', '.', 'K', '.' }} },
+		{ 1080, dumb_decoder::module_type_mod, {{ 'M', '&', 'K', '!' }} },
+		{ 1080, dumb_decoder::module_type_mod, {{ 'M', '!', 'K', '!' }} },
+
+		// Startracker 4/8 channel
+		{ 1080, dumb_decoder::module_type_mod, {{ 'F', 'L', 'T', '4' }} },
+		{ 1080, dumb_decoder::module_type_mod, {{ 'F', 'L', 'T', '8' }} },
+
+		// Startracker 4/8 channel
+		{ 1080, dumb_decoder::module_type_mod, {{ 'E', 'X', '0', '4' }} },
+		{ 1080, dumb_decoder::module_type_mod, {{ 'E', 'X', '0', '8' }} },
+
+
+
+		{ -1, dumb_decoder::module_type_unknown, {{ 0, 0, 0, 0 }} }
+	};
+
+
+	for (fourcc_entry const *fourcc_entry_ = fourcc_entries; fourcc_entry_->offset >= 0; ++fourcc_entry_)
+	{
+		source_->seek(fourcc_entry_->offset, source::seek_absolute);
+		fourcc_t read_fourcc;
+		source_->read(&read_fourcc[0], 4);
+		if (read_fourcc == fourcc_entry_->fourcc)
+		{
+			source_->seek(0, source::seek_absolute);
+			return fourcc_entry_->module_type_;
+		}
+	}
+
+
+	return dumb_decoder::module_type_unknown;
+}
+
+
+}
+
+
+
 dumb_decoder_creator::dumb_decoder_creator()
 {
 	dumb_resampling_quality = DUMB_RQ_CUBIC;
@@ -491,7 +486,7 @@ dumb_decoder_creator::dumb_decoder_creator()
 }
 
 
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
 	long filesize = source_->get_size();
@@ -499,11 +494,26 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 		return decoder_ptr_t();
 
 
-	if (mime_type != "audio/x-mod")
+	dumb_decoder::module_type module_type_ = dumb_decoder::module_type_unknown;
+
+	// retrieve the format from the metadata if present (MOD/S3M/XM/IT/...), to allow for quicker loading
+	// (if the format is not present, the code needs to test what module type it is)
+	if (has_metadata_value(metadata, "dumb_module_type"))
+	{
+		std::string type_str = get_metadata_value < std::string > (metadata, "dumb_module_type", "");
+		if (type_str == "mod") module_type_ = dumb_decoder::module_type_mod;
+		else if (type_str == "s3m") module_type_ = dumb_decoder::module_type_s3m;
+		else if (type_str == "xm") module_type_ = dumb_decoder::module_type_xm;
+		else if (type_str == "it") module_type_ = dumb_decoder::module_type_it;
+	}
+
+	if (module_type_ == dumb_decoder::module_type_unknown)
+		module_type_ = test_if_module_file(source_);
+
+	if (module_type_ == dumb_decoder::module_type_unknown)
 		return decoder_ptr_t();
 
-
-	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, metadata);
+	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, module_type_);
 	if (!dumb_decoder_->is_initialized())
 	{
 		delete dumb_decoder_;

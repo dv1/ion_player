@@ -381,7 +381,7 @@ gme_decoder_creator::gme_decoder_creator()
 }
 
 
-decoder_ptr_t gme_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &)
+decoder_ptr_t gme_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
 	gme_decoder *gme_decoder_ = new gme_decoder(send_command_callback, source_);
 	if (!gme_decoder_->is_initialized())

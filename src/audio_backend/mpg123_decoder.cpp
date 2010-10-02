@@ -471,9 +471,38 @@ mpg123_decoder_creator::~mpg123_decoder_creator()
 }
 
 
-decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
+decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
-	if (mime_type != "audio/mpeg")
+	// Testing out whether or not this is an MP3
+
+	bool recognized = false;
+
+	// First, try if it starts with an ID3 tag
+	if (!recognized)
+	{
+		source_->reset();
+
+		char buf[3];
+		source_->read(buf, 3);
+		recognized = (buf[0] == 'I') && (buf[1] == 'D') && (buf[2] == '3');
+	}
+
+	// If the ID3 test failed, try a different test found in libmagic's animation file
+	if (!recognized)
+	{
+		source_->reset();
+
+		uint8_t bytes[2];
+		source_->read(bytes, 2);
+		if ((bytes[0] == 0xff) && ((bytes[1] & 0xfe) == 0xfa))
+		{
+			source_->read(&bytes[0], 1);
+			bytes[0] >>= 4;
+			recognized = (bytes[0] >= 1) && (bytes[0] <= 0xE);
+		}
+	}
+	
+	if (!recognized) // All tests failed - it seems this is not an MP3
 		return decoder_ptr_t();
 
 

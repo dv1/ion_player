@@ -629,7 +629,7 @@ uade_decoder_creator::uade_decoder_creator()
 }
 
 
-decoder_ptr_t uade_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &)
+decoder_ptr_t uade_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
 	// UADE cannot handle any I/O other than local files
 	if (source_->get_uri().get_type() != "file")

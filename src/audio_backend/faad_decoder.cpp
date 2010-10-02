@@ -205,7 +205,7 @@ faad_decoder_creator::faad_decoder_creator()
 }
 
 
-decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback, std::string const &mime_type)
+decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
 {
 	if ((mime_type != "audio/x-hx-aac-adts") && (mime_type != "audio/x-hx-aac-adif"))
 		return decoder_ptr_t();
