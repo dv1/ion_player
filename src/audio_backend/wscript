@@ -126,7 +126,7 @@ def build(bld):
 'file_source.cpp'
 ]
 	sources = core_sources
-	uselib_locals = 'ion_audio_common ion_common jsoncpp '
+	uselib_locals = 'speex_resampler ion_audio_common ion_common jsoncpp '
 
 	if bld.env['WITH_DUMB_DECODER']:
 		bld.recurse('../../extern/dumb-0.9.3')
@@ -155,7 +155,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 SPEEXDSP SPEEX VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE BOOST BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = uselib_locals,

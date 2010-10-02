@@ -26,13 +26,14 @@ freely, subject to the following restrictions:
 
 #include <assert.h>
 #include <fstream>
+#include "config.h"
 #include <speex/speex_resampler.h>
 #include "resampler.hpp"
 
 
 namespace ion
 {
-namespace audio_common
+namespace speex_resampler
 {
 
 
@@ -129,7 +130,7 @@ void resampler::reset()
 }
 
 
-unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to_write, decoder &decoder_)
+unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to_write, audio_common::decoder &decoder_)
 {
 	{
 		unsigned int decoder_samplerate = decoder_.get_decoder_samplerate();

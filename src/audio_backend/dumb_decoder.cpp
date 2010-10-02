@@ -402,11 +402,60 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 
 
 
-namespace
+dumb_decoder_creator::dumb_decoder_creator()
 {
+	dumb_resampling_quality = DUMB_RQ_CUBIC;
+	dumb_it_max_to_mix = 256;
+
+        fs.open = &custom_dumb_stream_open;
+        fs.skip = &custom_dumb_stream_skip;
+        fs.getc = &custom_dumb_stream_getc;
+        fs.getnc = &custom_dumb_stream_getnc;
+        fs.close = &custom_dumb_stream_close;
+        register_dumbfile_system(&fs);
+}
 
 
-dumb_decoder::module_type test_if_module_file(source_ptr_t source_)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+{
+	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
+	long filesize = source_->get_size();
+	if (filesize < 0)
+		return decoder_ptr_t();
+
+
+	dumb_decoder::module_type module_type_ = dumb_decoder::module_type_unknown;
+
+	// retrieve the format from the metadata if present (MOD/S3M/XM/IT/...), to allow for quicker loading
+	if (has_metadata_value(metadata, "dumb_module_type"))
+	{
+		std::string type_str = get_metadata_value < std::string > (metadata, "dumb_module_type", "");
+		if (type_str == "mod") module_type_ = dumb_decoder::module_type_mod;
+		else if (type_str == "s3m") module_type_ = dumb_decoder::module_type_s3m;
+		else if (type_str == "xm") module_type_ = dumb_decoder::module_type_xm;
+		else if (type_str == "it") module_type_ = dumb_decoder::module_type_it;
+	}
+
+	// if the format is not known beforehand, the code needs to test what module type it is
+	if (module_type_ == dumb_decoder::module_type_unknown)
+		module_type_ = test_if_module_file(source_);
+
+	if (module_type_ == dumb_decoder::module_type_unknown) // this is not a module file -> exit
+		return decoder_ptr_t();
+
+	// at this point, it is clear that this most likely is a module file -> try to load it
+	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, module_type_);
+	if (!dumb_decoder_->is_initialized())
+	{
+		delete dumb_decoder_;
+		return decoder_ptr_t();
+	}
+	else
+		return decoder_ptr_t(dumb_decoder_);
+}
+
+
+dumb_decoder::module_type dumb_decoder_creator::test_if_module_file(source_ptr_t source_)
 {
 	if (!source_->can_seek(source::seek_absolute))
 		return dumb_decoder::module_type_unknown;
@@ -465,62 +514,6 @@ dumb_decoder::module_type test_if_module_file(source_ptr_t source_)
 
 
 	return dumb_decoder::module_type_unknown;
-}
-
-
-}
-
-
-
-dumb_decoder_creator::dumb_decoder_creator()
-{
-	dumb_resampling_quality = DUMB_RQ_CUBIC;
-	dumb_it_max_to_mix = 256;
-
-        fs.open = &custom_dumb_stream_open;
-        fs.skip = &custom_dumb_stream_skip;
-        fs.getc = &custom_dumb_stream_getc;
-        fs.getnc = &custom_dumb_stream_getnc;
-        fs.close = &custom_dumb_stream_close;
-        register_dumbfile_system(&fs);
-}
-
-
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
-{
-	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
-	long filesize = source_->get_size();
-	if (filesize < 0)
-		return decoder_ptr_t();
-
-
-	dumb_decoder::module_type module_type_ = dumb_decoder::module_type_unknown;
-
-	// retrieve the format from the metadata if present (MOD/S3M/XM/IT/...), to allow for quicker loading
-	// (if the format is not present, the code needs to test what module type it is)
-	if (has_metadata_value(metadata, "dumb_module_type"))
-	{
-		std::string type_str = get_metadata_value < std::string > (metadata, "dumb_module_type", "");
-		if (type_str == "mod") module_type_ = dumb_decoder::module_type_mod;
-		else if (type_str == "s3m") module_type_ = dumb_decoder::module_type_s3m;
-		else if (type_str == "xm") module_type_ = dumb_decoder::module_type_xm;
-		else if (type_str == "it") module_type_ = dumb_decoder::module_type_it;
-	}
-
-	if (module_type_ == dumb_decoder::module_type_unknown)
-		module_type_ = test_if_module_file(source_);
-
-	if (module_type_ == dumb_decoder::module_type_unknown)
-		return decoder_ptr_t();
-
-	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, module_type_);
-	if (!dumb_decoder_->is_initialized())
-	{
-		delete dumb_decoder_;
-		return decoder_ptr_t();
-	}
-	else
-		return decoder_ptr_t(dumb_decoder_);
 }
 
 

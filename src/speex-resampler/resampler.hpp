@@ -24,8 +24,8 @@ freely, subject to the following restrictions:
 ****************************************************************************/
 
 
-#ifndef ION_AUDIO_COMMON_RESAMPLER_HPP
-#define ION_AUDIO_COMMON_RESAMPLER_HPP
+#ifndef ION_SPEEX_RESAMPLER_HPP
+#define ION_SPEEX_RESAMPLER_HPP
 
 #include <stdint.h>
 #include <vector>
@@ -34,7 +34,7 @@ freely, subject to the following restrictions:
 
 namespace ion
 {
-namespace audio_common
+namespace speex_resampler
 {
 
 
@@ -50,7 +50,7 @@ public:
 	void set_output_frequency(unsigned int const new_output_frequency);
 	void reset();
 
-	unsigned int operator()(void *dest, unsigned int const num_samples_to_write, decoder &decoder_);
+	unsigned int operator()(void *dest, unsigned int const num_samples_to_write, audio_common::decoder &decoder_);
 
 
 protected:

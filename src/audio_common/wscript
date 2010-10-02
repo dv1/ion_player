@@ -5,8 +5,7 @@ def set_options(opt):
 
 
 def configure(conf):
-	conf.check_cfg(package='speex', uselib_store='SPEEX', args='--cflags --libs', mandatory=1)
-	conf.check_cfg(package='speexdsp', uselib_store='SPEEXDSP', args='--cflags --libs', mandatory=1)
+	pass
 
 
 def build(bld):

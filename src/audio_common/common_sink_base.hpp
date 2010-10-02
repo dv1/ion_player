@@ -72,7 +72,7 @@ template < typename Derived >
 class common_sink_base:
 	public sink
 {
-	typedef boost::shared_ptr < resampler > resampler_ptr_t;
+	typedef boost::shared_ptr < speex_resampler::resampler > resampler_ptr_t;
 public:
 	typedef Derived derived_t;
 	typedef common_sink_base < Derived > self_t;
@@ -103,7 +103,7 @@ public:
 				return;
 			}
 
-			resampler_ = resampler_ptr_t(new resampler(playback_properties_.num_channels, 5, playback_properties_.frequency));
+			resampler_ = resampler_ptr_t(new speex_resampler::resampler(playback_properties_.num_channels, 5, playback_properties_.frequency));
 		}
 
 		{

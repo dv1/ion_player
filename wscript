@@ -45,6 +45,7 @@ def set_options(opt):
 	opt.recurse('src/audio_common')
 	opt.recurse('src/common')
 	opt.recurse('src/audio_player')
+	opt.recurse('src/speex-resampler')
 
 
 def get_num_jobs():
@@ -91,6 +92,7 @@ def configure(conf):
 		conf.recurse('src/audio_player')
 	if not Options.options.without_audio_backend:
 		conf.define('WITH_AUDIO_BACKEND', 1)
+		conf.recurse('src/speex-resampler')
 		conf.recurse('src/audio_backend')
 		conf.recurse('src/audio_common')
 
@@ -149,6 +151,7 @@ def build(bld):
 
 	if bld.env['WITH_AUDIO_BACKEND']:
 		bld.recurse('src/audio_backend')
+		bld.recurse('src/speex-resampler')
 		bld.recurse('src/audio_common')
 	bld.recurse('src/common')
 	if bld.env['WITH_QT4_AUDIO_PLAYER']:

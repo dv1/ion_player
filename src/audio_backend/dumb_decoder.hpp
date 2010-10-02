@@ -121,6 +121,9 @@ public:
 	virtual std::string get_type() const { return "dumb"; }
 
 protected:
+	dumb_decoder::module_type test_if_module_file(source_ptr_t source_);
+
+
 	DUMBFILE_SYSTEM fs;
 };
 
