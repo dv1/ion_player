@@ -115,10 +115,6 @@ def configure(conf):
 
 
 def external(ctx):
-	# file/libmagic
-	run_cmd("./configure --enable-static --disable-shared", 'extern/file-5.04')
-	run_cmd("make -j%d" % get_num_jobs(), 'extern/file-5.04')
-
 	# mpg123
 	run_cmd("./configure --enable-static --disable-shared", 'extern/mpg123-1.12.3')
 	run_cmd("make -j%d" % get_num_jobs(), 'extern/mpg123-1.12.3')
@@ -139,7 +135,6 @@ def external(ctx):
 
 
 def clean_external(ctx):
-	run_cmd("make distclean", 'extern/file-5.04')
 	run_cmd("make distclean", 'extern/mpg123-1.12.3')
 	run_cmd("make clean", 'extern/uade-2.13')
 	run_cmd("make -f Makefile.common_lib clean", 'extern/uade-2.13/src/frontends/common')

@@ -19,11 +19,8 @@ def set_options(opt):
 
 
 def configure(conf):
-	conf.check_cxx(lib = 'z', uselib_store = 'ZLIB', mandatory = 1)
-
-	conf.env['CPPPATH_MAGIC'] = os.path.join(os.getcwd(), "extern/file-5.04/src")
-	conf.env['LIBPATH_MAGIC'] = os.path.join(os.getcwd(), "extern/file-5.04/src/.libs")
-	conf.env['STATICLIB_MAGIC'] = 'magic'
+	conf.check_cc(header_name = 'magic.h', uselib_store = 'MAGIC', mandatory=1)
+	conf.check_cc(lib = 'magic', uselib_store = 'MAGIC', mandatory=1)
 
 	if not Options.options.without_dumb_decoder:
 		conf.recurse('../../extern/dumb-0.9.3')
@@ -171,7 +168,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cprogram'],
-		uselib = 'BOOST_THREAD BOOST MPG123 ADPLUG BINIO UADE MAGIC ZLIB BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD BOOST MPG123 ADPLUG BINIO UADE BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		uselib_local = 'ion_audio_backend ion_common',
 		includes = '. ../..',
