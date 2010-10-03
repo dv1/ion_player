@@ -32,7 +32,7 @@ using namespace audio_common;
 
 
 alsa_sink::alsa_sink(send_command_callback_t const &send_command_callback):
-	common_sink_base < alsa_sink > (send_command_callback),
+	common_sink_base < alsa_sink > (send_command_callback, true),
 	pcm_handle(0),
 	hw_params(0)
 {

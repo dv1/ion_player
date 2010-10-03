@@ -86,14 +86,7 @@ public:
 	{
 		// stop is not called here; the backend does this already. Calling stop in the sink could lead to unexpected results.
 		get_derived().shutdown_audio_device();
-	}
-
-
-	void set_reinitialize_on_demand(bool const state)
-	{
-		boost::lock_guard < boost::mutex > lock(mutex);
-		reinitialize_on_demand = state;
-	}
+	}	
 
 
 	virtual void start(decoder_ptr_t decoder_, decoder_ptr_t next_decoder_)
@@ -257,11 +250,11 @@ protected:
 	derived_t const & get_derived() const { return *(static_cast < derived_t const * > (this)); }
 
 
-	explicit common_sink_base(send_command_callback_t const &send_command_callback):
+	explicit common_sink_base(send_command_callback_t const &send_command_callback, bool const initialize_on_demand):
 		sink(send_command_callback),
 		run_playback_loop(false),
 		is_paused(false),
-		reinitialize_on_demand(true)
+		reinitialize_on_demand(initialize_on_demand)
 	{
 	}
 

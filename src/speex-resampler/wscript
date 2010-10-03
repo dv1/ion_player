@@ -34,6 +34,8 @@ int main() {
 		if conf.check(fragment = sse_test_fragment, execute = 0, define_ret = 0, msg = 'Checking for SSE support', okmsg = 'yes', errmsg = 'no'):
 			defines['_USE_SSE'] = '1'
 
+	conf.env['CCFLAGS_SPEEX_RESAMPLER_FLAGS'] = ['-O2', '-fomit-frame-pointer']
+
 	for variant_name in conf.env['BUILD_VARIANTS']:
 		# Writing custom config file for speex
 		# write_config_header() doesnt seem to be designed for creating separate, isolated config files
@@ -58,11 +60,13 @@ int main() {
 
 
 def build(bld):
+	# TODO: not using BUILDMODE in the uselibs, because debug builds take ~20% CPU time on a core 2 duo 2.13 GHz if the speex resampler is built with debug options
+	# a better solution must be found; if the build is the debug one, use the custom SPEEX_RESAMPLER_FLAGS uselib, otherwise use BUILDMODE
 	obj = bld(
 		features = ['cc', 'cxx', 'cstaticlib'],
 		includes = '. speex',
 		export_incdirs = '.',
-		uselib = 'BUILDMODE',
+		uselib = 'SPEEX_RESAMPLER_FLAGS',
 		uselib_local = 'ion_audio_common',
 		defines = 'HAVE_CONFIG_H',
 		target = 'speex_resampler',

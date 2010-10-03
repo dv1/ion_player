@@ -25,6 +25,7 @@ freely, subject to the following restrictions:
 
 
 #include <assert.h>
+#include <iostream>
 #include <fstream>
 #include "config.h"
 #include <speex/speex_resampler.h>
@@ -54,6 +55,7 @@ struct resampler::internal_data
 resampler::resampler(unsigned int const initial_num_channels, unsigned int const initial_quality, unsigned int const initial_output_frequency):
 	internal_data_(new internal_data)
 {
+	std::cerr << "resampler: setting initial output frequency to " << initial_output_frequency << std::endl;
 	internal_data_->speex_resampler = 0;
 	internal_data_->num_channels = initial_num_channels;
 	internal_data_->quality = initial_quality;
@@ -95,6 +97,7 @@ void resampler::set_input_frequency(unsigned int const new_input_frequency)
 {
 	if (internal_data_->input_frequency != new_input_frequency)
 	{
+		std::cerr << "resampler: setting input frequency to " << new_input_frequency << std::endl;
 		internal_data_->input_frequency = new_input_frequency;
 		speex_resampler_set_rate(internal_data_->speex_resampler, new_input_frequency, internal_data_->output_frequency);
 		input_buffer.clear();
@@ -107,6 +110,7 @@ void resampler::set_output_frequency(unsigned int const new_output_frequency)
 {
 	if (internal_data_->output_frequency != new_output_frequency)
 	{
+		std::cerr << "resampler: setting output frequency to " << new_output_frequency << std::endl;
 		internal_data_->output_frequency = new_output_frequency;
 		speex_resampler_set_rate(internal_data_->speex_resampler, internal_data_->input_frequency, new_output_frequency);
 		output_buffer.clear();
