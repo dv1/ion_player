@@ -48,14 +48,42 @@ namespace audio_common
 
 /*
 Base code for sinks, using CRTP. Most sinks should use this and implement only a few necessary member functions:
-	bool is_initialized() const
-	bool initialize_audio_device(unsigned int const playback_frequency)
-	void shutdown_audio_device()
-	bool render_samples(unsigned int const num_samples_to_render)
-	unsigned int get_default_playback_frequency() const
 
-	std::size_t get_sample_buffer_size() const
-	uint8_t* get_sample_buffer()
+-bool is_initialized() const
+Returns true if the audio device is initialized properly, false otherwise
+
+-bool initialize_audio_device(unsigned int const playback_frequency)
+Initializes the audio device, setting its playback frequency to the given one
+The device is free to choose a different frequency if the given one cannot be used. Also, this function fills the playback_properties_ contents.
+If the device is already initialized, this function does nothing.
+
+-bool reinitialize_audio_device(unsigned int const new_playback_frequency)
+Similar to initialize_audio_device(), it differs in that if the device is already initialized, it reinitializes it.
+
+-void shutdown_audio_device()
+Shuts down the device. If the device is shut down already, this function does nothing.
+
+-bool render_samples(unsigned int const num_samples_to_render)
+Plays the given number of samples. The number of channels does NOT affect this value. For example, at 48000 Hz playback frequency, 12000 samples
+give data for 0.25 seconds of playback, regardless of whether or not this is mono or stereo playback.
+
+-unsigned int get_default_playback_frequency() const
+A device has a default playback frequency, which usually is 48 kHz. For decoders that have no sample rate, this value is used. The default frequency
+must be one the device can playback directly, meaning that passing this frequency to initialize_audio_device() or reinitialize_audio_device() would
+never cause the device to choose a different one.
+
+-std::size_t get_sample_buffer_size() const
+Returns the size of the sample buffer, in bytes (NOT samples). This size *is* affected by number of channels and the sample format. For example,
+a buffer that has room for 512 buffers, with stereo playback and 16bit samples, has 512 * 2 (stereo) * 2 (16bit) = 2048 bytes.
+This value is not required to remain the same after initialize_audio_device(), reinitialize_audio_device(), or shutdown_audio_device() calls have been made.
+Also, retrieving this value before the device was initialized is undefined behavior.
+
+-uint8_t* get_sample_buffer()
+Returns the pointer to the beginning of the sample buffer.
+This value is not required to remain the same after initialize_audio_device(), reinitialize_audio_device(), or shutdown_audio_device() calls have been made.
+Also, retrieving this value before the device was initialized is undefined behavior.
+
+
 
 IMPORTANT: initialize_audio_device(), reinitialize_audio_device(), and render_samples() must be synchronized by the derived class!
 
@@ -70,6 +98,12 @@ This queue will house smart pointers, so pushing it will keep the decoder alive.
 something was put into the queue, and pop it until its empty, dropping the smart pointers in the process. This avoids race conditions,
 and makes it unnecessary to require fast decoder shutdowns. (The queue can be implemented with an STL deque for storage and a thread
 condition variable for notification.)
+
+
+The sink base can run with reinitialization-on-demand enabled. This affects the way differing decoder samplerates are handled.
+If reinitialization on demand is enabled, the sink will be reinitialized if the sink's current sample rate differs from a decoder's one.
+This is checked in start(), and in the playback loop, when transitions happen. If it is disabled, then the playback frequency is set
+once (when initializing the device), and never changed. Decoders with differing sample rates will be resampled instead.
 */
 
 template < typename Derived >
@@ -116,7 +150,10 @@ public:
 			if (reinitialize_on_demand && run_playback_loop)
 			{
 				unsigned int new_frequency = get_playback_frequency(*decoder_);
-				if (new_frequency != playback_properties_.frequency)
+				bool do_restart = (new_frequency != playback_properties_.frequency);
+				if (do_restart && current_decoder)
+					do_restart = (get_playback_frequency(*current_decoder) != new_frequency);
+				if (do_restart)
 				{
 					if (!get_derived().reinitialize_audio_device(new_frequency))
 					{
