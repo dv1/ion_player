@@ -506,6 +506,9 @@ decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t co
 		return decoder_ptr_t();
 
 
+	source_->reset();
+
+
 	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(send_command_callback, source_);
 	if (!mpg123_decoder_->is_initialized())
 	{
