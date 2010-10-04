@@ -639,6 +639,7 @@ void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 		current_position_timer->stop();
 	position_volume_widget_ui.position->set_value(0);
 
+	current_uri_changed_timestamp = QDateTime::currentDateTime();
 	current_playback_time->setText(get_time_string(0, 0));
 }
 
@@ -648,11 +649,14 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 	if (new_metadata)
 	{
 		std::string title = get_metadata_value < std::string > (*new_metadata, "title", "");
-		if (!title.empty())
+		if (title.empty())
+			current_song_title->setText("");
+		else
 			current_song_title->setText(QString::fromUtf8(title.c_str()));
 
 		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
 		current_num_ticks_per_second = get_metadata_value < unsigned int > (*new_metadata, "num_ticks_per_second", 0);
+		current_uri_changed_timestamp = QDateTime::currentDateTime();
 
 		if (num_ticks > 0)
 		{
@@ -669,19 +673,26 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 				current_playback_time->setText(get_time_string(0, 0));
 				current_song_length->setText(get_time_string(minutes, seconds));
 			}
+			else
+			{
+				current_song_length->setText("");
+				current_playback_time->setText("");
+			}
 		}
 		else
 		{
 			position_volume_widget_ui.position->setEnabled(false);
 			position_volume_widget_ui.position->set_value(0);
 			position_volume_widget_ui.position->setRange(0, 1);
+			current_song_length->setText("");
+			current_playback_time->setText(get_time_string(0, 0));
 		}
 	}
 	else
 	{
 		current_song_title->setText("");
 		current_song_length->setText("");
-		current_playback_time->setText("");
+		current_playback_time->setText(get_time_string(0, 0));
 		position_volume_widget_ui.position->setEnabled(false);
 	}
 }
@@ -689,16 +700,19 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 
 void main_window::set_current_time_label(unsigned int const current_position)
 {
+	unsigned int time_in_seconds = 0;
 	if (current_num_ticks_per_second > 0)
-	{
-		unsigned int time_in_seconds = current_position / current_num_ticks_per_second;
-		unsigned int minutes = time_in_seconds / 60;
-		unsigned int seconds = time_in_seconds % 60;
-
-		current_playback_time->setText(get_time_string(minutes, seconds));
-	}
+		time_in_seconds = current_position / current_num_ticks_per_second;
 	else
-		current_playback_time->setText("");
+	{
+		QDateTime current_time = QDateTime::currentDateTime();
+		time_in_seconds = current_uri_changed_timestamp.secsTo(current_time);
+	}
+
+	unsigned int minutes = time_in_seconds / 60;
+	unsigned int seconds = time_in_seconds % 60;
+
+	current_playback_time->setText(get_time_string(minutes, seconds));
 }
 
 

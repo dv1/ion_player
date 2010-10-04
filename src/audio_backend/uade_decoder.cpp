@@ -447,8 +447,9 @@ uade_decoder::uade_decoder(send_command_callback_t const send_command_callback, 
 
 	try
 	{
-		uri::options_t options_ = source_->get_uri().get_options();
-		uri::options_t::const_iterator iter = options_.find("subsong_index");
+		// For some reason, making options_ a reference causes segfaults in the find() call below TODO: check why this happens
+		uri::options_t const options_ = source_->get_uri().get_options();
+		uri::options_t::const_iterator iter = options_.find("sub_resource_index");
 		if (iter != options_.end())
 			subsong_nr = boost::lexical_cast < long > (iter->second);
 	}
@@ -525,9 +526,9 @@ metadata_t uade_decoder::get_metadata() const
 	int num_subsongs = internal_data_->us->max_subsong - internal_data_->us->min_subsong + 1;
 	if (num_subsongs > 1)
 	{
-		set_metadata_value(metadata_, "min_subsong_index", internal_data_->us->min_subsong);
-		set_metadata_value(metadata_, "max_subsong_index", internal_data_->us->max_subsong);
-		set_metadata_value(metadata_, "num_subsongs", num_subsongs);
+		set_metadata_value(metadata_, "min_sub_resource_index", internal_data_->us->min_subsong);
+		set_metadata_value(metadata_, "max_sub_resource_index", internal_data_->us->max_subsong);
+		set_metadata_value(metadata_, "num_sub_resources", num_subsongs);
 	}
 
 	return metadata_;

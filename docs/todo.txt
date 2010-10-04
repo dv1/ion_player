@@ -26,8 +26,6 @@ Qt4 audio frontend:
 * Implement playback history as described in design doc
 * accelerate metadata scan by spawning the backend only at the beginning & when it crashes
 * introduce a PING to scan and playback backends to detect hung up backends
-* fix status bar indicators for current time & length; it doesnt work properly with resources of unknown length
-  also, the played time should be always visible, even with an unknown length, that is, get_current_position should do something
 * Add shuffle
 * Store in/restore from config the currently visible playlist
 * Store in/restore from config the overall UI states (like column widths in the playlists)
@@ -61,12 +59,16 @@ Audio backend:
 * MMS source
 * SHOUTcast source
 [* post processing, VST support, UPnP]
+* fix status bar indicators for current time & length; it doesnt work properly with resources of unknown length
+  also, the played time should be always visible, even with an unknown length, that is, get_current_position should do something
 
 Both:
 * Ability to edit metadata
 * support mid-play metadata changes (including title, artist, album, song length, ....)
 * Examine code for undefined cases
 * extensive testing (esp. fault tolerance)
+* currently, if the current playback doesn't have num_ticks or num_ticks_per_second, an extra QTime is used in the frontend, in short, a progress is calculated in the frontend
+  the proper solution would to do this calculation in the backend
 
 
 =======================================================================================

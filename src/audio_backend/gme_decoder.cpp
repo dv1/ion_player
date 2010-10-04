@@ -132,8 +132,9 @@ gme_decoder::gme_decoder(send_command_callback_t const send_command_callback, so
 
 	try
 	{
-		uri::options_t const &options_ = source_->get_uri().get_options();
-		uri::options_t::const_iterator iter = options_.find("subsong_index");
+		// For some reason, making options_ a reference causes segfaults in the find() call below TODO: check why this happens
+		uri::options_t const options_ = source_->get_uri().get_options();
+		uri::options_t::const_iterator iter = options_.find("sub_resource_index");
 		if (iter != options_.end())
 			track_nr = boost::lexical_cast < int > (iter->second);
 	}
@@ -234,7 +235,7 @@ metadata_t gme_decoder::get_metadata() const
 	}
 
 	if (internal_data_->track_info_.track_count > 1)
-		set_metadata_value(metadata_, "num_subsongs", int(internal_data_->track_info_.track_count));
+		set_metadata_value(metadata_, "num_sub_resources", int(internal_data_->track_info_.track_count));
 
 	return metadata_;
 }

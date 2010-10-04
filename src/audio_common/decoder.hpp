@@ -248,9 +248,6 @@ public:
 			unsigned int num_ticks = get_num_ticks();
 			unsigned int num_ticks_per_second = get_num_ticks_per_second();
 
-			if (num_ticks_per_second == 0)
-				throw resource_corrupted(get_uri().get_full());
-
 			set_metadata_value(metadata_, "decoder_type",         get_type());
 			set_metadata_value(metadata_, "num_ticks",            int(num_ticks));
 			set_metadata_value(metadata_, "num_ticks_per_second", int(num_ticks_per_second));

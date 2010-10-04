@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #include <algorithm>
 #include <deque>
 #include <iostream>
+#include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/signals2/connection.hpp>
@@ -170,26 +171,50 @@ protected:
 				}
 				else
 				{
-					long num_subsongs = 1;
-					if (has_metadata_value(*metadata_, "num_subsongs"))
+					long num_sub_resources = 1;
+					if (has_metadata_value(*metadata_, "num_sub_resources"))
 					{
-						num_subsongs = get_metadata_value < long > (*metadata_, "num_subsongs", 1);
-						if (num_subsongs < 1)
-							num_subsongs = 1;
+						num_sub_resources = get_metadata_value < long > (*metadata_, "num_sub_resources", 1);
+						if (num_sub_resources < 1)
+							num_sub_resources = 1;
 					}
 
-					long min_subsong_index = 0;
-					if (has_metadata_value(*metadata_, "min_subsong_index"))
-						min_subsong_index = get_metadata_value < long > (*metadata_, "min_subsong_index", 1);
+					long min_sub_resource_index = 0;
+					if (has_metadata_value(*metadata_, "min_sub_resource_index"))
+						min_sub_resource_index = get_metadata_value < long > (*metadata_, "min_sub_resource_index", 1);
 
-					if ((num_subsongs == 1) || (uri_.get_options().find("subsong_index") != uri_.get_options().end()))
+					uri::options_t::const_iterator uri_resource_index_iter = uri_.get_options().find("sub_resource_index");
+					bool has_resource_index = (uri_resource_index_iter != uri_.get_options().end());
+					if ((num_sub_resources == 1) || has_resource_index)
+					{
+						if (has_metadata_value(*metadata_, "title") && has_resource_index)
+						{
+							std::string title = get_metadata_value < std::string > (*metadata_, "title", "");
+							std::stringstream sstr;
+							std::string resource_index_str = uri_resource_index_iter->second;
+
+							try
+							{
+								// This compensates for the 0-starting indices
+								int resource_index = boost::lexical_cast < int > (resource_index_str);
+								resource_index_str = boost::lexical_cast < std::string > (resource_index + 1);
+							}
+							catch (boost::bad_lexical_cast const &)
+							{
+							}
+
+							sstr << title << " (" << resource_index_str << "/" << num_sub_resources << ")";
+							set_metadata_value(*metadata_, "title", sstr.str());
+						}
+
 						static_cast < Derived* > (this)->add_entry_to_playlist(uri_, *metadata_);
+					}
 					else
 					{
-						for (long subsong_nr = 0; subsong_nr < num_subsongs; ++subsong_nr)
+						for (long sub_resource_nr = 0; sub_resource_nr < num_sub_resources; ++sub_resource_nr)
 						{
 							ion::uri temp_uri(uri_);
-							temp_uri.get_options()["subsong_index"] = boost::lexical_cast < std::string > (subsong_nr + min_subsong_index);
+							temp_uri.get_options()["sub_resource_index"] = boost::lexical_cast < std::string > (sub_resource_nr + min_sub_resource_index);
 							start_scan(*current_playlist, temp_uri);
 						}
 					}

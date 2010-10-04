@@ -177,8 +177,9 @@ adplug_decoder::adplug_decoder(send_command_callback_t const send_command_callba
 
 	try
 	{
-		uri::options_t const &options_ = source_->get_uri().get_options();
-		uri::options_t::const_iterator iter = options_.find("subsong_index");
+		// For some reason, making options_ a reference causes segfaults in the find() call below TODO: check why this happens
+		uri::options_t const options_ = source_->get_uri().get_options();
+		uri::options_t::const_iterator iter = options_.find("sub_resource_index");
 		if (iter != options_.end())
 			subsong_nr = boost::lexical_cast < long > (iter->second);
 	}
@@ -265,7 +266,7 @@ metadata_t adplug_decoder::get_metadata() const
 	if (!desc_.empty())
 		set_metadata_value(metadata_, "description", desc_);
 
-	set_metadata_value(metadata_, "num_subsongs", player->getsubsongs());
+	set_metadata_value(metadata_, "num_sub_resources", player->getsubsongs());
 
 	return metadata_;
 }
