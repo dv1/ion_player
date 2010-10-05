@@ -132,9 +132,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	backend_log_dialog_ = new logger_dialog(this, 1000);
 
 
-	settings_ = new settings(*this, this);
-	apply_flags();
-
+	settings_ = new settings(this);
 
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
 	settings_dialog_ = new settings_dialog(
@@ -154,6 +152,9 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		add_playlist(playlists_ui_->get_playlists(), new_playlist);
 	}
 
+	ui_settings_ = new ui_settings(*this, *playlists_ui_, this);
+
+	apply_flags();
 
 	scan_dialog_ = new scan_dialog(this, 0);
 	connect(current_scan_status->get_open_scanner_dialog_action(), SIGNAL(triggered()), scan_dialog_, SLOT(show()));
@@ -172,6 +173,7 @@ main_window::~main_window()
 	dir_iterator = dir_iterator_ptr_t();
 	stop_backend();
 	save_playlists();
+	delete ui_settings_;
 	delete playlists_ui_;
 	delete settings_;
 	audio_frontend_ = audio_frontend_ptr_t();
@@ -512,17 +514,19 @@ void main_window::stop_backend(bool const send_quit_message, bool const stop_sca
 
 	if (send_signals)
 	{
-		backend_process->waitForFinished(30000);
+		backend_process->waitForFinished(4000);
 		if (backend_process->state() != QProcess::NotRunning)
 		{
 			backend_process->terminate();
+			std::cout << "Sending backend the TERM signal" << std::endl;
 			backend_log_dialog_->add_line("misc", "Sending backend the TERM signal");
 		}
 
-		backend_process->waitForFinished(30000);
+		backend_process->waitForFinished(4000);
 		if (backend_process->state() != QProcess::NotRunning)
 		{
 			backend_process->kill();
+			std::cout << "Sending backend the KILL signal" << std::endl;
 			backend_log_dialog_->add_line("misc", "Sending backend the KILL signal");
 		}
 	}

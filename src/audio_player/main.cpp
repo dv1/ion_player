@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 	{
 		QApplication application(argc, argv);
 		application.setApplicationName("ion_player");
+		application.setOrganizationName("ion_player");
 
 		ion::uri_optional_t command_line_uri = boost::none;
 		if (argc >= 2)

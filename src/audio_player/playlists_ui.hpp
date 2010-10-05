@@ -51,6 +51,9 @@ class playlist_ui:
 {
 	Q_OBJECT
 public:
+	typedef std::vector < int > ui_state_t;
+
+
 	explicit playlist_ui(QObject *parent, playlist &playlist_, playlists_ui &playlists_ui_);
 	~playlist_ui();
 
@@ -62,6 +65,9 @@ public:
 	inline playlist & get_playlist() { return playlist_; }
 	inline QTreeView* get_view_widget() { return view_widget; }
 	inline playlist_qt_model* get_playlist_qt_model() { return playlist_qt_model_; }
+
+	ui_state_t get_ui_state() const;
+	void set_ui_state(ui_state_t const &ui_state);
 
 
 protected slots:
@@ -85,6 +91,15 @@ class playlists_ui:
 {
 	Q_OBJECT
 public:
+	struct ui_state
+	{
+		typedef std::vector < playlist_ui::ui_state_t > playlist_ui_states_t;
+
+		int visible_playlist_index;
+		playlist_ui_states_t playlist_ui_states;
+	};
+
+
 	explicit playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_frontend_, QObject *parent);
 	~playlists_ui();
 
@@ -95,6 +110,9 @@ public:
 	playlist* get_currently_visible_playlist();
 	playlist_ui* get_currently_playing_playlist_ui();
 	void set_ui_visible(playlist_ui *ui);
+
+	ui_state get_ui_state() const;
+	void set_ui_state(ui_state const &ui_state_);
 
 
 protected slots:

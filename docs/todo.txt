@@ -2,55 +2,52 @@
 OPEN:
 
 Qt4 audio frontend:
+* Mark crashed/corrupt entries in playlist
+* File/directory names are corrupt sometimes when adding them (they have a file:// prefix already sometimes; note, this is a Qt/KDE problem - just compensate for it)
+* Configuration UIs for backend modules (decoders, sinks)
+* Accelerate metadata scan by spawning the backend only at the beginning & when it crashes
+* Add global loop support to frontend
+* Add resource specific loop support to frontend
+* introduce a PING to scan and playback backends to detect hung up backends
+* What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
+  (Note: this does NOT refer to backend crashes)
 * Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
 * Add filter playlists to GUI; matching function shall use wildcards
 * Make use of the systray for basic player control and minimizing to tray
 * Import/export M3U
 * Import/export individual playlists in JSON format
-* Configuration UIs for backend modules (decoders, sinks)
 * UIs for editing settings for individual resources (the settings are stored as URI options)
 * Playlist sorting
 * Moving/cutting/copying/pasting playlist entries
 * Resource rescan action in UI
   store the URI to be re-scanned in a list, and when the scanner finishes, use this list entry to replace the old playlist entry metadata with the new one
   also mind errors like invalid_uri, resource_not_found etc. in this list's handling
-* Add global loop support to frontend
-* Add resource specific loop support to frontend
 * UI for manual decoder specification for resources (implies a rescan)
 * Save/restore playback status when changing backend
-* Mark crashed/corrupt entries in playlist
-* File/directory names are corrupt sometimes when adding them (they have a file:// prefix already sometimes)
-* What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
-  (Note: this does NOT refer to backend crashes)
 * make it possible to insert new items in middle of playlist
 * Implement playback history as described in design doc
-* accelerate metadata scan by spawning the backend only at the beginning & when it crashes
-* introduce a PING to scan and playback backends to detect hung up backends
 * Add shuffle
-* Store in/restore from config the currently visible playlist
-* Store in/restore from config the overall UI states (like column widths in the playlists)
 
 Audio backend:
-* Handle I/O failures (for example, SMB share + network cable disconnected)
-* dragonsfunk.mod cannot be read by DUMB -> check that other decoders do not wrongly recognize it (mpg123 is particularly tolerant, and "recognizes" a lot of file types which it cannot play)
-* audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
-* Investigate shared memory for passing audio data to a visualizer (use boost.interprocess for this)
-* StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
-* timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
 * faad decoder
-* monkey's audio decoder
-* vqf decoder (decoding library not found yet)
 * sidplay decoder (http://sidplay2.sourceforge.net/)
-* wavpack decoder (http://www.wavpack.com/)
-* musepack (mpcdec) decoder (http://musepack.net/)
-* modplug decoder (http://gnu.ethz.ch/linuks.mine.nu/modplugplay/)
-* trueaudio (tta) decoder (http://en.true-audio.com/)
-* in_cube or vgmstream decoder for Gamecube audio
 * volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * mono->stereo conversion if source is mono - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * handle different sample formats and channel counts in decoders
 * implement decoder deletion thread
+* Handle I/O failures (for example, SMB share + network cable disconnected)
+* audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
+* Investigate shared memory for passing audio data to a visualizer (use boost.interprocess for this)
+* StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
+* timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
+* monkey's audio decoder
+* vqf decoder (decoding library not found yet)
+* wavpack decoder (http://www.wavpack.com/)
+* musepack (mpcdec) decoder (http://musepack.net/)
+* modplug decoder (http://gnu.ethz.ch/linuks.mine.nu/modplugplay/)
+* trueaudio (tta) decoder (http://en.true-audio.com/)
+* in_cube or vgmstream decoder for Gamecube audio
 * Windows waveout sink
 * Pulseaudio sink
 * JACK sink
@@ -59,21 +56,24 @@ Audio backend:
 * MMS source
 * SHOUTcast source
 [* post processing, VST support, UPnP]
-* fix status bar indicators for current time & length; it doesnt work properly with resources of unknown length
-  also, the played time should be always visible, even with an unknown length, that is, get_current_position should do something
 
 Both:
-* Ability to edit metadata
-* support mid-play metadata changes (including title, artist, album, song length, ....)
 * Examine code for undefined cases
-* extensive testing (esp. fault tolerance)
 * currently, if the current playback doesn't have num_ticks or num_ticks_per_second, an extra QTime is used in the frontend, in short, a progress is calculated in the frontend
   the proper solution would to do this calculation in the backend
+* support mid-play metadata changes (including title, artist, album, song length, ....)
+* Ability to edit metadata
+* extensive testing (esp. fault tolerance)
 
 
 =======================================================================================
 DONE:
 
+* fix status bar indicators for current time & length; it doesnt work properly with resources of unknown length
+  also, the played time should be always visible, even with an unknown length, that is, get_current_position should do something
+* Store in/restore from config the currently visible playlist
+* Store in/restore from config the overall UI states (like column widths in the playlists)
+* dragonsfunk.mod cannot be read by DUMB -> check that other decoders do not wrongly recognize it (mpg123 is particularly tolerant, and "recognizes" a lot of file types which it cannot play)
 * allow for disabling the speex resampler at run-time, causing the backend to reinitialize the sink instead
   (pro: less CPU usage, potentially better sound quality  con: gapless playback only guaranteed if playback frequency does not change)
 * include speex resampler in extern/

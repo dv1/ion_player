@@ -19,6 +19,7 @@
 **************************************************************************/
 
 
+#include <assert.h>
 #include <QTreeView>
 #include <QTabWidget>
 #include <boost/foreach.hpp>
@@ -109,6 +110,22 @@ void playlist_ui::ensure_currently_playing_visible()
 }
 
 
+playlist_ui::ui_state_t playlist_ui::get_ui_state() const
+{
+	ui_state_t ui_state(playlist_qt_model_->columnCount(QModelIndex()));
+	for (int i = 0; i < playlist_qt_model_->columnCount(QModelIndex()); ++i)
+		ui_state[i] = view_widget->columnWidth(i);
+	return ui_state;
+}
+
+
+void playlist_ui::set_ui_state(ui_state_t const &ui_state)
+{
+	for (size_t i = 0; i < ui_state.size(); ++i)
+		view_widget->setColumnWidth(i, ui_state[i]);
+}
+
+
 void playlist_ui::play_song_in_row(QModelIndex const &index)
 {
 	playlist_traits < playlist > ::entry_t const *playlist_entry = get_entry(playlist_, index.row());
@@ -195,6 +212,30 @@ void playlists_ui::set_ui_visible(playlist_ui *ui)
 {
 	if (ui != 0)
 		tab_widget.setCurrentWidget(ui->get_view_widget());
+}
+
+
+playlists_ui::ui_state playlists_ui::get_ui_state() const
+{
+	ui_state state;
+	state.visible_playlist_index = tab_widget.currentIndex();
+
+	BOOST_FOREACH(playlist_ui *playlist_ui_, playlist_uis)
+	{
+		playlist_ui::ui_state_t playlist_ui_state = playlist_ui_->get_ui_state();
+		state.playlist_ui_states.push_back(playlist_ui_state);
+	}
+
+	return state;
+}
+
+
+void playlists_ui::set_ui_state(ui_state const &ui_state_)
+{
+	for (size_t i = 0; i < std::min(ui_state_.playlist_ui_states.size(), playlist_uis.size()); ++i)
+		playlist_uis[i]->set_ui_state(ui_state_.playlist_ui_states[i]);
+
+	tab_widget.setCurrentIndex(ui_state_.visible_playlist_index);
 }
 
 

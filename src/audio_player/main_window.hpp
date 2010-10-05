@@ -38,6 +38,7 @@
 #include <ion/flat_playlist.hpp>
 
 #include "settings.hpp"
+#include "ui_settings.hpp"
 #include "audio_frontend.hpp"
 #include "settings_dialog.hpp"
 #include "search_dialog.hpp"
@@ -144,6 +145,7 @@ protected:
 	playlists_ui *playlists_ui_;
 
 	settings *settings_;
+	ui_settings *ui_settings_;
 	settings_dialog *settings_dialog_;
 
 	search_dialog *search_dialog_;
