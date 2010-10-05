@@ -332,7 +332,7 @@ bool gme_decoder::reset_emu(unsigned int const sample_rate)
 	if (internal_data_->track_info_.length <= 0)
 		internal_data_->track_info_.length = internal_data_->track_info_.intro_length + internal_data_->track_info_.loop_length * 2;
 	if (internal_data_->track_info_.length <= 0)
-		internal_data_->track_info_.length = long(2.5 * 60 * 1000);
+		internal_data_->track_info_.length = 0;
 
 	internal_data_->emu = new_emu;
 	set_fade();
@@ -346,7 +346,7 @@ void gme_decoder::set_fade()
 	internal_data_->emu->set_fade(
 		(internal_data_->track_info_.length != 0)
 			? long(internal_data_->track_info_.length)
-			: long(2.5 * 60 * 1000)
+			: long(internal_data_->emu->tell() + 2.5 * 60 * 1000) // when no length is known, set the fade point to current point + 150 seconds (to have some tolerance)
 		,
 		0
 	);
@@ -363,6 +363,9 @@ unsigned int gme_decoder::update(void *dest, unsigned int const num_samples_to_w
 {
 	if (!is_initialized())
 		return 0;
+
+	if (internal_data_->track_info_.length == 0)
+		internal_data_->emu->set_fade(internal_data_->emu->tell() + 2.5 * 60 * 1000);// when no length is known, set the fade point to current point + 150 seconds (to have some tolerance)
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 

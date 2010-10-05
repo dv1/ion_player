@@ -494,11 +494,24 @@ decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t co
 
 		uint8_t bytes[2];
 		source_->read(bytes, 2);
-		if ((bytes[0] == 0xff) && ((bytes[1] & 0xfe) == 0xfa))
+		if (bytes[0] == 0xff)
 		{
-			source_->read(&bytes[0], 1);
-			bytes[0] >>= 4;
-			recognized = (bytes[0] >= 1) && (bytes[0] <= 0xE);
+			int second_byte = (bytes[1] & 0xfe);
+			switch (second_byte)
+			{
+				case 0xe2:
+				case 0xf2:
+				case 0xf4:
+				case 0xf6:
+				case 0xfa:
+				case 0xfc:
+					source_->read(&bytes[0], 1);
+					bytes[0] >>= 4;
+					recognized = (bytes[0] >= 1) && (bytes[0] <= 0xE);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 	
