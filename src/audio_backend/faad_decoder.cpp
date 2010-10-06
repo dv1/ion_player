@@ -31,8 +31,8 @@ namespace audio_backend
 {
 
 
-faad_decoder::faad_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_)
-	decoder(send_command_callback),
+faad_decoder::faad_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_)
+	decoder(send_event_callback),
 	source_(source_),
 	initialized(false)
 {
@@ -205,13 +205,13 @@ faad_decoder_creator::faad_decoder_creator()
 }
 
 
-decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
 	if ((mime_type != "audio/x-hx-aac-adts") && (mime_type != "audio/x-hx-aac-adif"))
 		return decoder_ptr_t();
 
 
-	faad_decoder *faad_decoder_ = new faad_decoder(send_command_callback, source_);
+	faad_decoder *faad_decoder_ = new faad_decoder(send_event_callback, source_);
 	if (!faad_decoder_->is_initialized())
 	{
 		delete faad_decoder_;

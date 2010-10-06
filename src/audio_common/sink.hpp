@@ -27,12 +27,12 @@ freely, subject to the following restrictions:
 #ifndef ION_AUDIO_COMMON_BACKEND_SINK_HPP
 #define ION_AUDIO_COMMON_BACKEND_SINK_HPP
 
+#include <assert.h>
 #include <iostream>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <ion/send_command_callback.hpp>
-
+#include "send_event_callback.hpp"
 #include "decoder.hpp"
 
 
@@ -46,16 +46,6 @@ class sink:
 	private boost::noncopyable
 {
 public:
-	enum command_type
-	{
-		resource_finished, // sent when the decoder signalizes and end-of-data via a "false" returnvalue from decoder::update(); the only way to get playback again is to call start()
-		stopped, // sent when the playback is stopped by other means (by calling stop() for instance); the only way to get playback again is to call start()
-		started, // start() was called, playback started
-		paused, // pause() was called, playback pauses
-		resumed, // resume() was called, playback resumes
-		transition // like resource_finished, except that playback doesn't stop, since there is a next song that automatically gets promoted to the current song
-	};
-
 	typedef boost::function < void() > resource_finished_callback_t;
 
 
@@ -91,7 +81,7 @@ public:
 	* This call does _not_ affect the decoder in any way; it does not change position, volume, it does not even pause it.
 	* The backend requires this for internal sink handovers, in case the user wants to change the sink while playback is running.
 	*
-	* @param do_notify If set to true, this function will use the send command callback to send a response that notifies about the stop
+	* @param do_notify If set to true, this function will use the send event callback to send a response that notifies about the stop
 	* @pre the sink must be operational
 	* @post current and next decoder will be reset (e.g. set to decoder_ptr_t(), which equals a null pointer). This may trigger a decoder shutdown if no one else had a shared pointer
 	* to these decoders. If no playback was running, this function does nothing. Paused playback will be stopped as well.
@@ -101,7 +91,7 @@ public:
 	/**
 	* Pauses playback. Repeated calls will be ignored. This function does NOT have to uninitialize anything internally, and is in fact preferred to not do so.
 	*
-	* @param do_notify If set to true, this function will use the send command callback to send a response that notifies about the pause
+	* @param do_notify If set to true, this function will use the send event callback to send a response that notifies about the pause
 	* @pre Playback must be present (e.g. start() must have been called earlier) and unpaused; the sink must be operational
 	* @post The playback will be paused if the preconditions were met, otherwise this function does nothing
 	*/
@@ -110,7 +100,7 @@ public:
 	/**
 	* Resumes playback. Repeated calls will be ignored. This function does NOT have to reinitialize anything internally, and is in fact preferred to not do so.
 	*
-	* @param do_notify If set to true, this function will use the send command callback to send a response that notifies about the resume
+	* @param do_notify If set to true, this function will use the send event callback to send a response that notifies about the resume
 	* @pre Playback must be present (e.g. start() must have been called earlier) and paused; the sink must be operational
 	* @post The playback will be resumed if the preconditions were met, otherwise this function does nothing
 	*/
@@ -128,6 +118,12 @@ public:
 	*/
 	virtual void set_next_decoder(decoder_ptr_t next_decoder_) = 0;
 
+	/**
+	* Clears any set next decoder. If no next decoder is set, or no playback is running, this function does nothing.
+	* @pre The sink must be operational
+	* @post The next decoder will be cleared. If no playback is running, or no next decoder was previously set, this function does nothing.
+	* @
+	*/
 	virtual void clear_next_decoder() = 0;
 
 	/**
@@ -136,6 +132,7 @@ public:
 	* It is valid to pass on an invalid callback (that is, the value of resource_finished_callback_t(), which is an "empty" callback). This tells the sink to not trigger this callback.
 	*
 	* @param new_resource_finished_callback The callback to be used
+	* @pre Playback must not not running
 	* @post The song finished callback will be new_resource_finished_callback
 	*/
 	inline void set_resource_finished_callback(resource_finished_callback_t const &new_resource_finished_callback)
@@ -145,35 +142,18 @@ public:
 
 
 protected:
-	explicit sink(send_command_callback_t const &send_command_callback):
-		send_command_callback(send_command_callback)
+	// Base constructor. Accepts a send event callback that is used to send events back to the frontend.
+	// @param send_event_callback The send event callback to use; must be valid and non-null
+	// @pre The callback must be valid
+	// @post The sink base class will be initialized
+	explicit sink(send_event_callback_t const &send_event_callback):
+		send_event_callback(send_event_callback)
 	{
+		assert(send_event_callback);
 	}
 
 
-	// Convenience function to define and send common response event commands
-	void send_event_command(command_type const command, params_t const &custom_params = params_t())
-	{
-		if (!send_command_callback)
-		{
-			std::cerr << "Trying to send command \"" << command << "\" without a callback" << std::endl;
-			return;
-		}
-
-		switch (command)
-		{
-			case resource_finished: send_command_callback("resource_finished", custom_params); break;
-			case stopped: send_command_callback("stopped", custom_params); break;
-			case started: send_command_callback("started", custom_params); break;
-			case paused: send_command_callback("paused", custom_params); break;
-			case resumed: send_command_callback("resumed", custom_params); break;
-			case transition: send_command_callback("transition", custom_params); break;
-			default: break;
-		}
-	}
-
-
-	send_command_callback_t send_command_callback;
+	send_event_callback_t send_event_callback;
 	resource_finished_callback_t resource_finished_callback;
 };
 

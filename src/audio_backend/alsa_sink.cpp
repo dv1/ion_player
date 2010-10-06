@@ -31,8 +31,8 @@ namespace audio_backend
 using namespace audio_common;
 
 
-alsa_sink::alsa_sink(send_command_callback_t const &send_command_callback):
-	common_sink_base < alsa_sink > (send_command_callback, true),
+alsa_sink::alsa_sink(send_event_callback_t const &send_event_callback):
+	common_sink_base < alsa_sink > (send_event_callback, true),
 	pcm_handle(0),
 	hw_params(0)
 {
@@ -142,8 +142,8 @@ bool alsa_sink::reinitialize_audio_device(unsigned int const playback_frequency)
 
 void alsa_sink::shutdown_audio_device()
 {
-	// Even though both the playback thread and stop_impl() call shutdown_audio_device, there is no need to synchronize this function
-	// the playback thread calls this when a song finished and no next song is there, while stop_impl() calls this only -after- the playback thread was join()ed
+	// Even though both the playback thread and stop() call shutdown_audio_device, there is no need to synchronize this function
+	// the playback thread calls this when a song finished and no next song is there, while stop() calls this only -after- the playback thread was join()ed
 
 	if (pcm_handle == 0)
 		return;
@@ -209,9 +209,9 @@ bool alsa_sink::render_samples(unsigned int const num_samples_to_render)
 
 
 
-sink_ptr_t alsa_sink_creator::create(send_command_callback_t const &send_command_callback)
+sink_ptr_t alsa_sink_creator::create(send_event_callback_t const &send_event_callback)
 {
-	return sink_ptr_t(new alsa_sink(send_command_callback));
+	return sink_ptr_t(new alsa_sink(send_event_callback));
 }
 
 

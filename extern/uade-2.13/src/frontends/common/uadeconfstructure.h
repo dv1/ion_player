@@ -78,7 +78,7 @@ struct uade_ao_options {
  * merge will notice the change in value.
  */
 struct uade_config {
-	UADE_CHAR_CONFIG(action_keys);
+	UADE_CHAR_CONFIG(action_keys)
 
 	struct uade_ao_options ao_options;
 	char ao_options_set;
@@ -86,54 +86,54 @@ struct uade_config {
 	struct uade_dir basedir;
 	char basedir_set;
 
-	UADE_INT_CONFIG(buffer_time);
-	UADE_CHAR_CONFIG(content_detection);
-	UADE_CHAR_CONFIG(cygwin_drive_workaround);
+	UADE_INT_CONFIG(buffer_time)
+	UADE_CHAR_CONFIG(content_detection)
+	UADE_CHAR_CONFIG(cygwin_drive_workaround)
 
 	struct uade_ep_options ep_options;
 	char ep_options_set;
 
-	UADE_CHAR_CONFIG(filter_type);
-	UADE_INT_CONFIG(frequency);
-	UADE_CHAR_CONFIG(led_forced);
-	UADE_CHAR_CONFIG(led_state);
+	UADE_CHAR_CONFIG(filter_type)
+	UADE_INT_CONFIG(frequency)
+	UADE_CHAR_CONFIG(led_forced)
+	UADE_CHAR_CONFIG(led_state)
 
-	UADE_CHAR_CONFIG(gain_enable);
+	UADE_CHAR_CONFIG(gain_enable)
 	/* should be removed of uade_effect integrated */
-	UADE_FLOAT_CONFIG(gain);
+	UADE_FLOAT_CONFIG(gain)
 
-	UADE_CHAR_CONFIG(headphones);
-	UADE_CHAR_CONFIG(headphones2);
-	UADE_CHAR_CONFIG(ignore_player_check);
+	UADE_CHAR_CONFIG(headphones)
+	UADE_CHAR_CONFIG(headphones2)
+	UADE_CHAR_CONFIG(ignore_player_check)
 
 	char *resampler;
 	char resampler_set;
 
-	UADE_CHAR_CONFIG(no_ep_end);
-	UADE_CHAR_CONFIG(no_filter);
-	UADE_CHAR_CONFIG(no_postprocessing);
+	UADE_CHAR_CONFIG(no_ep_end)
+	UADE_CHAR_CONFIG(no_filter)
+	UADE_CHAR_CONFIG(no_postprocessing)
 
-	UADE_CHAR_CONFIG(normalise);
+	UADE_CHAR_CONFIG(normalise)
 	/* no normalise_parameter_set entry, use manual merging code */
 	char *normalise_parameter;
 
-	UADE_CHAR_CONFIG(one_subsong);
-	UADE_FLOAT_CONFIG(panning);		/* should be removed */
-	UADE_CHAR_CONFIG(panning_enable);
-	UADE_CHAR_CONFIG(random_play);
-	UADE_CHAR_CONFIG(recursive_mode);
-	UADE_INT_CONFIG(silence_timeout);
+	UADE_CHAR_CONFIG(one_subsong)
+	UADE_FLOAT_CONFIG(panning)		/* should be removed */
+	UADE_CHAR_CONFIG(panning_enable)
+	UADE_CHAR_CONFIG(random_play)
+	UADE_CHAR_CONFIG(recursive_mode)
+	UADE_INT_CONFIG(silence_timeout)
 
 	char *song_title;
 	char song_title_set;
 
-	UADE_CHAR_CONFIG(speed_hack);
-	UADE_INT_CONFIG(subsong_timeout);
-	UADE_INT_CONFIG(timeout);
-	UADE_CHAR_CONFIG(use_text_scope);
-	UADE_CHAR_CONFIG(use_timeouts);
-	UADE_CHAR_CONFIG(use_ntsc);
-	UADE_CHAR_CONFIG(verbose);
+	UADE_CHAR_CONFIG(speed_hack)
+	UADE_INT_CONFIG(subsong_timeout)
+	UADE_INT_CONFIG(timeout)
+	UADE_CHAR_CONFIG(use_text_scope)
+	UADE_CHAR_CONFIG(use_timeouts)
+	UADE_CHAR_CONFIG(use_ntsc)
+	UADE_CHAR_CONFIG(verbose)
 };
 
 #endif

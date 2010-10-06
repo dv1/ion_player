@@ -34,8 +34,8 @@ namespace audio_backend
 using namespace audio_common;
 
 
-mpg123_decoder::mpg123_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
-	decoder(send_command_callback),
+mpg123_decoder::mpg123_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_):
+	decoder(send_event_callback),
 	source_(source_),
 	mpg123_handle_(0),
 	id3v1_data(0),
@@ -471,7 +471,7 @@ mpg123_decoder_creator::~mpg123_decoder_creator()
 }
 
 
-decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
 	// Testing out whether or not this is an MP3
 
@@ -522,7 +522,7 @@ decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t co
 	source_->reset();
 
 
-	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(send_command_callback, source_);
+	mpg123_decoder *mpg123_decoder_ = new mpg123_decoder(send_event_callback, source_);
 	if (!mpg123_decoder_->is_initialized())
 	{
 		delete mpg123_decoder_;

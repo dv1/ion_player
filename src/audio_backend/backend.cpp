@@ -47,8 +47,8 @@ backend::backend():
 }
 
 
-backend::backend(send_command_callback_t const &send_command_callback):
-	send_command_callback(send_command_callback),
+backend::backend(send_event_callback_t const &send_event_callback):
+	send_event_callback(send_event_callback),
 	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
@@ -62,9 +62,9 @@ backend::~backend()
 }
 
 
-void backend::set_send_command_callback(send_command_callback_t const &new_send_command_callback)
+void backend::set_send_event_callback(send_event_callback_t const &new_send_event_callback)
 {
-	send_command_callback = new_send_command_callback;
+	send_event_callback = new_send_event_callback;
 }
 
 
@@ -310,11 +310,11 @@ void backend::start_playback(params_t const &params)
 	}
 	catch (unrecognized_resource const &exc)
 	{
-		send_command_callback("unrecognized_resource", boost::assign::list_of(uri_str[1]));
+		send_event_callback("unrecognized_resource", boost::assign::list_of(uri_str[1]));
 	}
 	catch (resource_not_found const &exc)
 	{
-		send_command_callback("resource_not_found", boost::assign::list_of(uri_str[1]));
+		send_event_callback("resource_not_found", boost::assign::list_of(uri_str[1]));
 	}
 	catch (std::runtime_error const &exc)
 	{
@@ -328,7 +328,7 @@ void backend::start_playback(params_t const &params)
 			response_params.push_back(param);
 		}
 
-		send_command_callback("error", response_params);
+		send_event_callback("error", response_params);
 	}
 
 	// this assignment happens -after- the set_next_decoder() call in case the function throws an exception
@@ -352,7 +352,7 @@ void backend::set_next_decoder(std::string const &uri_str, std::string const &de
 	decoder_ptr_t new_next_decoder;
 	if (uri_str.empty())
 	{
-		send_command_callback("info", boost::assign::list_of("no next decoder given -> not setting a next decoder"));
+		send_event_callback("info", boost::assign::list_of("no next decoder given -> not setting a next decoder"));
 		next_decoder = decoder_ptr_t();
 		return;
 	}
@@ -479,7 +479,7 @@ void backend::create_sink(std::string const &type)
 	if (current_sink)
 		current_sink->pause(false); // false means no notification
 
-	sink_ptr_t new_sink = (*iter)->create(send_command_callback);
+	sink_ptr_t new_sink = (*iter)->create(send_event_callback);
 	if (new_sink)
 	{
 		/* If control reaches this scope, then the new sink was successfully created, and the
@@ -500,7 +500,7 @@ void backend::create_sink(std::string const &type)
 		// remove it.
 		if (next_decoder && !current_decoder)
 		{
-			send_command_callback("info", boost::assign::list_of("encountered a nil current decoder and a non-nil next decoder - compensating"));
+			send_event_callback("info", boost::assign::list_of("encountered a nil current decoder and a non-nil next decoder - compensating"));
 
 			current_decoder = next_decoder;
 			next_decoder = decoder_ptr_t();
@@ -587,7 +587,7 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 		decoder_creators_t::ordered_t::iterator iter = decoder_creators.get < decoder_creators_t::ordered_tag > ().find(decoder_type);
 		if (iter != decoder_creators.get < decoder_creators_t::ordered_tag > ().end())
 		{
-			new_decoder = (*iter)->create(new_source, metadata, send_command_callback);
+			new_decoder = (*iter)->create(new_source, metadata, send_event_callback);
 		}
 	}
 
@@ -600,7 +600,7 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 			{
 				new_source->reset();
 
-				new_decoder = decoder_creator_->create(new_source, metadata, send_command_callback);
+				new_decoder = decoder_creator_->create(new_source, metadata, send_event_callback);
 				if (new_decoder)
 					break;
 			}
@@ -625,9 +625,9 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 
 
 
-void set_send_command_callback(backend &backend_, send_command_callback_t const &new_send_command_callback)
+void set_send_event_callback(backend &backend_, send_event_callback_t const &new_send_event_callback)
 {
-	backend_.set_send_command_callback(new_send_command_callback);
+	backend_.set_send_event_callback(new_send_event_callback);
 }
 
 

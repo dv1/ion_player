@@ -435,8 +435,8 @@ struct uade_decoder::internal_data
 };
 
 
-uade_decoder::uade_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, metadata_t const &initial_metadata):
-	decoder(send_command_callback),
+uade_decoder::uade_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, metadata_t const &initial_metadata):
+	decoder(send_event_callback),
 	source_(source_),
 	subsong_nr(-1),
 	internal_data_(0)
@@ -630,13 +630,13 @@ uade_decoder_creator::uade_decoder_creator()
 }
 
 
-decoder_ptr_t uade_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t uade_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
 	// UADE cannot handle any I/O other than local files
 	if (source_->get_uri().get_type() != "file")
 		return decoder_ptr_t();
 
-	uade_decoder *uade_decoder_ = new uade_decoder(send_command_callback, source_, metadata);
+	uade_decoder *uade_decoder_ = new uade_decoder(send_event_callback, source_, metadata);
 	if (!uade_decoder_->is_initialized())
 	{
 		delete uade_decoder_;

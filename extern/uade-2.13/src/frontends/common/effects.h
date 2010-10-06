@@ -9,7 +9,7 @@ typedef enum {
 	UADE_EFFECT_HEADPHONES,
 	UADE_EFFECT_HEADPHONES2,
 	UADE_EFFECT_PAN,
-	UADE_EFFECT_NORMALISE,
+	UADE_EFFECT_NORMALISE
 } uade_effect_t;
 
 struct uade_effect {

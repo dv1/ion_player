@@ -24,22 +24,25 @@ freely, subject to the following restrictions:
 ****************************************************************************/
 
 
-#ifndef ION_SEND_COMMAND_CALLBACK_HPP
-#define ION_SEND_COMMAND_CALLBACK_HPP
+#ifndef ION_AUDIO_COMMON_SEND_EVENT_CALLBACK_HPP
+#define ION_AUDIO_COMMON_SEND_EVENT_CALLBACK_HPP
 
 #include <boost/function.hpp>
-#include "command_line_tools.hpp"
+#include <ion/command_line_tools.hpp>
 
 
 namespace ion
 {
+namespace audio_common
+{
 
 
-// This typedef is widely used in the backend for passing around the send command callback. The send command callback is used by the backend to send events to the frontend
+// This typedef is widely used in the backend for passing around the send event callback. The send event callback is used by the backend to send events to the frontend
 // via the backend process' stdout.
-typedef boost::function < void(std::string const &command, params_t const &params) > send_command_callback_t;
+typedef boost::function < void(std::string const &event, params_t const &params) > send_event_callback_t;
 
 
+}
 }
 
 

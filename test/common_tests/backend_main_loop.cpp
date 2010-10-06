@@ -2,7 +2,7 @@
 #include <sstream>
 #include <ion/command_line_tools.hpp>
 #include <ion/backend_main_loop.hpp>
-#include <ion/send_command_callback.hpp>
+#include <send_event_callback.hpp>
 
 
 
@@ -23,13 +23,13 @@ public:
 	}
 
 
-	ion::send_command_callback_t cb;
+	ion::audio_common::send_event_callback_t cb;
 };
 
 
-void set_send_command_callback(mock_backend &backend_, ion::send_command_callback_t const &new_send_command_callback)
+void set_send_event_callback(mock_backend &backend_, ion::audio_common::send_event_callback_t const &new_send_event_callback)
 {
-	backend_.cb = new_send_command_callback;
+	backend_.cb = new_send_event_callback;
 }
 
 

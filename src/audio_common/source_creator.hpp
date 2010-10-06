@@ -27,7 +27,6 @@ freely, subject to the following restrictions:
 #ifndef ION_AUDIO_COMMON_SOURCE_CREATOR_HPP
 #define ION_AUDIO_COMMON_SOURCE_CREATOR_HPP
 
-#include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 #include "component_creator.hpp"
 #include "source.hpp"

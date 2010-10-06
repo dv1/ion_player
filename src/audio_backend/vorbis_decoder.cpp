@@ -95,8 +95,8 @@ long vorbis_tell_func(void *datasource)
 
 
 
-vorbis_decoder::vorbis_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
-	decoder(send_command_callback),
+vorbis_decoder::vorbis_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_):
+	decoder(send_event_callback),
 	source_(source_),
 	info(0),
 	initialized(false)
@@ -359,7 +359,7 @@ vorbis_decoder_creator::vorbis_decoder_creator()
 }
 
 
-decoder_ptr_t vorbis_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t vorbis_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
 	{
 		std::string magic_id;
@@ -377,7 +377,7 @@ decoder_ptr_t vorbis_decoder_creator::create(source_ptr_t source_, metadata_t co
 		source_->reset();
 	}
 
-	vorbis_decoder *vorbis_decoder_ = new vorbis_decoder(send_command_callback, source_);
+	vorbis_decoder *vorbis_decoder_ = new vorbis_decoder(send_event_callback, source_);
 	if (!vorbis_decoder_->is_initialized())
 	{
 		delete vorbis_decoder_;

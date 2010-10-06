@@ -37,9 +37,9 @@ freely, subject to the following restrictions:
 
 #include <ion/metadata.hpp>
 #include <ion/resource_exceptions.hpp>
-#include <ion/send_command_callback.hpp>
 #include <ion/uri.hpp>
 
+#include "send_event_callback.hpp"
 #include "types.hpp"
 
 
@@ -229,10 +229,10 @@ public:
 
 
 	/**
-	* Returns the send command callback set for this decoder.
-	* @return The send command callback this decoder is using
+	* Returns the send event callback set for this decoder.
+	* @return The send event callback this decoder is using
 	*/
-	send_command_callback_t get_send_command_callback() const { return send_command_callback; }
+	send_event_callback_t get_send_event_callback() const { return send_event_callback; }
 
 
 	/**
@@ -264,13 +264,13 @@ public:
 
 
 protected:
-	explicit decoder(send_command_callback_t const &send_command_callback):
-		send_command_callback(send_command_callback)
+	explicit decoder(send_event_callback_t const &send_event_callback):
+		send_event_callback(send_event_callback)
 	{
 	}
 
 
-	send_command_callback_t send_command_callback;
+	send_event_callback_t send_event_callback;
 };
 
 

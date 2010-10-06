@@ -145,8 +145,8 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 
 
 
-dumb_decoder::dumb_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, long const filesize, module_type const module_type_):
-	decoder(send_command_callback),
+dumb_decoder::dumb_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, long const filesize, module_type const module_type_):
+	decoder(send_event_callback),
 	duh(0),
 	duh_sigrenderer(0),
 	module_type_(module_type_),
@@ -416,7 +416,7 @@ dumb_decoder_creator::dumb_decoder_creator()
 }
 
 
-decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
 	// Check if the source has a size; if not, then the source may not have an end; decoding is not possible then
 	long filesize = source_->get_size();
@@ -444,7 +444,7 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 		return decoder_ptr_t();
 
 	// at this point, it is clear that this most likely is a module file -> try to load it
-	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_command_callback, source_, filesize, module_type_);
+	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_event_callback, source_, filesize, module_type_);
 	if (!dumb_decoder_->is_initialized())
 	{
 		delete dumb_decoder_;

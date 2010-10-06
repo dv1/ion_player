@@ -157,8 +157,8 @@ void adplug_source_file_provider::close(binistream *f) const
 
 
 
-adplug_decoder::adplug_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_, metadata_t const &initial_metadata):
-	decoder(send_command_callback),
+adplug_decoder::adplug_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, metadata_t const &initial_metadata):
+	decoder(send_event_callback),
 	opl(0),
 	player(0),
 	source_(source_),
@@ -422,10 +422,10 @@ adplug_decoder_creator::adplug_decoder_creator()
 }
 
 
-decoder_ptr_t adplug_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t adplug_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
 	adplug_decoder *adplug_decoder_ = new adplug_decoder(
-		send_command_callback,
+		send_event_callback,
 		source_,
 		metadata
 	);

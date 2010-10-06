@@ -111,8 +111,8 @@ struct gme_decoder::internal_data
 };
 
 
-gme_decoder::gme_decoder(send_command_callback_t const send_command_callback, source_ptr_t source_):
-	decoder(send_command_callback),
+gme_decoder::gme_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_):
+	decoder(send_event_callback),
 	source_(source_),
 	track_nr(0),
 	internal_data_(0)
@@ -385,9 +385,9 @@ gme_decoder_creator::gme_decoder_creator()
 }
 
 
-decoder_ptr_t gme_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_command_callback_t const &send_command_callback)
+decoder_ptr_t gme_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
-	gme_decoder *gme_decoder_ = new gme_decoder(send_command_callback, source_);
+	gme_decoder *gme_decoder_ = new gme_decoder(send_event_callback, source_);
 	if (!gme_decoder_->is_initialized())
 	{
 		delete gme_decoder_;

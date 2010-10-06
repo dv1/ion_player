@@ -51,11 +51,11 @@ public:
 
 
 	explicit backend();
-	explicit backend(send_command_callback_t const &send_command_callback);
+	explicit backend(send_event_callback_t const &send_event_callback);
 	~backend();
 
 
-	void set_send_command_callback(send_command_callback_t const &new_send_command_callback);
+	void set_send_event_callback(send_event_callback_t const &new_send_event_callback);
 
 
 	// Retrieves a type identifier for this backend, this identifier being "ion_audio".
@@ -129,7 +129,7 @@ protected:
 	metadata_t checked_parse_metadata(std::string const &metadata_str, std::string const &error_msg);
 
 
-	send_command_callback_t send_command_callback;
+	send_event_callback_t send_event_callback;
 
 	decoder_creators_t::creators_t decoder_creators;
 	sink_creators_t::creators_t    sink_creators;
@@ -146,7 +146,7 @@ protected:
 
 
 
-void set_send_command_callback(backend &backend_, send_command_callback_t const &new_send_command_callback);
+void set_send_event_callback(backend &backend_, send_event_callback_t const &new_send_event_callback);
 std::string get_backend_type(backend const &backend_);
 void execute_command(backend &backend_, std::string const &command, params_t const &parameters, std::string &response_command, params_t &response_parameters);
 

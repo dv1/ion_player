@@ -88,9 +88,63 @@ Also, retrieving this value before the device was initialized is undefined behav
 IMPORTANT: initialize_audio_device(), reinitialize_audio_device(), and render_samples() must be synchronized by the derived class!
 
 
+PAUSE/RESUME:
+
+The device itself is not really paused, since many audio devices do not have this functionality. Instead, a zeroed sample buffer is played.
+
+
+SMART POINTER USAGE IN CODE:
+
 This code makes extensive use of smart pointers. The reason for this is that the assignments current_song_decoder = next_song_decoder;
 and next_song_decoder = null; then automatically deallocate songs that are no longer necessary. Of course this means that the decoder
 must not spend a lot of time in its destructor.
+
+
+ABOUT THE DIFFERENT FREQUENCIES:
+
+The playback frequency is an issue that can get complicated. There are several frequencies involved: requested and actual playback frequency,
+default sink frequency, and decoder samplerate. In addition, it is preferable not to have to resample the audio data, since this needs extra processing power
+and potentially degrades audio quality.
+
+The policies for dealing with this situation are defined on whether or not reinitialization-on-demand is used.
+With reinitialization-on-demand, the policy is:
+
+1. In the device initialization (that is, a start() call after either stop() was called or the system just started up),
+   try to initialize the device using the decoder's samplerate as playback frequency
+2. The device's actual frequency (which is known after successful initialization) is stored in the playback_properties_ structure
+3. During playback, resample if necessary
+4. If a transition happens, check if a device reinitialization is necessary; if so, reinitialize the device with the next decoder's samplerate
+   the check is performed this way:
+   4.1. for each decoder, get its sample rate; if the sample rate is 0, use the sink's default playback frequency as sample rate
+   4.2. compare these sample rates; if they match, no device reinitialization is necessary
+   4.3. otherwise, a second check needs to be done: compare the next decoder's sample rate (treating a rate of 0 like in 4.1) with the current playback frequency;
+        if they do not match, a reinitialization is neccesary (using the next decoderr's sample rate), otherwise do not reinitialize
+5. If a start() call is done, and playback is running, do a check similar to the one in 4.:
+   4.1. Get the current decoder's playback frequency (treating a rate of 0 like in 4.1)
+   4.2. Get the new decoder's (the one that is passed to start() as parameter) frequency (treating a rate of 0 like in 4.1)
+   4.3. If these frequencies match, no reinitialization is necessary, otherwise perform one, using the new decoder's sample rate for the reinitialization
+
+(this one will be called the "reinitialization policy" from here on)
+
+without reinitialization-on-demand, the policy is:
+
+1. In the device initialization (that is, a start() call after either stop() was called or the system just started up),
+   try to initialize the device using the sink's default playback frequency as playback frequency
+2. The device's actual frequency (which is known after successful initialization) is stored in the playback_properties_ structure
+3. During playback, resample if necessary
+
+The second policy is clearly simpler and more robust, since the device has to be initialized only once (shutdown due to a stop() call or a playback finish have been
+omitted, for sake of clarity). It also guarantees gapless playback regardless of decoder sample rate. On other other hand, the reinitialization policy tries to get
+the device to operate at the decoder's sample rate as much as possible, thereby reducing the amount of unavoidable resampling work. Also, while gaps are introduced, they
+do not happen between decoders with the same sample rate. It can be argued that gapless playback is only really interesting for tracks of the same album, and these are
+typically sampled with identical rates.
+Decoders with no sample rate of their own return 0 as sample rate, indicating they can adapt to the given playback frequency. The reinitialization policy uses this to
+further optimize playback; usually, the default sink playback frequency is one the audio device directly supports, so when (re)initializing the device with this frequency,
+the actual playback frequency will match this one. Therefore, by choosing this frequncy for decoders with no sample rate of their own, the probability for resampling to
+become necessary is greatly diminished.
+
+
+POSSIBLE IMPROVEMENTS:
 
 An improvement would be to check if a decoder will be set to null, and if so, stuff it in a "deallocation queue". So, before setting
 current_song_decoder = next_song_decoder, check if next_song_decoder is null. If so, push current_song_decoder in a deallocation queue.
@@ -98,12 +152,6 @@ This queue will house smart pointers, so pushing it will keep the decoder alive.
 something was put into the queue, and pop it until its empty, dropping the smart pointers in the process. This avoids race conditions,
 and makes it unnecessary to require fast decoder shutdowns. (The queue can be implemented with an STL deque for storage and a thread
 condition variable for notification.)
-
-
-The sink base can run with reinitialization-on-demand enabled. This affects the way differing decoder samplerates are handled.
-If reinitialization on demand is enabled, the sink will be reinitialized if the sink's current sample rate differs from a decoder's one.
-This is checked in start(), and in the playback loop, when transitions happen. If it is disabled, then the playback frequency is set
-once (when initializing the device), and never changed. Decoders with differing sample rates will be resampled instead.
 */
 
 template < typename Derived >
@@ -118,35 +166,41 @@ public:
 
 	~common_sink_base()
 	{
-		// stop is not called here; the backend does this already. Calling stop in the sink could lead to unexpected results.
+		// Stop is not called here; the backend does this already. Calling stop in the sink could lead to unexpected results.
 		get_derived().shutdown_audio_device();
 	}	
 
 
 	virtual void start(decoder_ptr_t decoder_, decoder_ptr_t next_decoder_)
 	{
-		if (!decoder_)
-			return;
+		assert(!decoder_); // No decoder -> error
 
 		if (run_playback_loop)
 		{
+			// Playback is already running, the device does not have to be initialized - pause it to reset the resampler and set the new current & next decoders
 			pause(false);
 			resampler_->reset();
 		}
 		else
 		{
+			// Playback is not running, the device must be initialized first; also, the resampler must be created
 			if (!get_derived().initialize_audio_device(get_playback_frequency(*decoder_)))
 			{
-				send_command_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
+				send_event_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
 				return;
 			}
 
+			// The 5 is a quality setting; 0 is worst, 10 is best; better quality requires more computations at run-time
 			resampler_ = resampler_ptr_t(new speex_resampler::resampler(playback_properties_.num_channels, 5, playback_properties_.frequency));
 		}
 
+		// At this point, the device is initialized (and possibly in a paused state). This scope must still be synchronized, however,
+		// since the playback loop thread may take a short while before it is paused. Without synchronization, this would cause a race condition.
 		{
 			boost::lock_guard < boost::mutex > lock(mutex);
 
+			// Reinitialization has been marked as necessary, and playback is running -> reinitialize device
+			// (reinitializing makes no sense if no playback is running yet)
 			if (reinitialize_on_demand && run_playback_loop)
 			{
 				unsigned int new_frequency = get_playback_frequency(*decoder_);
@@ -166,9 +220,11 @@ public:
 				}
 			}
 
+			// Tell the decoder the playback properties. This has to be done here; it cannot happen at time of creation of the decoder,
+			// since only from here on the properties are fully known
 			decoder_->set_playback_properties(playback_properties_);
 
-			if (decoder_->can_playback())
+			if (decoder_->can_playback()) // playback can commence - set decoder_ as the new current one, and try to set the next decoder
 			{
 				current_decoder = decoder_;
 
@@ -179,7 +235,7 @@ public:
 						next_decoder = next_decoder_;
 					else
 					{
-						send_command_callback("error", boost::assign::list_of("given next decoder cannot playback"));
+						send_event_callback("error", boost::assign::list_of("given next decoder cannot playback"));
 						next_decoder = decoder_ptr_t();
 					}
 				}
@@ -190,10 +246,14 @@ public:
 			{
 				// TODO: handle the case where the very first playback attempt fails because can_playback() returns false
 				// (current_decoder will still be null, and the whole sink will be left in an undefined state)
-				send_command_callback("error", boost::assign::list_of("given current decoder cannot playback"));
+				send_event_callback("error", boost::assign::list_of("given current decoder cannot playback"));
 			}
 		}
 
+		// The decoder(s) is/are set; next step is to either resume playback, or start playback thread, depending on whether or not playback was running
+		// when start() was called
+
+		// Grab URIs here, *before* resuming playback/starting the thread
 		std::string current_uri = current_decoder->get_uri().get_full();
 		std::string next_uri;			
 		if (next_decoder)
@@ -208,87 +268,131 @@ public:
 			playback_thread = boost::thread(boost::phoenix::bind(&self_t::playback_loop, this));
 		}
 
-		send_event_command(started, boost::assign::list_of(current_uri)(next_uri));
+		// Notify about the start
+		send_event_callback("started", boost::assign::list_of(current_uri)(next_uri));
 	}
 
 
 	virtual void stop(bool const do_notify)
 	{
-		stop_impl(do_notify, stopped);
+		if (!get_derived().is_initialized()) // Ignore calls when no playback is running
+			return;
+
+		{
+			// Settin run_playback_loop to false causes the while loop in the playback thread to exit
+			boost::lock_guard < boost::mutex > lock(mutex);
+			run_playback_loop = false;
+		}
+
+		playback_thread.join(); // Wait for the playback thread to finish
+		is_paused = false; // reset the pause state
+
+		get_derived().shutdown_audio_device(); // perform device shutdown
+
+		if (do_notify) // Send a stopped event if it is desired
+			send_event_callback("stopped", boost::assign::list_of(current_decoder->get_uri().get_full()));
+
+		// Finally, reset current and next decoder; any set decoder will be destroyed by shared_ptr
+		current_decoder = decoder_ptr_t();
+		next_decoder = decoder_ptr_t();
 	}
 
 
 	virtual void pause(bool const do_notify)
 	{
-		if (!get_derived().is_initialized() || !current_decoder)
+		if (!get_derived().is_initialized() || !current_decoder) // No playback or no current decoder set? -> Do nothing, and exit
 			return;
 
+		// Set the pause flag - this needs to be synchronized, since the playback thread looks at this flag
 		{
 			boost::lock_guard < boost::mutex > lock(mutex);
-			if (is_paused)
+			if (is_paused) // if the sink is already paused, do nothing and exit
 				return;
 			is_paused = true;
+
+			// Send a notification if desired
+			// Doing this inside the synchronized scope, to avoid secondary race conditions between this event and events sent by the playback thread
 			if (do_notify)
-				send_event_command(paused);
+				send_event_callback("paused", params_t());
 		}
 
+		// Tell the decoder it can pause any activity of its own
 		current_decoder->pause();
 	}
 
 
 	virtual void resume(bool const do_notify)
 	{
-		if (!get_derived().is_initialized() || !current_decoder)
+		if (!get_derived().is_initialized() || !current_decoder) // No playback or no current decoder set? -> Do nothing, and exit
 			return;
 			
 		{
 			boost::lock_guard < boost::mutex > lock(mutex);
-			if (!is_paused)
+			if (!is_paused) // if the sink is not paused, do nothing and exit
 				return;
 			is_paused = false;
+
+			// Send a notification if desired
+			// Doing this inside the synchronized scope, to avoid secondary race conditions between this event and events sent by the playback thread
 			if (do_notify)
-				send_event_command(resumed);
+				send_event_callback("resumed", params_t());
 		}
 
+		// Tell the decoder it shall resume any previously paused activity
 		current_decoder->resume();
 	}
 
 
 	virtual void clear_next_decoder()
 	{
-		if (!get_derived().is_initialized())
+		if (!get_derived().is_initialized()) // No playback? -> Do nothing, and exit
 			return;
 
 		boost::lock_guard < boost::mutex > lock(mutex);
+		// Clear the currently set next decoder
+		// Using synchronization, since the playback thread accesses the next decoder
 		next_decoder = decoder_ptr_t(); // TODO: see deferred shutdown note at the beginning of this file for details
 	}
 
 
 	virtual void set_next_decoder(decoder_ptr_t next_decoder_)
 	{
+		// If no playback is running, no current decoder is set, or the supplied next decoder is null, do nothing and exit
 		if (!get_derived().is_initialized() || !current_decoder || !next_decoder_)
 			return;
 
+		// Tell the new next decoder the sink's playback properties
 		next_decoder_->set_playback_properties(playback_properties_);
 
-		if (!next_decoder_->can_playback())
+		if (!next_decoder_->can_playback()) // If the new next decoder cannot playback, it is useless for this sink -> report and error and exit
 		{
-			send_command_callback("error", boost::assign::list_of("given next decoder cannot playback"));
+			send_event_callback("error", boost::assign::list_of("given next decoder cannot playback"));
 			return;
 		}
 
+		// New next decoder is OK, replace the currently set the next decoder with this one
+		// Using synchronization, since the playback thread accesses the next decoder
 		boost::lock_guard < boost::mutex > lock(mutex);
 		next_decoder = next_decoder_;
 	}
 
 
 protected:
+	// Convenience CRTP related calls
 	derived_t& get_derived() { return *(static_cast < derived_t* > (this)); }
 	derived_t const & get_derived() const { return *(static_cast < derived_t const * > (this)); }
 
 
-	explicit common_sink_base(send_command_callback_t const &send_command_callback, bool const initialize_on_demand):
-		sink(send_command_callback),
+	/**
+	* Constructor. Accepts a send event callback and a boolean flag determining whether or not to use reinitialization (see above for an explanation).
+	*
+	* @param send_event_callback The send event callback to use; must be valid and non-null
+	* @param initialize_on_demand true if the reinitialization policy shall be used, otherwise false (the other will be used then)
+	* @pre The callback must be valid
+	* @post The common sink base class will be initialized with the reinitialization policy in effect or not, depending on initialize_on_demand
+	*/
+	explicit common_sink_base(send_event_callback_t const &send_event_callback, bool const initialize_on_demand):
+		sink(send_event_callback),
 		run_playback_loop(false),
 		is_paused(false),
 		reinitialize_on_demand(initialize_on_demand)
@@ -296,6 +400,14 @@ protected:
 	}
 
 
+	/**
+	* Helper function to get a frequency for the given decoder. If the decoder has a sample rate (that is, if decoder_.get_decoder_samplerate() returns
+	*nonzero), this value is returned, otherwise, the sink's default playback frequency will be used.
+	*
+	* @param decoder_ The decoder whose sample rate is to be used (if its nonzero)
+	* @return A non-zero frequency for playback; if the decoder sample rate is nonzero, this will be the frequency, otherwise it will be the sink's
+	* default playback one
+	*/
 	unsigned int get_playback_frequency(decoder &decoder_) const
 	{
 		unsigned int frequency = 0;
@@ -307,59 +419,54 @@ protected:
 	}
 
 
-	virtual void stop_impl(bool const do_notify, command_type const command_type_)
-	{
-		if (!get_derived().is_initialized())
-			return;
-
-		{
-			boost::lock_guard < boost::mutex > lock(mutex);
-			run_playback_loop = false;
-		}
-
-		playback_thread.join();
-		run_playback_loop = false;
-		is_paused = false;
-
-		get_derived().shutdown_audio_device();
-
-		if (do_notify)
-			send_event_command(command_type_, boost::assign::list_of(current_decoder->get_uri().get_full()));
-
-		current_decoder = decoder_ptr_t();
-		next_decoder = decoder_ptr_t();
-	}
-
-
+	// Playback thread loop function.
 	void playback_loop()
 	{
 		bool do_shutdown = false;
 		bool restart_device = false;
 
+		// actual loop
 		while (true)
 		{
 			unsigned int num_buffer_samples;
 
+			// First part of the loop: prepare data to be played
+			// This part is synchronized, since outside operations may affect its behavior, introducing race conditions otherwise
 			{
 				boost::lock_guard < boost::mutex > lock(mutex);
 
 				if (do_shutdown)
-				{
+				{	
+					// An earlier loop iteration requested a shutdown -> shutdown audio device and exit loop
 					run_playback_loop = false;
 					is_paused = false;
 					get_derived().shutdown_audio_device();
 					return;
 				}
 
-				if (restart_device && current_decoder)
+				if (restart_device)
 				{
+					// An earlier iteration of the loop requested a device restart
+					// If a current decoder is set, do the restart (= reinitialize the device), otherwise just set restart_device to false
+					if (current_decoder)
+					{
+						if (!get_derived().reinitialize_audio_device(get_playback_frequency(*current_decoder)))
+						{
+							run_playback_loop = false;
+							is_paused = false;
+							return; // reinitialization failed -> shut down playback
+						}
+						// set the resampler's output frequency to match the device's
+						resampler_->set_output_frequency(playback_properties_.frequency);
+						// tell the current decoder about the new playback properties
+						current_decoder->set_playback_properties(playback_properties_);
+					}
+
 					restart_device = false;
-					if (!get_derived().reinitialize_audio_device(get_playback_frequency(*current_decoder)))
-						return;
-					resampler_->set_output_frequency(playback_properties_.frequency);
-					current_decoder->set_playback_properties(playback_properties_);
 				}
 
+				// Either something inside this loop or a call outside the playback thread requested for the playback loop to exit
+				// (therefore ending the playback thread) -> do so
 				if (!run_playback_loop)
 					return;
 
@@ -370,17 +477,30 @@ protected:
 				num_buffer_samples = playback_properties_.num_buffer_samples;
 
 
+				// Inner loop; this loop fills the sample buffer, which will be played back
+				// If the sink is paused, do not fill the sample buffer with decoder data
 				while (!is_paused && current_decoder)
 				{
+					// Multiplier is used for getting byte counts out of sample counts
 					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
+					// This catches miscalculations that would otherwise lead to buffer overflows
 					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
+
+					// Call the resampler, which pulls data from the current decoder and resamples it if necessary, returning the number of actually
+					// written samples. The resampler writes the samples into the audio device's sample buffer, at the current sample offset.
+					// The sample offset is used to implemented gapless playback; in case an earlier inner loop iteration only partially filled the sample buffer,
+					// the offset ensures filling will continue where the previous iteration left off.
 					unsigned int num_samples_written = (*resampler_)(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write, *current_decoder);
 
-					if (num_samples_written == 0) // no samples were written -> try the next song
+					// No samples were written -> try the next song
+					// (A count of zero means by definition "this decoder is done decoding, and will not write any more samples")
+					if (num_samples_written == 0)
 					{
 						std::string current_uri = current_decoder->get_uri().get_full();
 						std::string next_uri;
-						
+
+						// There is a next decoder set -> get its URI (for sending a transition/resource_finished event), and determine if the next playback
+						// loop iteration should restart the device
 						if (next_decoder)
 						{
 							next_uri = next_decoder->get_uri().get_full();
@@ -396,26 +516,31 @@ protected:
 						}
 
 						// if (next_song_decoder == null) deallocation_queue.push(current_song_decoder); // TODO: see deferred shutdown note at the beginning of this file for details
+
+						// Do the next->current handover; current decoder is destroyed, next decoder becomes current one
 						current_decoder = next_decoder;
 						next_decoder = decoder_ptr_t();
 
+						// Call the resource_finished_callback if one was set before playback started
 						if (resource_finished_callback)
 							resource_finished_callback();
 
+						// Send a notification; if a next decoder was set, send "transition", otherwise send "resource_finished"
+						// (This way, frontends know whether or not playback stopped)
 						if (!next_uri.empty())
-						{
-							send_event_command(transition,
-								boost::assign::list_of
-									(current_uri)
-									(next_uri)
-							);
-						}
+							send_event_callback("transition", boost::assign::list_of(current_uri)(next_uri));
 						else
-							send_event_command(resource_finished, boost::assign::list_of(current_uri));
+							send_event_callback("resource_finished", boost::assign::list_of(current_uri));
 
+						// If current_decoder is null, it means the next decoder wasn't set, and the handover above essentially set both decoder shared pointers to null
+						// -> there is nothing more to play; set do_shutdown to true so the next playback loop iteration performs a shutdown and exits
 						if (!current_decoder)
 							do_shutdown = true;
 
+						// This inner loop cannot continue if the device needs restarting - the playback frequency might change after
+						// device reinitialization
+						// This does introduce a gap, which is documented at the beginning of this source
+						// Subsequent code will fill any space left in the buffer with zeros
 						if (restart_device)
 							break;
 					}
@@ -435,14 +560,17 @@ protected:
 
 				if (num_samples_to_write > 0)
 				{
-					// if the current decoder is null, and not the entire buffer was filled, set the remaining samples to zero
-					// (also, if the output is paused, num_samples_to_write will always equal the total amount of samples)
+					// Not all samples that were supposed to be written actually were filled into the buffer; there are some samples left that
+					// did not get a value assigned -> fill these with zeros
+					// This code also ensures the sample buffer is fully zeroed in case the sink is paused, since in this case,
+					// num_samples_to_write will always equal the total amount of samples
 					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
 					std::memset(&(get_derived().get_sample_buffer()[sample_offset * multiplier]), 0, num_samples_to_write * multiplier);
 				}
 			}
 
+			// Second part of the loop: playback the prepared data
 			if (!get_derived().render_samples(num_buffer_samples))
 			{
 				// if a fatal error happened, end the playback loop
@@ -450,6 +578,7 @@ protected:
 			}
 		}
 	}
+
 
 
 	decoder_ptr_t current_decoder, next_decoder;

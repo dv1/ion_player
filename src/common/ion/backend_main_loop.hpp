@@ -64,7 +64,7 @@ public:
 	/*
 	The constructor accepts an input stream, an output stream, and a backend instance. The input/output streams are used for communication with the frontend.
 	Commands are received from the input stream, and events are sent to the output stream.
-	The given backend has its send command callback set by using a set_send_command_callback() function call.
+	The given backend has its send command callback set by using a set_send_event_callback() function call.
 
 	@param in The input stream
 	@param out The output stream
@@ -77,7 +77,7 @@ public:
 		out(out),
 		backend_(backend_)
 	{
-		set_send_command_callback(backend_, boost::phoenix::bind(&self_t::send_response_command_params, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
+		set_send_event_callback(backend_, boost::phoenix::bind(&self_t::send_response_command_params, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	}
 
 
