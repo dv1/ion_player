@@ -40,7 +40,7 @@ namespace audio_common
 {
 
 
-template < typename Derived >
+// Base class for all the other creators (source/decoder/sink creators and all their derivatives).
 class component_creator
 {
 public:
@@ -48,8 +48,10 @@ public:
 	{
 	}
 
+	// The type specifier; it is used for creating components akin to the factory pattern
 	virtual std::string get_type() const = 0;
 
+	// UI for common settings for the components this creator instantiates. The UI is written in HTML. See the design document for more about module GUIs.
 	virtual module_ui get_ui() const
 	{
 		return module_ui("<html><head></head><body>No user interface for this module available.</body></html>", empty_metadata());
@@ -57,10 +59,14 @@ public:
 };
 
 
+// This struct defines a type for a creator container. This container can retrieve creators by using the creator's type string.
+// Additionally, the container preserves the order of the components.
+// To see how to use the container, consult the boost multi-index container documentation (http://www.boost.org/doc/libs/1_44_0/libs/multi_index/doc/index.html).
 template < typename Creator >
 struct component_creators
 {
 protected:
+	// This functor is used for custom key retrieval in the multi-index container, making it possible to use a type string as a key
 	struct get_type_from_creator
 	{
 		typedef std::string result_type;

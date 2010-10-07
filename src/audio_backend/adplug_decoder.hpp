@@ -145,7 +145,6 @@ public:
 
 	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback);
 	virtual std::string get_type() const { return "adplug"; }
-	virtual bool uses_magic_handle() const { return false; }
 };
 
 

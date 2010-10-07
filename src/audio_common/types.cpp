@@ -39,6 +39,8 @@ unsigned int get_sample_size(sample_type const &type)
 	{
 		case sample_s16: return 2;
 		case sample_s24: return 3;
+		case sample_s24_x8_lsb: return 4;
+		case sample_s24_x8_msb: return 4;
 		default: return 0;
 	}
 }

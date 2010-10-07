@@ -93,7 +93,7 @@ public:
 
 	/*
 	* Determines whether or not the source reached the end of available data.
-	* Note that this is expected to return true *after a reading operation detected the end-of-data*.
+	* Note that this is expected to return true *after* a reading operation detected the end-of-data*.
 	* This means that checking this first, and then reading, will fail - it has to be the other way round.
 	* once this returns true, the source may be left in an undefined state, meaning that operations like seeking won't
 	* work properly. From this point on, use reset() to get the source back to a working state.

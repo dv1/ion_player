@@ -39,7 +39,7 @@ namespace audio_common
 
 
 class source_creator:
-	public component_creator < source_creator >
+	public component_creator
 {
 public:
 	virtual source_ptr_t create(ion::uri const &uri_) = 0;

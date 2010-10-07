@@ -41,7 +41,7 @@ namespace audio_common
 
 
 class sink_creator:
-	public component_creator < sink_creator >
+	public component_creator
 {
 public:
 	virtual sink_ptr_t create(send_event_callback_t const &send_event_callback) = 0;

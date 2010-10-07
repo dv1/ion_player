@@ -30,18 +30,37 @@ freely, subject to the following restrictions:
 #include <ion/metadata.hpp>
 
 
+/*
+This header contains a number of miscellaneous types and related functions.
+*/
+
+
 namespace ion
 {
 namespace audio_common
 {
 
 
+//////
+// sample types
+
 enum sample_type
 {
 	sample_s16,
 	sample_s24,
+	sample_s24_x8_lsb, // 24-bit sample with addition 8 bits of padding (-> 32 bit total); these 8 bits are the LSB
+	sample_s24_x8_msb, // 24-bit sample with addition 8 bits of padding (-> 32 bit total); these 8 bits are the MSB
 	sample_unknown
 };
+
+
+unsigned int get_sample_size(sample_type const &type);
+
+
+
+
+//////
+// playback properties class
 
 
 struct playback_properties
@@ -62,15 +81,6 @@ struct playback_properties
 	{
 	}
 
-	playback_properties& merge_properties(playback_properties const &other_properties)
-	{
-		if (this->frequency == 0)                 this->frequency = other_properties.frequency;
-		if (this->num_buffer_samples == 0)        this->num_buffer_samples = other_properties.num_buffer_samples;
-		if (this->num_channels == 0)              this->num_channels = other_properties.num_channels;
-		if (this->sample_type_ == sample_unknown) this->sample_type_ = other_properties.sample_type_;
-		return *this;
-	}
-
 	bool is_valid() const
 	{
 		return
@@ -81,6 +91,12 @@ struct playback_properties
 			;
 	}
 };
+
+
+
+
+//////
+// module ui class
 
 
 struct module_ui
@@ -99,9 +115,6 @@ struct module_ui
 	{
 	}
 };
-
-
-unsigned int get_sample_size(sample_type const &type);
 
 
 }

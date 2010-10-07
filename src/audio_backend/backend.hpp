@@ -66,7 +66,12 @@ public:
 	// Retrieves metadata for the given resource.
 	// pre: the given uri must be valid. It does not matter if the same resource is currently being played.
 	// post: does not affect backend states.
-	decoder::metadata_str_optional_t get_metadata(std::string const &uri_str);
+	metadata_t get_metadata(std::string const &uri_str);
+
+	// Convenience function to retrieve metadata in string form.
+	// pre: the given uri must be valid. It does not matter if the same resource is currently being played.
+	// post: does not affect backend states.
+	std::string get_metadata_as_string(std::string const &uri_str);
 
 	void exec_command(std::string const &command, params_t const &params, std::string &response_command, params_t &response_params);
 
