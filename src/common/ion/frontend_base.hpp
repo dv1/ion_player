@@ -245,6 +245,10 @@ public:
 	// tell the caller not to restart this backend. Otherwise, tell the caller to restart it.
 	bool backend_terminated()
 	{
+		return true;
+		// TODO: the code below must not be in effect if only one backend is present, since otherwise nothing will ever happen,
+		// and the logfile will never report any more backend crashes, which is bad for troubleshooting
+#if 0
 		++crash_count;
 
 		if (current_uri)
@@ -261,6 +265,7 @@ public:
 			else
 				return true;
 		}
+#endif
 	}
 
 

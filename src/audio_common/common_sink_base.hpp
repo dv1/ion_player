@@ -173,7 +173,7 @@ public:
 
 	virtual void start(decoder_ptr_t decoder_, decoder_ptr_t next_decoder_)
 	{
-		assert(!decoder_); // No decoder -> error
+		assert(decoder_); // No decoder -> error
 
 		if (run_playback_loop)
 		{
