@@ -19,13 +19,13 @@
 **************************************************************************/
 
 
-#if 0
 #ifndef ION_AUDIO_BACKEND_FAAD_DECODER_HPP
 #define ION_AUDIO_BACKEND_FAAD_DECODER_HPP
 
 
 #include <faad.h>
 #include <boost/optional.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "decoder.hpp"
 #include "decoder_creator.hpp"
@@ -81,7 +81,7 @@ public:
 protected:
 	typedef boost::optional < faacDecHandle > faad_handle_optional_t;
 
-	void initialize(unsigned int const frequency);
+	bool initialize(unsigned int const frequency);
 	void close();
 
 
@@ -90,6 +90,7 @@ protected:
 	faad_handle_optional_t faad_handle;
 	bool initialized;
 	playback_properties playback_properties_;
+	unsigned int decoder_sample_rate;
 
 	unsigned long sample_rate;
 	unsigned char channels;
@@ -113,6 +114,5 @@ public:
 }
 
 
-#endif
 #endif
 

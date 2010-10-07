@@ -155,7 +155,7 @@ def build(bld):
 
 	obj = bld(
 		features = ['cxx', 'cstaticlib'],
-		uselib = 'BOOST_THREAD ALSA MPG123 VORBISFILE FLACPP VORBIS OGG ADPLUG BINIO UADE BOOST BUILDMODE STRICT',
+		uselib = 'BOOST_THREAD ALSA MPG123 VORBISFILE FLACPP VORBIS OGG FAAD ADPLUG BINIO UADE BOOST BUILDMODE STRICT',
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = uselib_locals,

@@ -35,6 +35,9 @@
 #ifdef WITH_VORBIS_DECODER
 #include "vorbis_decoder.hpp"
 #endif
+#ifdef WITH_FAAD_DECODER
+#include "faad_decoder.hpp"
+#endif
 #ifdef WITH_ADPLUG_DECODER
 #include "adplug_decoder.hpp"
 #endif
@@ -89,6 +92,9 @@ struct creators
 #endif
 #ifdef WITH_VORBIS_DECODER
 		decoder_creators_container.push_back(new ion::audio_backend::vorbis_decoder_creator);
+#endif
+#ifdef WITH_FAAD_DECODER
+		decoder_creators_container.push_back(new ion::audio_backend::faad_decoder_creator);
 #endif
 #ifdef WITH_ADPLUG_DECODER
 		decoder_creators_container.push_back(new ion::audio_backend::adplug_decoder_creator);

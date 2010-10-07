@@ -19,7 +19,6 @@
 **************************************************************************/
 
 
-#if 0
 #include <iostream>
 #include <boost/thread/locks.hpp>
 #include "faad_decoder.hpp"
@@ -31,7 +30,7 @@ namespace audio_backend
 {
 
 
-faad_decoder::faad_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_)
+faad_decoder::faad_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_):
 	decoder(send_event_callback),
 	source_(source_),
 	initialized(false)
@@ -45,27 +44,42 @@ faad_decoder::faad_decoder(send_event_callback_t const send_event_callback, sour
 	if (source_size == 0)
 		return; // 0 bytes? we cannot use this.
 
-	long ret;
-
-	faacDecConfigurationPtr conf = faacDecGetCurrentConfiguration(faad_handle);
-	faacDecSetConfiguration(faad_handle, conf);
-
-	faad_handle = faacDecOpen();
-	unsigned long sample_rate;
-	unsigned char channels;
-	ret = faacDecInit(faad_handle, &read_buffer[0], read_buffer.size(), &sample_rate, &channels);
-	if (ret < 0)
-		return;
-
-	initialized = true;
+	initialized = initialize(48000);
 }
 
 
-void faad_decoder::initialize(unsigned int const frequency)
+bool faad_decoder::initialize(unsigned int const frequency)
 {
 	close();
 
+	long ret;
 
+	faad_handle = faacDecOpen();
+
+	faacDecConfigurationPtr conf = faacDecGetCurrentConfiguration(*faad_handle);
+	conf->defSampleRate = frequency;
+	conf->outputFormat = FAAD_FMT_16BIT;
+	faacDecSetConfiguration(*faad_handle, conf);
+
+	unsigned long sample_rate;
+	unsigned char channels;
+
+	std::vector < uint8_t > read_buffer(512);
+	long actual_read = source_->read(&read_buffer[0], read_buffer.size());
+	source_->reset();
+	read_buffer.resize(actual_read);
+
+	ret = faacDecInit(*faad_handle, &read_buffer[0], read_buffer.size(), &sample_rate, &channels);
+	if (ret < 0)
+	{
+		close();
+		return false;
+	}
+	else
+	{
+		decoder_sample_rate = sample_rate;
+		return true;
+	}
 }
 
 
@@ -116,6 +130,7 @@ long faad_decoder::set_current_position(long const new_position)
 		return -1;
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
+	return 0;
 }
 
 
@@ -125,6 +140,7 @@ long faad_decoder::get_current_position() const
 		return -1;
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
+	return 0;
 }
 
 
@@ -161,11 +177,13 @@ uri faad_decoder::get_uri() const
 
 long faad_decoder::get_num_ticks() const
 {
+	return 0;
 }
 
 
 long faad_decoder::get_num_ticks_per_second() const
 {
+	return decoder_sample_rate;
 }
 
 
@@ -182,11 +200,13 @@ void faad_decoder::set_playback_properties(playback_properties const &new_playba
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
 	playback_properties_ = new_playback_properties;
+	initialize(playback_properties_.frequency);
 }
 
 
 unsigned int faad_decoder::get_decoder_samplerate() const
 {
+	return decoder_sample_rate;
 }
 
 
@@ -195,6 +215,10 @@ unsigned int faad_decoder::update(void *dest, unsigned int const num_samples_to_
 	if (!is_initialized())
 		return 0;
 
+	faacDecFrameInfo info;
+	faacDecDecode(*faad_handle, &info, reinterpret_cast < unsigned char* > (dest), num_samples_to_write * 4);
+
+	return ((info.error == 0) && (info.channels != 0)) ? (info.samples / info.channels) : 0;
 }
 
 
@@ -207,9 +231,7 @@ faad_decoder_creator::faad_decoder_creator()
 
 decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
-	if ((mime_type != "audio/x-hx-aac-adts") && (mime_type != "audio/x-hx-aac-adif"))
-		return decoder_ptr_t();
-
+	return decoder_ptr_t(); // TODO: remove this later
 
 	faad_decoder *faad_decoder_ = new faad_decoder(send_event_callback, source_);
 	if (!faad_decoder_->is_initialized())
@@ -224,7 +246,4 @@ decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t cons
 
 }
 }
-
-
-#endif
 
