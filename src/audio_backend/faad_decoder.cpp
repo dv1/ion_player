@@ -231,7 +231,21 @@ faad_decoder_creator::faad_decoder_creator()
 
 decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback)
 {
-	return decoder_ptr_t(); // TODO: remove this later
+	// Test found in libmagic's animation file
+	{
+		uint8_t bytes[4];
+		source_->reset();
+		source_->read(bytes, 4);
+		source_->reset();
+
+		// check if this is an AAC file in ADIF format
+		if ((bytes[0] != 'A') || (bytes[1] != 'D') || (bytes[2] != 'I') || (bytes[3] != 'F'))
+			return decoder_ptr_t();
+
+		// check if this is an AAC file in ADTS format
+		if ((bytes[0] != 0xff) || ((bytes[1] & 0xf6) != 0xf0))
+			return decoder_ptr_t();
+	}
 
 	faad_decoder *faad_decoder_ = new faad_decoder(send_event_callback, source_);
 	if (!faad_decoder_->is_initialized())

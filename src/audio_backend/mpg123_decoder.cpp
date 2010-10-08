@@ -477,7 +477,7 @@ decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t co
 
 	bool recognized = false;
 
-	// First, try if it starts with an ID3 tag
+	// Try if it starts with an ID3 tag
 	if (!recognized)
 	{
 		source_->reset();
@@ -487,7 +487,32 @@ decoder_ptr_t mpg123_decoder_creator::create(source_ptr_t source_, metadata_t co
 		recognized = (buf[0] == 'I') && (buf[1] == 'D') && (buf[2] == '3');
 	}
 
-	// If the ID3 test failed, try a different test found in libmagic's animation file
+	// Try if this is a RIFF (AVI) file with MP3 embedded
+	{
+		source_->reset();
+
+		char buf[4];
+		source_->read(buf, 4);
+		if ((buf[0] == 'R') && (buf[1] == 'I') && (buf[2] == 'F') && (buf[3] == 'F'))
+		{
+			source_->seek(4, source::seek_relative);
+			source_->read(buf, 4);
+
+			// Either it is MP3 data directly embedded in the RIFF container
+			if ((buf[0] == 'R') && (buf[1] == 'M') && (buf[2] == 'P') && (buf[3] == '3'))
+				recognized = true;
+			else if ((buf[0] == 'W') && (buf[1] == 'A') && (buf[2] == 'V') && (buf[3] == 'E')) // or it is a WAVE stream, which itself is a container
+			{
+				source_->seek(8, source::seek_relative);
+				uint8_t bytes[2];
+				source_->read(bytes, 2);
+				// the two bytes form up a little-endian signed 16bit value - this value identifies the wave contents; 85 means "MP3"
+				recognized = (bytes[0] == 85) && (bytes[1] == 0);
+			}
+		}
+	}
+
+	// Try a different test found in libmagic's animation file for ADTS files
 	if (!recognized)
 	{
 		source_->reset();

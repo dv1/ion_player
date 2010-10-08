@@ -555,7 +555,7 @@ long uade_decoder::get_num_ticks() const
 
 long uade_decoder::get_num_ticks_per_second() const
 {
-	return 0;
+	return playback_properties_.frequency;
 }
 
 
