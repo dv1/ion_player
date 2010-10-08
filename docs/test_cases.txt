@@ -1,1 +1,16 @@
+FILE TYPES TO TEST:
+------------------------
+raw mp3 - with ID3 tag
+raw mp3 - without ID3 (-> ADTS header check)
+mp3 in RIFF (AVI), with RMP3 audio stream
+mp3 in RIFF (AVI), with WAVE audio stream, type MP3
+AAC in ADTS format
+AAC in ADIF format
+AAC in MP4 container
+raw FLAC stream
+FLACC in Ogg container
+Vorbis in Ogg container
+
+MISCELLANEOUS TEST CASES:
+------------------------
 mdat.world 5 transition subsong 3/13 -> 4/13: playback history test (4/13 immediately ends)

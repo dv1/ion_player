@@ -50,6 +50,7 @@ Audio backend:
 * modplug decoder (http://gnu.ethz.ch/linuks.mine.nu/modplugplay/)
 * trueaudio (tta) decoder (http://en.true-audio.com/)
 * in_cube or vgmstream decoder for Gamecube audio
+* investigate whether or not to write an RF64/BWF decoder
 * Windows waveout sink
 * Pulseaudio sink
 * JACK sink
