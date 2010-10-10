@@ -86,19 +86,25 @@ public:
 
 	/**
 	* Pauses the decoder. Repeated calls are ignored.
+	* Default implementation does nothing.
 	*
 	* @pre The decoder must have been initialized properly, must be operating correctly, and not be in a paused state (if it is, the call will be ignored)
 	* @post The decoder will be in a paused state
 	*/
-	virtual void pause() = 0;
+	virtual void pause()
+	{
+	}
 
 	/**
 	* Resumes the decoder. Repeated calls are ignored.
+	* Default implementation does nothing.
 	*
 	* @pre The decoder must have been initialized properly, must be operating correctly, and be in a paused state (if it is not, the call will be ignored)
 	* @post The decoder will no longer be in a paused state
 	*/
-	virtual void resume() = 0;
+	virtual void resume()
+	{
+	}
 
 	/**
 	* Moves the current resource position to the one specified. The position is given in ticks. The decoder does _not_ have to guarantee that the current position
@@ -106,7 +112,7 @@ public:
 	* The return value will be the new current position, which as described may differ from new_position.
 	*
 	* @param new_position The new position, in ticks
-	* @return The new position, of -1 if setting the new position failed or is not possible (example: internet radio streams)
+	* @return The new position
 	* @pre new_position must be valid (>=0 and < get_num_ticks()); the decoder must be correctly initialized
 	* @post The position will have changed if the precondition was met and the call was successful (= -1 was not returned); if it failed, nothing will have been changed
 	*/
@@ -114,7 +120,7 @@ public:
 
 	/**
 	* Returns the current position, in ticks.
-	* @return The current position, or -1 if getting the position fails or is not possible (example: internet radio streams)
+	* @return The current position
 	*/
 	virtual long get_current_position() const = 0;
 
@@ -166,10 +172,11 @@ public:
 
 	/**
 	* Gets the amount of ticks that make up one second. This information is necessary to convert the return value of get_num_ticks() to seconds: the result of get_num_ticks()/get_num_ticks_per_second()
-	* would be the resource length in seconds. In cases where the amount of ticks is unavailable (as described for get_num_ticks()), this function returns -1.
+	* would be the resource length in seconds. This must always be valid, even if get_num_ticks() returns zero (if there is no num ticks per second information available, use the
+	* playback properties frequency/decoder sample rate instead for example)
 	*
 	* @pre the decoder must be correctly initialized
-	* @return Amount of ticks that make up one second, or 0 if this information is unavailable
+	* @return Amount of ticks that make up one second
 	*/
 	virtual long get_num_ticks_per_second() const = 0;
 

@@ -29,9 +29,6 @@ Qt4 audio frontend:
 * Add shuffle
 
 Audio backend:
-* num_ticks == 0 means the resource cannot seek; in that case, let the decoders do a "fake" progress - count upwards in each update() call, and use that counter as return value
-  for get_current_position; increment the counter by the num_tick_per_second value (this also fixes the issue below about the timer in the frontend)
-* faad decoder
 * sidplay decoder (http://sidplay2.sourceforge.net/)
 * volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
@@ -64,8 +61,6 @@ Both:
 * Change per-resource looping design: instead of setting the loop count with set_loop_mode for each resource, put a "loop_mode" member into the metadata
   if not present, the global loop mode shall be used; set_loop_mode would then only be used for said global loop mode
 * Examine code for undefined cases
-* currently, if the current playback doesn't have num_ticks or num_ticks_per_second, an extra QTime is used in the frontend, in short, a progress is calculated in the frontend
-  the proper solution would to do this calculation in the backend
 * support mid-play metadata changes (including title, artist, album, song length, ....)
 * Ability to edit metadata
 * extensive testing (esp. fault tolerance)
@@ -74,6 +69,11 @@ Both:
 =======================================================================================
 DONE:
 
+* num_ticks == 0 means the resource cannot seek; in that case, let the decoders do a "fake" progress - count upwards in each update() call, and use that counter as return value
+  for get_current_position; increment the counter by the num_tick_per_second value (this also fixes the issue below about the timer in the frontend)
+* currently, if the current playback doesn't have num_ticks or num_ticks_per_second, an extra QTime is used in the frontend, in short, a progress is calculated in the frontend
+  the proper solution would to do this calculation in the backend
+* faad decoder
 * fix status bar indicators for current time & length; it doesnt work properly with resources of unknown length
   also, the played time should be always visible, even with an unknown length, that is, get_current_position should do something
 * Store in/restore from config the currently visible playlist

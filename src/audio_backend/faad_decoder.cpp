@@ -34,7 +34,8 @@ namespace audio_backend
 faad_decoder::faad_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_):
 	decoder(send_event_callback),
 	source_(source_),
-	initialized(false)
+	initialized(false),
+	current_position(0)
 {
 	// Misc checks & initializations
 
@@ -133,14 +134,14 @@ void faad_decoder::resume()
 long faad_decoder::set_current_position(long const)
 {
 	// It generally does not seem to be possible to seek in AAC songs with FAAD
-	return -1;
+	return current_position;
 }
 
 
 long faad_decoder::get_current_position() const
 {
 	// It generally does not seem to be possible to retrieve the current position with FAAD
-	return -1;
+	return current_position;
 }
 
 
@@ -259,6 +260,7 @@ unsigned int faad_decoder::update(void *dest, unsigned int const num_samples_to_
 		std::memmove(&out_buffer[0], &out_buffer[num_bytes_to_copy], out_buffer.size() - num_bytes_to_copy);
 	out_buffer.resize(out_buffer.size() - num_bytes_to_copy);
 
+	current_position += num_bytes_to_copy / multiplier;
 	return num_bytes_to_copy / multiplier;
 }
 

@@ -104,6 +104,7 @@ protected:
 	playback_properties playback_properties_;
 	unsigned int decoder_sample_rate;
 	buffer_t in_buffer, out_buffer;
+	long current_position;
 
 	unsigned long sample_rate;
 	unsigned char channels;

@@ -79,6 +79,7 @@ protected:
 	source_ptr_t source_;
 	long subsong_nr;
 	playback_properties playback_properties_;
+	long current_position;
 
 	struct internal_data;
 	internal_data *internal_data_;

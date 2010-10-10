@@ -117,7 +117,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 
 	current_position_timer = new QTimer(this);
-	current_position_timer->setInterval(1000);
+	current_position_timer->setInterval(500);
 	connect(current_position_timer, SIGNAL(timeout()), this, SLOT(get_current_playback_position()));
 
 	scan_directory_timer.setSingleShot(false);
@@ -410,6 +410,9 @@ void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_stat
 
 void main_window::get_current_playback_position()
 {
+	if (audio_frontend_->is_paused())
+		return;
+
 	audio_frontend_->issue_get_position_command();
 	unsigned int current_position = audio_frontend_->get_current_position();
 	if (position_volume_widget_ui.position->isEnabled())
@@ -642,8 +645,6 @@ void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 	else
 		current_position_timer->stop();
 	position_volume_widget_ui.position->set_value(0);
-
-	current_uri_changed_timestamp = QDateTime::currentDateTime();
 	current_playback_time->setText(get_time_string(0, 0));
 }
 
@@ -660,7 +661,6 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 
 		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
 		current_num_ticks_per_second = get_metadata_value < unsigned int > (*new_metadata, "num_ticks_per_second", 0);
-		current_uri_changed_timestamp = QDateTime::currentDateTime();
 
 		if (num_ticks > 0)
 		{
@@ -696,7 +696,7 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 	{
 		current_song_title->setText("");
 		current_song_length->setText("");
-		current_playback_time->setText(get_time_string(0, 0));
+		current_playback_time->setText("");
 		position_volume_widget_ui.position->setEnabled(false);
 	}
 }
@@ -706,17 +706,16 @@ void main_window::set_current_time_label(unsigned int const current_position)
 {
 	unsigned int time_in_seconds = 0;
 	if (current_num_ticks_per_second > 0)
-		time_in_seconds = current_position / current_num_ticks_per_second;
-	else
 	{
-		QDateTime current_time = QDateTime::currentDateTime();
-		time_in_seconds = current_uri_changed_timestamp.secsTo(current_time);
+		time_in_seconds = current_position / current_num_ticks_per_second;
+
+		unsigned int minutes = time_in_seconds / 60;
+		unsigned int seconds = time_in_seconds % 60;
+
+		current_playback_time->setText(get_time_string(minutes, seconds));
 	}
-
-	unsigned int minutes = time_in_seconds / 60;
-	unsigned int seconds = time_in_seconds % 60;
-
-	current_playback_time->setText(get_time_string(minutes, seconds));
+	else
+		current_playback_time->setText("");
 }
 
 

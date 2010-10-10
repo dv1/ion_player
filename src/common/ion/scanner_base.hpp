@@ -197,7 +197,7 @@ protected:
 							{
 								// This compensates for the 0-starting indices
 								int resource_index = boost::lexical_cast < int > (resource_index_str);
-								resource_index_str = boost::lexical_cast < std::string > (resource_index + 1);
+								resource_index_str = boost::lexical_cast < std::string > (resource_index + 1 - min_sub_resource_index);
 							}
 							catch (boost::bad_lexical_cast const &)
 							{

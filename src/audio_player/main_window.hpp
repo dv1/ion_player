@@ -24,7 +24,6 @@
 
 #include <QMainWindow>
 #include <QProcess>
-#include <QDateTime>
 #include <QTimer>
 #include <QDirIterator>
 
@@ -134,7 +133,6 @@ protected:
 
 	QProcess *backend_process;
 	scanner *scanner_;
-	QDateTime current_uri_changed_timestamp;
 	QTimer *current_position_timer;
 	QTimer scan_directory_timer;
 

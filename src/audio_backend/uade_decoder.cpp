@@ -439,6 +439,7 @@ uade_decoder::uade_decoder(send_event_callback_t const send_event_callback, sour
 	decoder(send_event_callback),
 	source_(source_),
 	subsong_nr(-1),
+	current_position(0),
 	internal_data_(0)
 {
 	internal_data_ = new internal_data;
@@ -490,15 +491,15 @@ void uade_decoder::resume()
 }
 
 
-long uade_decoder::set_current_position(long const new_position)
+long uade_decoder::set_current_position(long const)
 {
-	return 0;
+	return current_position;
 }
 
 
 long uade_decoder::get_current_position() const
 {
-	return 0;
+	return current_position;
 }
 
 
@@ -555,7 +556,7 @@ long uade_decoder::get_num_ticks() const
 
 long uade_decoder::get_num_ticks_per_second() const
 {
-	return playback_properties_.frequency;
+	return 50000;
 }
 
 
@@ -619,6 +620,7 @@ unsigned int uade_decoder::update(void *dest, unsigned int const num_samples_to_
 	else
 		internal_data_->sample_buffer.resize(0);
 
+	current_position += num_samples_to_return * 50000 / playback_properties_.frequency;
 	return num_samples_to_return;
 }
 
