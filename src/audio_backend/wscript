@@ -68,7 +68,9 @@ def configure(conf):
 			conf.define('HAVE_OGG_VORBIS', 1)
 
 	if not Options.options.without_faad_decoder:
-		faad_ret_1 = conf.check_cc(header_name = 'faad.h', uselib_store = 'FAAD')
+		faad_ret_1 = conf.check_cc(header_name = 'neaacdec.h', uselib_store = 'FAAD')
+		if not faad_ret_1:
+			faad_ret_1 = conf.check_cc(header_name = 'faad.h', uselib_store = 'FAAD')
 		faad_ret_2 = conf.check_cc(lib = 'faad', uselib_store = 'FAAD')
 		if faad_ret_1 and faad_ret_2:
 			conf.define('WITH_FAAD_DECODER', 1)
@@ -159,7 +161,7 @@ def build(bld):
 		target = 'ion_audio_backend',
 		name = 'ion_audio_backend',
 		uselib_local = uselib_locals,
-		includes = '.',
+		includes = '. ../..',
 		source = sources
 	)
 

@@ -19,6 +19,7 @@
 **************************************************************************/
 
 
+#include <cstring>
 #include <iostream>
 #include <boost/thread/locks.hpp>
 #include "faad_decoder.hpp"
@@ -64,20 +65,28 @@ bool faad_decoder::initialize(unsigned int const frequency)
 	unsigned long sample_rate;
 	unsigned char channels;
 
-	std::vector < uint8_t > read_buffer(512);
-	long actual_read = source_->read(&read_buffer[0], read_buffer.size());
 	source_->reset();
-	read_buffer.resize(actual_read);
+	in_buffer.resize(32768);
+	long num_read_bytes = source_->read(&in_buffer[0], 32768);
+	if (num_read_bytes <= 0)
+		return false;
+	in_buffer.resize(num_read_bytes);
 
-	ret = faacDecInit(*faad_handle, &read_buffer[0], read_buffer.size(), &sample_rate, &channels);
+	ret = faacDecInit(*faad_handle, &in_buffer[0], in_buffer.size(), &sample_rate, &channels);
 	if (ret < 0)
 	{
+		std::cerr << "faacDecInit failed" << std::endl;
 		close();
 		return false;
 	}
 	else
 	{
 		decoder_sample_rate = sample_rate;
+		if (ret > 0)
+		{
+			std::memmove(&in_buffer[0], &in_buffer[ret], in_buffer.size() - ret);
+			in_buffer.resize(in_buffer.size() - ret);
+		}
 		return true;
 	}
 }
@@ -121,26 +130,17 @@ void faad_decoder::resume()
 }
 
 
-long faad_decoder::set_current_position(long const new_position)
+long faad_decoder::set_current_position(long const)
 {
-	if (!can_playback())
-		return -1;
-
-	if ((new_position < 0) || (new_position >= get_num_ticks()))
-		return -1;
-
-	boost::lock_guard < boost::mutex > lock(mutex_);
-	return 0;
+	// It generally does not seem to be possible to seek in AAC songs with FAAD
+	return -1;
 }
 
 
 long faad_decoder::get_current_position() const
 {
-	if (!can_playback())
-		return -1;
-
-	boost::lock_guard < boost::mutex > lock(mutex_);
-	return 0;
+	// It generally does not seem to be possible to retrieve the current position with FAAD
+	return -1;
 }
 
 
@@ -215,10 +215,51 @@ unsigned int faad_decoder::update(void *dest, unsigned int const num_samples_to_
 	if (!is_initialized())
 		return 0;
 
-	faacDecFrameInfo info;
-	faacDecDecode(*faad_handle, &info, reinterpret_cast < unsigned char* > (dest), num_samples_to_write * 4);
+	unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 
-	return ((info.error == 0) && (info.channels != 0)) ? (info.samples / info.channels) : 0;
+	faacDecFrameInfo info;
+	while (out_buffer.size() < (num_samples_to_write * multiplier))
+	{
+		size_t actual_in_size = in_buffer.size();
+
+		if (actual_in_size < 32768)
+		{
+			size_t old_in_size = actual_in_size;
+			in_buffer.resize(old_in_size + 32768);
+			long num_read_bytes = source_->read(&in_buffer[old_in_size], 32768);
+			if (num_read_bytes <= 0)
+				break;
+			actual_in_size = old_in_size + num_read_bytes;
+		}
+
+		void *output_samples = faacDecDecode(*faad_handle, &info, reinterpret_cast < unsigned char* > (&in_buffer[0]), actual_in_size);
+		unsigned int num_remaining_bytes = actual_in_size;
+
+		num_remaining_bytes -= info.bytesconsumed;
+		std::memmove(&in_buffer[0], &in_buffer[info.bytesconsumed], num_remaining_bytes);
+		in_buffer.resize(num_remaining_bytes);
+
+		if ((output_samples == 0) || (info.error != 0) || (info.channels == 0))
+		{
+			initialized = false;
+			break;
+		}
+
+		if (info.samples > 0)
+		{
+			size_t old_out_size = out_buffer.size();
+			out_buffer.resize(old_out_size + info.samples * playback_properties_.num_channels);
+			std::memcpy(&out_buffer[old_out_size], output_samples, info.samples * playback_properties_.num_channels);
+		}
+	}
+
+	size_t num_bytes_to_copy = std::min(size_t(num_samples_to_write * multiplier), out_buffer.size());
+	std::memcpy(dest, &out_buffer[0], num_bytes_to_copy);
+	if (out_buffer.size() > num_bytes_to_copy)
+		std::memmove(&out_buffer[0], &out_buffer[num_bytes_to_copy], out_buffer.size() - num_bytes_to_copy);
+	out_buffer.resize(out_buffer.size() - num_bytes_to_copy);
+
+	return num_bytes_to_copy / multiplier;
 }
 
 
@@ -240,11 +281,11 @@ decoder_ptr_t faad_decoder_creator::create(source_ptr_t source_, metadata_t cons
 
 		// check if this is an AAC file in ADIF format
 		if ((bytes[0] != 'A') || (bytes[1] != 'D') || (bytes[2] != 'I') || (bytes[3] != 'F'))
-			return decoder_ptr_t();
-
-		// check if this is an AAC file in ADTS format
-		if ((bytes[0] != 0xff) || ((bytes[1] & 0xf6) != 0xf0))
-			return decoder_ptr_t();
+		{
+			// check if this is an AAC file in ADTS format
+			if ((bytes[0] != 0xff) || ((bytes[1] & 0xf6) != 0xf0))
+				return decoder_ptr_t();
+		}
 	}
 
 	faad_decoder *faad_decoder_ = new faad_decoder(send_event_callback, source_);

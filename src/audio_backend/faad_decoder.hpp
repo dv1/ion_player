@@ -22,8 +22,19 @@
 #ifndef ION_AUDIO_BACKEND_FAAD_DECODER_HPP
 #define ION_AUDIO_BACKEND_FAAD_DECODER_HPP
 
+#include <stdint.h>
+#include <vector>
 
+#include <ion_config.h>
+
+#ifdef HAVE_NEAACDEC_H
+#include <neaacdec.h>
+#elif HAVE_FAAD_H
 #include <faad.h>
+#else
+#error No FAAD header found during build configuration
+#endif
+
 #include <boost/optional.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -80,6 +91,7 @@ public:
 
 protected:
 	typedef boost::optional < faacDecHandle > faad_handle_optional_t;
+	typedef std::vector < uint8_t > buffer_t;
 
 	bool initialize(unsigned int const frequency);
 	void close();
@@ -91,6 +103,7 @@ protected:
 	bool initialized;
 	playback_properties playback_properties_;
 	unsigned int decoder_sample_rate;
+	buffer_t in_buffer, out_buffer;
 
 	unsigned long sample_rate;
 	unsigned char channels;
