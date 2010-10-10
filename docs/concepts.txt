@@ -17,14 +17,16 @@ Playlist concept:
 
 Types:
 
-playlist_traits < Playlist > ::resource_event_signal_t     boost signals2 compatible type, signature void(uri_set_t const &uris, bool const before)
-playlist_traits < Playlist > ::playlist_renamed_signal_t     boost signals2 compatible type, signature void(std::string const &new_name)
+playlist_traits < Playlist > ::resource_event_signal_t           boost signals2 compatible type, signature void(uri_set_t const &uris, bool const before)
+playlist_traits < Playlist > ::resource_incompatible_signal_t    boost signals2 compatible type, signature void(ion::uri const &incompatible_uri)
+playlist_traits < Playlist > ::playlist_renamed_signal_t         boost signals2 compatible type, signature void(std::string const &new_name)
 
 Functions:
 
 playlist_traits < Playlist > ::resource_event_signal_t & get_resource_added_signal(Playlist &playlist)
 playlist_traits < Playlist > ::resource_event_signal_t & get_resource_removed_signal(Playlist &playlist)
 playlist_traits < Playlist > ::resource_event_signal_t & get_resource_metadata_changed_signal(Playlist &playlist)
+playlist_traits < Playlist > ::resource_incompatible_signal_t & get_resource_incompatible_signal(Playlist &playlist)
 playlist_traits < Playlist > ::playlist_renamed_signal_t get_playlist_renamed_signal(Playlist &playlist)
 metadata_optional_t get_metadata_for(Playlist const &playlist, uri const &uri_)
 uri_optional_t get_preceding_uri(Playlist const &playlist, uri const &uri_)

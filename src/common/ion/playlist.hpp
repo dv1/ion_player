@@ -52,8 +52,9 @@ class playlist
 public:
 	typedef boost::signals2::signal < void(bool const before) > all_resources_changed_signal_t;
 	typedef boost::signals2::signal < void(uri_set_t const &uris, bool const before) > resource_event_signal_t;
+	typedef boost::signals2::signal < void(uri const &uri_) > resource_incompatible_signal_t;
 	typedef boost::signals2::signal < void(std::string const &new_name) > playlist_renamed_signal_t;
-	typedef boost::fusion::vector2 < ion::uri, metadata_t > entry_t;
+	typedef boost::fusion::vector3 < ion::uri, metadata_t, bool > entry_t; // URI, metadata, marked as incompatible yes/no
 	typedef uint64_t index_t;
 	typedef uint64_t num_entries_t;
 	typedef boost::optional < index_t > index_optional_t;
@@ -65,6 +66,7 @@ public:
 	inline resource_event_signal_t & get_resource_added_signal() { return resource_added_signal; }
 	inline resource_event_signal_t & get_resource_removed_signal() { return resource_removed_signal; }
 	inline resource_event_signal_t & get_resource_metadata_changed_signal() { return resource_metadata_changed_signal; }
+	inline resource_incompatible_signal_t & get_resource_incompatible_signal() { return resource_incompatible_signal; }
 	inline all_resources_changed_signal_t & get_all_resources_changed_signal() { return all_resources_changed_signal; }
 
 	inline playlist_renamed_signal_t & get_playlist_renamed_signal() { return playlist_renamed_signal; }
@@ -103,6 +105,7 @@ public:
 
 protected:
 	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
+	resource_incompatible_signal_t resource_incompatible_signal;
 	all_resources_changed_signal_t all_resources_changed_signal;
 	playlist_renamed_signal_t playlist_renamed_signal;
 	std::string name;
@@ -152,6 +155,12 @@ inline playlist::resource_event_signal_t & get_resource_removed_signal(playlist 
 inline playlist::resource_event_signal_t & get_resource_metadata_changed_signal(playlist &playlist_)
 {
 	return playlist_.get_resource_metadata_changed_signal();
+}
+
+
+inline playlist::resource_incompatible_signal_t & get_resource_incompatible_signal(playlist &playlist_)
+{
+	return playlist_.get_resource_incompatible_signal();
 }
 
 
@@ -233,7 +242,7 @@ inline playlist::index_optional_t get_entry_index(playlist const &playlist_, uri
 
 inline playlist::entry_t create_entry(playlist &, uri const &uri_, metadata_t const &metadata_)
 {
-	return playlist::entry_t(uri_, metadata_);
+	return playlist::entry_t(uri_, metadata_, false);
 }
 
 

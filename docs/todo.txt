@@ -2,7 +2,6 @@
 OPEN:
 
 Qt4 audio frontend:
-* Mark crashed/corrupt entries in playlist
 * File/directory names are corrupt sometimes when adding them (they have a file:// prefix already sometimes; note, this is a Qt/KDE problem - just compensate for it)
 * Configuration UIs for backend modules (decoders, sinks)
 * Accelerate metadata scan by spawning the backend only at the beginning & when it crashes
@@ -60,6 +59,7 @@ Audio backend:
 Both:
 * Change per-resource looping design: instead of setting the loop count with set_loop_mode for each resource, put a "loop_mode" member into the metadata
   if not present, the global loop mode shall be used; set_loop_mode would then only be used for said global loop mode
+* Support multiple backends (this affects scanner, frontend base, audio frontend, and the resource incompatibility bit in the playlist entries)
 * Examine code for undefined cases
 * support mid-play metadata changes (including title, artist, album, song length, ....)
 * Ability to edit metadata
@@ -69,6 +69,7 @@ Both:
 =======================================================================================
 DONE:
 
+* Mark crashed/corrupt entries in playlist
 * num_ticks == 0 means the resource cannot seek; in that case, let the decoders do a "fake" progress - count upwards in each update() call, and use that counter as return value
   for get_current_position; increment the counter by the num_tick_per_second value (this also fixes the issue below about the timer in the frontend)
 * currently, if the current playback doesn't have num_ticks or num_ticks_per_second, an extra QTime is used in the frontend, in short, a progress is calculated in the frontend

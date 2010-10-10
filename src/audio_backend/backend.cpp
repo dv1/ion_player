@@ -318,14 +318,18 @@ void backend::start_playback(params_t const &params)
 	}
 	catch (unrecognized_resource const &exc)
 	{
+		next_decoder = decoder_ptr_t();
 		send_event_callback("unrecognized_resource", boost::assign::list_of(uri_str[1]));
 	}
 	catch (resource_not_found const &exc)
 	{
+		next_decoder = decoder_ptr_t();
 		send_event_callback("resource_not_found", boost::assign::list_of(uri_str[1]));
 	}
 	catch (std::runtime_error const &exc)
 	{
+		next_decoder = decoder_ptr_t();
+
 		params_t response_params;
 
 		response_params.clear();
@@ -339,7 +343,7 @@ void backend::start_playback(params_t const &params)
 		send_event_callback("error", response_params);
 	}
 
-	// this assignment happens -after- the set_next_decoder() call in case the function throws an exception
+	// this assignment happens -after- the set_next_decoder() call in case the function throws an unhandled exception
 	current_decoder = new_current_decoder;
 
 	try

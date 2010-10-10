@@ -20,6 +20,7 @@
 
 
 #include <QApplication>
+#include <QBrush>
 #include <QFont>
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/spirit/home/phoenix/core/argument.hpp>
@@ -43,8 +44,8 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_t &playlists_, 
 
 	entry_added_signal_connection = get_resource_added_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::entries_added, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	entry_removed_signal_connection = get_resource_removed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::entries_removed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
+	resource_incompatible_connection = get_resource_incompatible_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::resource_incompatible, this, boost::phoenix::arg_names::arg1));
 	all_resources_changed_connection = get_all_resources_changed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::all_resources_changed, this, boost::phoenix::arg_names::arg1));
-
 	active_playlist_changed_connection = get_active_playlist_changed_signal(playlists_).connect(boost::phoenix::bind(&playlist_qt_model::active_playlist_changed, this, boost::phoenix::arg_names::arg1));
 }
 
@@ -53,6 +54,7 @@ playlist_qt_model::~playlist_qt_model()
 {
 	entry_added_signal_connection.disconnect();
 	entry_removed_signal_connection.disconnect();
+	resource_incompatible_connection.disconnect();
 	all_resources_changed_connection.disconnect();
 	active_playlist_changed_connection.disconnect();
 }
@@ -108,6 +110,12 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 			}
 			break;
 		}
+
+
+		case Qt::BackgroundRole:
+			if (boost::fusion::at_c < 2 > (*entry))
+				return QBrush(Qt::darkRed);
+			break;
 
 
 		case Qt::FontRole:
@@ -252,6 +260,16 @@ void playlist_qt_model::entries_removed(uri_set_t const, bool const before)
 }
 
 
+void playlist_qt_model::resource_incompatible(uri const uri_)
+{
+	playlist_traits < playlist > ::index_optional_t uri_index = get_entry_index(playlist_, uri_);
+	if (!uri_index)
+		return;
+
+	dataChanged(createIndex(*uri_index, 0), createIndex(*uri_index, columnCount(QModelIndex()) - 1));
+}
+
+
 void playlist_qt_model::all_resources_changed(bool const before)
 {
 	if (!before)
@@ -265,7 +283,7 @@ void playlist_qt_model::active_playlist_changed(playlists_traits < playlists_t >
 
 	if (!current_uri)
 		return;
-		
+
 	playlist_traits < playlist > ::index_optional_t uri_index = get_entry_index(*playlist_, *current_uri);
 	if (!uri_index)
 		return;

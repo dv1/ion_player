@@ -108,6 +108,16 @@ uri_optional_t flat_playlist::get_succeeding_uri(uri const &uri_) const
 
 void flat_playlist::mark_backend_resource_incompatibility(uri const &uri_, std::string const &backend_type)
 {
+	entry_sequence_t &entry_sequence = entries.get < sequence_tag > ();
+	entry_sequence_t::iterator seq_iter = entries.project < sequence_tag > (get_uri_iterator_for(uri_));
+
+	if (seq_iter != entry_sequence.end())
+	{
+		entry_t entry = *seq_iter;
+		boost::fusion::at_c < 2 > (entry) = true;
+		entry_sequence.replace(seq_iter, entry);
+		resource_incompatible_signal(uri_);
+	}
 }
 
 
@@ -302,7 +312,7 @@ void flat_playlist::load_from(Json::Value const &in_value)
 
 		try
 		{
-			flat_playlist::entry_t entry_(ion::uri(json_entry["uri"].asString()), json_entry["metadata"]);
+			flat_playlist::entry_t entry_(ion::uri(json_entry["uri"].asString()), json_entry["metadata"], json_entry.get("incompatible", false).asBool());
 			add_entry(entry_, true);
 		}
 		catch (ion::uri::invalid_uri const &invalid_uri_)
@@ -325,6 +335,7 @@ void flat_playlist::save_to(Json::Value &out_value) const
 		Json::Value entry_value(Json::objectValue);
 		entry_value["uri"] = boost::fusion::at_c < 0 > (entry_).get_full();
 		entry_value["metadata"] = boost::fusion::at_c < 1 > (entry_);
+		entry_value["incompatible"] = boost::fusion::at_c < 2 > (entry_);
 		entries_value.append(entry_value);
 	}
 	out_value["entries"] = entries_value;

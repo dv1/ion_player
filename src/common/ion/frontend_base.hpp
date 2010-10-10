@@ -68,7 +68,7 @@ public:
 		send_line_to_backend_callback(send_line_to_backend_callback),
 		current_playlist(0),
 		crash_count(0),
-		num_allowed_crashes(1),
+		num_allowed_crashes(0),
 		backend_broken(false)
 	{
 	}
