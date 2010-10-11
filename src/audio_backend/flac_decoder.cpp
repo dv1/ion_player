@@ -263,16 +263,6 @@ bool flac_decoder::can_playback() const
 }
 
 
-void flac_decoder::pause()
-{
-}
-
-
-void flac_decoder::resume()
-{
-}
-
-
 long flac_decoder::set_current_position(long const new_position)
 {
 	if (!can_playback())
@@ -355,9 +345,9 @@ void flac_decoder::set_playback_properties(playback_properties const &new_playba
 }
 
 
-unsigned int flac_decoder::get_decoder_samplerate() const
+decoder_properties flac_decoder::get_decoder_properties() const
 {
-	return custom_flac_decoder_->get_flac_metadata().sample_rate;
+	return decoder_properties(custom_flac_decoder_->get_flac_metadata().sample_rate, playback_properties_.num_channels, playback_properties_.sample_type_);
 }
 
 

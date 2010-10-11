@@ -481,16 +481,6 @@ bool uade_decoder::can_playback() const
 }
 
 
-void uade_decoder::pause()
-{
-}
-
-
-void uade_decoder::resume()
-{
-}
-
-
 long uade_decoder::set_current_position(long const)
 {
 	return current_position;
@@ -578,9 +568,9 @@ void uade_decoder::set_playback_properties(playback_properties const &new_playba
 }
 
 
-unsigned int uade_decoder::get_decoder_samplerate() const
+decoder_properties uade_decoder::get_decoder_properties() const
 {
-	return 0;
+	return decoder_properties(playback_properties_);
 }
 
 

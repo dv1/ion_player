@@ -206,18 +206,6 @@ bool mpg123_decoder::can_playback() const
 }
 
 
-void mpg123_decoder::pause()
-{
-	// unnecessary for mpg123
-}
-
-
-void mpg123_decoder::resume()
-{
-	// unnecessary for mpg123
-}
-
-
 long mpg123_decoder::set_current_position(long const new_position)
 {
 	if (!has_song_length)
@@ -384,9 +372,9 @@ void mpg123_decoder::set_playback_properties(playback_properties const &new_play
 }
 
 
-unsigned int mpg123_decoder::get_decoder_samplerate() const
+decoder_properties mpg123_decoder::get_decoder_properties() const
 {
-	return src_frequency;
+	return decoder_properties(src_frequency, playback_properties_.num_channels, playback_properties_.sample_type_);
 }
 
 

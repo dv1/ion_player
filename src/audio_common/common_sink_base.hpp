@@ -68,7 +68,7 @@ Plays the given number of samples. The number of channels does NOT affect this v
 give data for 0.25 seconds of playback, regardless of whether or not this is mono or stereo playback.
 
 -unsigned int get_default_playback_frequency() const
-A device has a default playback frequency, which usually is 48 kHz. For decoders that have no sample rate, this value is used. The default frequency
+A device has a default playback frequency, which usually is 48 kHz. The default frequency
 must be one the device can playback directly, meaning that passing this frequency to initialize_audio_device() or reinitialize_audio_device() would
 never cause the device to choose a different one.
 
@@ -103,7 +103,7 @@ must not spend a lot of time in its destructor.
 ABOUT THE DIFFERENT FREQUENCIES:
 
 The playback frequency is an issue that can get complicated. There are several frequencies involved: requested and actual playback frequency,
-default sink frequency, and decoder samplerate. In addition, it is preferable not to have to resample the audio data, since this needs extra processing power
+default sink frequency, and the frequency from the decoder's properties. In addition, it is preferable not to have to resample the audio data, since this needs extra processing power
 and potentially degrades audio quality.
 
 The policies for dealing with this situation are defined on whether or not reinitialization-on-demand is used.
@@ -115,14 +115,14 @@ With reinitialization-on-demand, the policy is:
 3. During playback, resample if necessary
 4. If a transition happens, check if a device reinitialization is necessary; if so, reinitialize the device with the next decoder's samplerate
    the check is performed this way:
-   4.1. for each decoder, get its sample rate; if the sample rate is 0, use the sink's default playback frequency as sample rate
-   4.2. compare these sample rates; if they match, no device reinitialization is necessary
-   4.3. otherwise, a second check needs to be done: compare the next decoder's sample rate (treating a rate of 0 like in 4.1) with the current playback frequency;
-        if they do not match, a reinitialization is neccesary (using the next decoderr's sample rate), otherwise do not reinitialize
+   4.1. for each decoder, get its frequency
+   4.2. compare these frequencies; if they match, no device reinitialization is necessary
+   4.3. otherwise, a second check needs to be done: compare the next decoder's frequency (treating a rate of 0 like in 4.1) with the current playback frequency;
+        if they do not match, a reinitialization is neccesary (using the next decoder's frequency), otherwise do not reinitialize
 5. If a start() call is done, and playback is running, do a check similar to the one in 4.:
    4.1. Get the current decoder's playback frequency (treating a rate of 0 like in 4.1)
    4.2. Get the new decoder's (the one that is passed to start() as parameter) frequency (treating a rate of 0 like in 4.1)
-   4.3. If these frequencies match, no reinitialization is necessary, otherwise perform one, using the new decoder's sample rate for the reinitialization
+   4.3. If these frequencies match, no reinitialization is necessary, otherwise perform one, using the new decoder's frequency for the reinitialization
 
 (this one will be called the "reinitialization policy" from here on)
 
@@ -134,14 +134,14 @@ without reinitialization-on-demand, the policy is:
 3. During playback, resample if necessary
 
 The second policy is clearly simpler and more robust, since the device has to be initialized only once (shutdown due to a stop() call or a playback finish have been
-omitted, for sake of clarity). It also guarantees gapless playback regardless of decoder sample rate. On other other hand, the reinitialization policy tries to get
-the device to operate at the decoder's sample rate as much as possible, thereby reducing the amount of unavoidable resampling work. Also, while gaps are introduced, they
-do not happen between decoders with the same sample rate. It can be argued that gapless playback is only really interesting for tracks of the same album, and these are
+omitted, for sake of clarity). It also guarantees gapless playback regardless of decoder frequency. On other other hand, the reinitialization policy tries to get
+the device to operate at the decoder's frequency as much as possible, thereby reducing the amount of unavoidable resampling work. Also, while gaps are introduced, they
+do not happen between decoders with the same frequency. It can be argued that gapless playback is only really interesting for tracks of the same album, and these are
 typically sampled with identical rates.
-Decoders with no sample rate of their own return 0 as sample rate, indicating they can adapt to the given playback frequency. The reinitialization policy uses this to
-further optimize playback; usually, the default sink playback frequency is one the audio device directly supports, so when (re)initializing the device with this frequency,
-the actual playback frequency will match this one. Therefore, by choosing this frequncy for decoders with no sample rate of their own, the probability for resampling to
-become necessary is greatly diminished.
+Decoders with no frequency of their own can adapt to any frequency, they just need to be told which one. Therefore, return the frequency that was specified to them in the
+set_playback_properties() call. The reinitialization policy uses this to further optimize playback; usually, the default sink playback frequency is one the audio device
+directly supports, so when (re)initializing the device with this frequency, the actual playback frequency will match this one. Therefore, by choosing this frequency
+for decoders with no frequency of their own, the probability for resampling to become necessary is greatly diminished.
 
 
 POSSIBLE IMPROVEMENTS:
@@ -401,21 +401,19 @@ protected:
 
 
 	/**
-	* Helper function to get a frequency for the given decoder. If the decoder has a sample rate (that is, if decoder_.get_decoder_samplerate() returns
-	*nonzero), this value is returned, otherwise, the sink's default playback frequency will be used.
+	* Helper function to get a frequency for the given decoder. If reinitialize on demand is used, the decoder's frequency is returned,
+	* otherwise, the sink's default playback frequency will be used.
 	*
-	* @param decoder_ The decoder whose sample rate is to be used (if its nonzero)
-	* @return A non-zero frequency for playback; if the decoder sample rate is nonzero, this will be the frequency, otherwise it will be the sink's
+	* @param decoder_ The decoder whose frequency is to be used (if its nonzero)
+	* @return A non-zero frequency for playback; if the decoder frequency is nonzero, this will be the frequency, otherwise it will be the sink's
 	* default playback one
 	*/
 	unsigned int get_playback_frequency(decoder &decoder_) const
 	{
-		unsigned int frequency = 0;
 		if (reinitialize_on_demand)
-			frequency = decoder_.get_decoder_samplerate();
-		if (frequency == 0)
-			frequency = get_derived().get_default_playback_frequency();
-		return frequency;
+			return decoder_.get_decoder_properties().frequency;
+		else
+			return get_derived().get_default_playback_frequency();
 	}
 
 

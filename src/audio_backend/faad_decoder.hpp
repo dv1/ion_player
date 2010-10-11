@@ -62,9 +62,6 @@ public:
 	virtual bool is_initialized() const;
 	virtual bool can_playback() const;
 
-	virtual void pause();
-	virtual void resume();
-
 	virtual long set_current_position(long const new_position);
 	virtual long get_current_position() const;
 
@@ -84,7 +81,7 @@ public:
 
 	virtual void set_playback_properties(playback_properties const &new_playback_properties);
 
-	virtual unsigned int get_decoder_samplerate() const;
+	virtual decoder_properties get_decoder_properties() const;
 
 	virtual unsigned int update(void *dest, unsigned int const num_samples_to_write);
 

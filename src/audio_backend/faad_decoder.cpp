@@ -121,16 +121,6 @@ bool faad_decoder::can_playback() const
 }
 
 
-void faad_decoder::pause()
-{
-}
-
-
-void faad_decoder::resume()
-{
-}
-
-
 long faad_decoder::set_current_position(long const)
 {
 	// It generally does not seem to be possible to seek in AAC songs with FAAD
@@ -205,9 +195,9 @@ void faad_decoder::set_playback_properties(playback_properties const &new_playba
 }
 
 
-unsigned int faad_decoder::get_decoder_samplerate() const
+decoder_properties faad_decoder::get_decoder_properties() const
 {
-	return decoder_sample_rate;
+	return decoder_properties(decoder_sample_rate, playback_properties_.num_channels, playback_properties_.sample_type_);
 }
 
 

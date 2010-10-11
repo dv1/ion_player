@@ -41,7 +41,7 @@ namespace speex_resampler
 /* TODO:
 - testing; check if the byte <-> sample roundings in the () operator work properly
 - handle bit depths other than 16
-- support decoders that change the sample rate while playing
+- support decoders that change the frequency while playing
 */
 
 
@@ -137,9 +137,7 @@ void resampler::reset()
 unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to_write, audio_common::decoder &decoder_)
 {
 	{
-		unsigned int decoder_samplerate = decoder_.get_decoder_samplerate();
-		if (decoder_samplerate == 0)
-			decoder_samplerate = internal_data_->output_frequency;
+		unsigned int decoder_samplerate = decoder_.get_decoder_properties().frequency;
 		set_input_frequency(decoder_samplerate);
 	}
 

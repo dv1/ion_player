@@ -187,16 +187,6 @@ bool dumb_decoder::can_playback() const
 }
 
 
-void dumb_decoder::pause()
-{
-}
-
-
-void dumb_decoder::resume()
-{
-}
-
-
 long dumb_decoder::set_current_position(long const new_position)
 {
 	if (!can_playback())
@@ -377,9 +367,9 @@ void dumb_decoder::set_playback_properties(playback_properties const &new_playba
 }
 
 
-unsigned int dumb_decoder::get_decoder_samplerate() const
+decoder_properties dumb_decoder::get_decoder_properties() const
 {
-	return 0;
+	return decoder_properties(playback_properties_);
 }
 
 

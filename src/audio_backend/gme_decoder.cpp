@@ -164,16 +164,6 @@ bool gme_decoder::can_playback() const
 }
 
 
-void gme_decoder::pause()
-{
-}
-
-
-void gme_decoder::resume()
-{
-}
-
-
 long gme_decoder::set_current_position(long const new_position)
 {
 	if (!is_initialized())
@@ -353,9 +343,9 @@ void gme_decoder::set_fade()
 }
 
 
-unsigned int gme_decoder::get_decoder_samplerate() const
+decoder_properties gme_decoder::get_decoder_properties() const
 {
-	return 0;
+	return decoder_properties(playback_properties_);
 }
 
 

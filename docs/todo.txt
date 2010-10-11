@@ -102,7 +102,7 @@ DONE:
   possible solutions: (1) remove the FLAC include path from the config environment  (2) isolate the FLAC decoder further, to avoid FLAC <-> boost collisions
   [solved by letting go of the pkg-config package and manually finding flac++ headers/lib instead]
 * change common_sink_base behavior: when the number of actually read samples < number requested samples, it shall NOT immediately move to the next decoder; only do that when 0 is returned
-  (this is necessary for decoders like the vorbis one, since they may only give partial amounts sometimes, for example because the decoder's sample rate suddenly changes)
+  (this is necessary for decoders like the vorbis one, since they may only give partial amounts sometimes, for example because the decoder's frequency suddenly changes)
 * game music emulator decoder
 * ogg vorbis decoder
 * adplug decoder

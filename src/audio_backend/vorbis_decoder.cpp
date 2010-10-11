@@ -158,16 +158,6 @@ bool vorbis_decoder::can_playback() const
 }
 
 
-void vorbis_decoder::pause()
-{
-}
-
-
-void vorbis_decoder::resume()
-{
-}
-
-
 long vorbis_decoder::set_current_position(long const new_position)
 {
 	if (!can_playback())
@@ -280,9 +270,9 @@ void vorbis_decoder::set_playback_properties(playback_properties const &new_play
 }
 
 
-unsigned int vorbis_decoder::get_decoder_samplerate() const
+decoder_properties vorbis_decoder::get_decoder_properties() const
 {
-	return info->rate;
+	return decoder_properties(info->rate, playback_properties_.num_channels, playback_properties_.sample_type_);
 }
 
 

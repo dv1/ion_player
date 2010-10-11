@@ -311,6 +311,12 @@ void adplug_decoder::set_playback_properties(playback_properties const &new_play
 }
 
 
+decoder_properties adplug_decoder::get_decoder_properties() const
+{
+	return decoder_properties(playback_properties_);
+}
+
+
 void adplug_decoder::initialize_player(unsigned int const frequency)
 {
 	if (opl != 0) { delete opl; opl = 0; }
@@ -338,12 +344,6 @@ void adplug_decoder::initialize_player(unsigned int const frequency)
 		cur_song_length = player->songlength(subsong_nr);
 		player->rewind(subsong_nr);
 	}
-}
-
-
-unsigned int adplug_decoder::get_decoder_samplerate() const
-{
-	return 0;
 }
 
 

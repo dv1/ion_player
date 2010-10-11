@@ -96,6 +96,46 @@ struct playback_properties
 
 
 //////
+// decoder properties class
+
+
+
+struct decoder_properties
+{
+	unsigned int frequency; // = The playback frequency (for example, 44100 = 44100 Hz = 44100 samples per second)
+	unsigned int num_channels;
+	sample_type sample_type_;
+
+
+	decoder_properties():
+		num_channels(0), sample_type_(sample_unknown)
+	{
+	}
+
+	explicit decoder_properties(unsigned int const frequency, unsigned int const num_channels, sample_type const sample_type_):
+		frequency(frequency), num_channels(num_channels), sample_type_(sample_type_)
+	{
+	}
+
+	explicit decoder_properties(playback_properties const &src):
+		frequency(src.frequency), num_channels(src.num_channels), sample_type_(src.sample_type_)
+	{
+	}
+
+	bool is_valid() const
+	{
+		return
+			(frequency > 0) &&
+			(num_channels > 0) &&
+			(sample_type_ != sample_unknown)
+			;
+	}
+};
+
+
+
+
+//////
 // module ui class
 
 

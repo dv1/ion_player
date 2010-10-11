@@ -173,7 +173,7 @@ public:
 	/**
 	* Gets the amount of ticks that make up one second. This information is necessary to convert the return value of get_num_ticks() to seconds: the result of get_num_ticks()/get_num_ticks_per_second()
 	* would be the resource length in seconds. This must always be valid, even if get_num_ticks() returns zero (if there is no num ticks per second information available, use the
-	* playback properties frequency/decoder sample rate instead for example)
+	* playback properties frequency/decoder frequency instead for example)
 	*
 	* @pre the decoder must be correctly initialized
 	* @return Amount of ticks that make up one second
@@ -202,15 +202,12 @@ public:
 	virtual void set_playback_properties(playback_properties const &new_playback_properties) = 0;
 
 	/**
-	* Returns the decoder's samplerate. If the decoder performs internal resampling, then this function must return the resampled data's frequency, NOT the original one.
-	* If said resampling converts the data to match the sample rate specified in set_playback_properties(), then this must return either 0 or said sample rate.
-	* In other words, the sink checks if the return value of this function is 0 or the sink's playback sample rate. In this case, the sink chooses not to resample.
-	* Otherwise, it does.
-	*
-	* @pre: nothing.
-	* @return The decoder's samplerate.
+	* Returns the decoder's playback properties.
+	* The samples the decoder delivers have a certain frequency, number of channels, and sample format. The sink uses this information to see if any conversion is necessary
+	* (sample format conversion, resampling, mixing...)
+	* The sample buffer size member of the return value is unused.
 	*/
-	virtual unsigned int get_decoder_samplerate() const = 0;
+	virtual decoder_properties get_decoder_properties() const = 0;
 
 	/**
 	* Updates the dest buffer with new samples. num_samples_to_write specifies how many samples to write.
