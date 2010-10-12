@@ -24,6 +24,7 @@ freely, subject to the following restrictions:
 ****************************************************************************/
 
 
+#include <stdint.h>
 #include "types.hpp"
 
 
@@ -41,7 +42,63 @@ unsigned int get_sample_size(sample_type const &type)
 		case sample_s24: return 3;
 		case sample_s24_x8_lsb: return 4;
 		case sample_s24_x8_msb: return 4;
+		case sample_s32: return 4;
 		default: return 0;
+	}
+}
+
+
+long get_sample_value(void const *src, unsigned int const sample_value_index, sample_type const type)
+{
+	uint8_t const *ptr = reinterpret_cast < uint8_t const * > (src) + get_sample_size(type) * sample_value_index;
+
+	switch (type)
+	{
+		case sample_s16: return *(reinterpret_cast < int16_t const * > (ptr));
+		case sample_s32: return *(reinterpret_cast < int32_t const * > (ptr));
+		default: return 0;
+	}
+}
+
+
+void set_sample_value(void *dest, unsigned int const sample_value_index, long const value, sample_type const type)
+{
+	uint8_t *ptr = reinterpret_cast < uint8_t* > (dest) + get_sample_size(type) * sample_value_index;
+
+	switch (type)
+	{
+		case sample_s16: *(reinterpret_cast < int16_t* > (ptr)) = value; break;
+		case sample_s32: *(reinterpret_cast < int32_t* > (ptr)) = value; break;
+		default: break;
+	}
+}
+
+
+long convert_sample_value(long const value, sample_type const input_type, sample_type const output_type)
+{
+	if (input_type == output_type)
+		return value;
+
+	switch (input_type)
+	{
+		case sample_s16:
+			switch (output_type)
+			{
+				case sample_s32: return value << 16;
+				default: return 0;
+			}
+			break;
+
+		case sample_s32:
+			switch (output_type)
+			{
+				case sample_s16: return value >> 16;
+				default: return 0;
+			}
+			break;
+
+		default:
+			return 0;
 	}
 }
 

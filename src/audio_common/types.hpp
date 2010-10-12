@@ -50,11 +50,15 @@ enum sample_type
 	sample_s24,
 	sample_s24_x8_lsb, // 24-bit sample with addition 8 bits of padding (-> 32 bit total); these 8 bits are the LSB
 	sample_s24_x8_msb, // 24-bit sample with addition 8 bits of padding (-> 32 bit total); these 8 bits are the MSB
+	sample_s32,
 	sample_unknown
 };
 
 
 unsigned int get_sample_size(sample_type const &type);
+long get_sample_value(void const *src, unsigned int const sample_value_index, sample_type const type);
+void set_sample_value(void *dest, unsigned int const sample_value_index, long const value, sample_type const type);
+long convert_sample_value(long const value, sample_type const input_type, sample_type const output_type);
 
 
 
