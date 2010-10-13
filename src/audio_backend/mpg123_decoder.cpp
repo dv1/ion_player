@@ -385,7 +385,7 @@ unsigned int mpg123_decoder::update(void *dest, unsigned int const num_samples_t
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
-	unsigned int size_to_write = num_samples_to_write * playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
+	unsigned int size_to_write = num_samples_to_write * src_num_channels * get_sample_size(playback_properties_.sample_type_);
 
 
 	// If not enough data is stored in the out buffer, fill it until it is full, an error occurs, or reading fails
@@ -441,7 +441,7 @@ unsigned int mpg123_decoder::update(void *dest, unsigned int const num_samples_t
 		out_buffer.clear(); // no more data remaining - clear the out buffer
 
 
-	return available_size / (playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_)); // Return the actual amount of samples written to dest
+	return available_size / (src_num_channels * get_sample_size(playback_properties_.sample_type_)); // Return the actual amount of samples written to dest
 }
 
 
