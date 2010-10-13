@@ -44,12 +44,15 @@ namespace audio_common
 template < typename Resampler >
 struct convert
 {
+	// resampler must meet the Resampler concept requirements
 	explicit convert(Resampler &resampler):
 		resampler(resampler)
 	{
 	}
 
 
+	// sample_source must meet the SampleSource concept requirements
+	// input_properties and output_properties both must meet the AudioProperties concept requirements
 	template < typename SampleSource, typename InputProperties, typename OutputProperties >
 	unsigned long operator()(
 		SampleSource &sample_source, InputProperties const &input_properties,
@@ -235,37 +238,6 @@ protected:
 	buffer_t resampling_input_buffer, source_data_buffer;
 	Resampler &resampler;
 };
-
-
-/*
-
-
-SampleSource concept:
-unsigned long retrieve_samples(SampleSource &sample_source, void *output, unsigned long const num_output_samples)
-
-
-Resampler concept:
-
-sample_type find_compatible_type(Resampler &resampler, sample_type const type)
-sample_type find_compatible_type(Resampler &resampler, sample_type const input_type, sample_type const output_type)
-unsigned long resample(
-	Resampler &resampler,
-	void const *input_data, unsigned long const num_input_samples,
-	void *output_data, unsigned long const max_num_output_samples,
-	unsigned int const num_input_frequency, unsigned int const num_output_frequency,
-	sample_type const input_type, sample_type const output_type,
-	unsigned int const num_channels
-)
-
-
-AudioProperties concept:
-
-unsigned int get_num_channels(AudioProperties const &audio_properties)
-unsigned int get_frequency(AudioProperties const &audio_properties)
-sample_type get_sample_type(AudioProperties const &audio_properties)
-
-
-*/
 
 
 }
