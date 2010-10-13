@@ -345,7 +345,7 @@ void gme_decoder::set_fade()
 
 decoder_properties gme_decoder::get_decoder_properties() const
 {
-	return decoder_properties(playback_properties_);
+	return decoder_properties(0, 2, audio_common::sample_s16);
 }
 
 

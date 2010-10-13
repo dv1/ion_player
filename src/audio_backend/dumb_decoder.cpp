@@ -158,6 +158,7 @@ dumb_decoder::dumb_decoder(send_event_callback_t const send_event_callback, sour
 
 	loop_data_.loop_mode = -1;
 	loop_data_.cur_num_loops = 0;
+	playback_properties_.num_channels = 0;
 
 	duh = read_module(*source_, filesize, this->module_type_);
 }
@@ -369,7 +370,7 @@ void dumb_decoder::set_playback_properties(playback_properties const &new_playba
 
 decoder_properties dumb_decoder::get_decoder_properties() const
 {
-	return decoder_properties(playback_properties_);
+	return decoder_properties(0, playback_properties_.num_channels, audio_common::sample_s16);
 }
 
 
@@ -384,7 +385,6 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 	if ((duh == 0) || (duh_sigrenderer == 0))
 		return 0;
 
-	// TODO: for the sample type, evaluate the type from the playback properties
 	unsigned int l = duh_render(duh_sigrenderer, 16, 0, float(current_volume) / float(max_volume()), 65536.0f / float(playback_properties_.frequency), num_samples_to_write, dest);
 	return l;
 }

@@ -59,6 +59,16 @@ struct speex_resampler::internal_data
 		sample_type_(audio_common::sample_unknown)
 	{
 	}
+
+	bool are_parameters_valid() const
+	{
+		return
+			(num_channels != 0) &&
+			(input_frequency != 0) &&
+			(output_frequency != 0) &&
+			(sample_type_ != audio_common::sample_unknown)
+			;
+	}
 };
 
 
@@ -66,6 +76,7 @@ struct speex_resampler::internal_data
 speex_resampler::speex_resampler(unsigned int const quality):
 	internal_data_(new internal_data)
 {
+	internal_data_->quality = quality;
 }
 
 
@@ -85,8 +96,12 @@ void speex_resampler::reset()
 		internal_data_->speex_resampler = 0;
 	}
 
-	int err;
-	internal_data_->speex_resampler = speex_resampler_init(internal_data_->num_channels, internal_data_->input_frequency, internal_data_->output_frequency, internal_data_->quality, &err);
+	if (internal_data_->are_parameters_valid())
+	{
+		int err;
+		internal_data_->speex_resampler = speex_resampler_init(internal_data_->num_channels, internal_data_->input_frequency, internal_data_->output_frequency, internal_data_->quality, &err);
+	}
+
 	output_buffer.clear();
 }
 

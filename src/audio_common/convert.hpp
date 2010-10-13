@@ -67,6 +67,9 @@ struct convert
 		unsigned int input_frequency = get_frequency(input_properties);
 		unsigned int output_frequency = get_frequency(output_properties);
 
+		if (input_frequency == 0)
+			input_frequency = output_frequency;
+
 		bool frequencies_match = (input_frequency == output_frequency);
 		bool num_channels_match = (num_input_channels == num_output_channels);
 		bool sample_types_match = get_sample_type(input_properties) == get_sample_type(output_properties);

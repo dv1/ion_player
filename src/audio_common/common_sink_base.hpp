@@ -407,10 +407,15 @@ protected:
 	*/
 	unsigned int get_playback_frequency(decoder &decoder_) const
 	{
+		unsigned int frequency = 0;
+
 		if (reinitialize_on_demand)
-			return decoder_.get_decoder_properties().frequency;
-		else
-			return get_derived().get_default_playback_frequency();
+			frequency = decoder_.get_decoder_properties().frequency;
+
+		if (frequency == 0)
+			frequency = get_derived().get_default_playback_frequency();
+
+		return frequency;
 	}
 
 

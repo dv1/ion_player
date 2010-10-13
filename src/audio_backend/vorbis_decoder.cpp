@@ -272,7 +272,7 @@ void vorbis_decoder::set_playback_properties(playback_properties const &new_play
 
 decoder_properties vorbis_decoder::get_decoder_properties() const
 {
-	return decoder_properties(info->rate, playback_properties_.num_channels, playback_properties_.sample_type_);
+	return decoder_properties(info->rate, info->channels, playback_properties_.sample_type_);
 }
 
 
@@ -285,7 +285,7 @@ unsigned int vorbis_decoder::update(void *dest, unsigned int const num_samples_t
 
 	{
 		boost::lock_guard < boost::mutex > lock(mutex_);
-		bytes_per_tick = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
+		bytes_per_tick = info->channels * get_sample_size(playback_properties_.sample_type_);
 	}
 
 #if 1

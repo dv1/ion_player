@@ -570,7 +570,7 @@ void uade_decoder::set_playback_properties(playback_properties const &new_playba
 
 decoder_properties uade_decoder::get_decoder_properties() const
 {
-	return decoder_properties(playback_properties_);
+	return decoder_properties(0, 2, audio_common::sample_s16);
 }
 
 

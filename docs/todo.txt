@@ -30,9 +30,6 @@ Qt4 audio frontend:
 Audio backend:
 * sidplay decoder (http://sidplay2.sourceforge.net/)
 * volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
-* sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
-* mono->stereo conversion if source is mono - combine this with the resampler if possible, to minimize the amount of intermediate steps
-* handle different sample formats and channel counts in decoders
 * implement decoder deletion thread
 * Handle I/O failures (for example, SMB share + network cable disconnected)
 * audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
@@ -69,6 +66,9 @@ Both:
 =======================================================================================
 DONE:
 
+* sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
+* mono->stereo conversion if source is mono - combine this with the resampler if possible, to minimize the amount of intermediate steps
+* handle different sample formats and channel counts in decoders
 * Mark crashed/corrupt entries in playlist
 * num_ticks == 0 means the resource cannot seek; in that case, let the decoders do a "fake" progress - count upwards in each update() call, and use that counter as return value
   for get_current_position; increment the counter by the num_tick_per_second value (this also fixes the issue below about the timer in the frontend)
