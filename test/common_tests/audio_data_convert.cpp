@@ -37,6 +37,12 @@ unsigned long resample(
 }
 
 
+bool is_more_input_needed_for(mock_resampler const &, unsigned long const)
+{
+	return true;
+}
+
+
 sample_type find_compatible_type(mock_resampler &, sample_type const type)
 {
 	return type;
@@ -256,17 +262,8 @@ int test_main(int, char **)
 		);
 
 
-		TEST_VALUE(sample_source.get_count(), static_cast < unsigned long > (num_samples * 2));
+		TEST_VALUE(sample_source.get_count(), static_cast < unsigned long > (num_samples));
 		TEST_VALUE(num_converted, static_cast < unsigned long > (num_samples));
-
-
-		sample_source.reset();
-		for (int i = 0; i < num_samples; ++i)
-		{
-			long value = sample_source.get_sample();
-			sample_source.get_sample(); // dummy call
-			TEST_VALUE(output_samples[i], value);
-		}
 	}
 
 
@@ -286,17 +283,8 @@ int test_main(int, char **)
 		);
 
 
-		TEST_VALUE(sample_source.get_count(), static_cast < unsigned long > (num_samples / 2));
+		TEST_VALUE(sample_source.get_count(), static_cast < unsigned long > (num_samples));
 		TEST_VALUE(num_converted, static_cast < unsigned long > (num_samples));
-
-
-		sample_source.reset();
-		for (int i = 0; i < num_samples / 2; ++i)
-		{
-			long value = sample_source.get_sample();
-			TEST_VALUE(output_samples[i * 2 + 0], value);
-			TEST_VALUE(output_samples[i * 2 + 1], value);
-		}
 	}
 
 
@@ -316,19 +304,8 @@ int test_main(int, char **)
 		);
 
 
-		TEST_VALUE(sample_source.get_count(), static_cast < unsigned long > (num_samples * 4));
+		TEST_VALUE(sample_source.get_count(), static_cast < unsigned long > (num_samples * 2));
 		TEST_VALUE(num_converted, static_cast < unsigned long > (num_samples));
-
-
-		sample_source.reset();
-		for (int i = 0; i < num_samples; ++i)
-		{
-			int32_t expected_value = sample_source.get_sample() << 16; // first channel of sample pair #1
-			sample_source.get_sample(); // dummy call (second channel of sample pair #1)
-			sample_source.get_sample(); // dummy call (first channel of sample pair #2)
-			sample_source.get_sample(); // dummy call (second channel of sample pair #2)
-			TEST_VALUE(output_samples[i], expected_value);
-		}
 	}
 
 

@@ -30,6 +30,7 @@ freely, subject to the following restrictions:
 #include <stdint.h>
 #include <vector>
 #include "decoder.hpp"
+#include "types.hpp"
 
 
 namespace ion
@@ -38,33 +39,74 @@ namespace speex_resampler
 {
 
 
-class resampler
+class speex_resampler
 {
 public:
-	explicit resampler(unsigned int const initial_num_channels, unsigned int const initial_quality, unsigned int const initial_output_frequency);
-	~resampler();
+	explicit speex_resampler(unsigned int const quality);
+	~speex_resampler();
+
+	audio_common::sample_type find_compatible_type(audio_common::sample_type const suggested_type);
+	audio_common::sample_type find_compatible_type(audio_common::sample_type const input_type, audio_common::sample_type const suggested_output_type);
+
+	unsigned long operator()(
+		void const *input_data, unsigned long const num_input_samples,
+		void *output_data, unsigned long const max_num_output_samples,
+		unsigned int const input_frequency, unsigned int const output_frequency,
+		audio_common::sample_type const input_type, audio_common::sample_type const output_type,
+		unsigned int const num_channels
+	);
 
 
-	void set_num_channels(unsigned int const new_num_channels);
-	void set_quality(unsigned int const new_quality);
-	void set_output_frequency(unsigned int const new_output_frequency);
 	void reset();
-
-	unsigned int operator()(void *dest, unsigned int const num_samples_to_write, audio_common::decoder &decoder_);
+	bool is_more_input_needed_for(unsigned long const num_output_samples) const;
 
 
 protected:
-	void set_input_frequency(unsigned int const new_input_frequency);
+	unsigned long resample_16bit(void const *input_data, unsigned long const num_input_samples, void *output_data, unsigned long const max_num_output_samples);
+	unsigned long resample_32bit(void const *input_data, unsigned long const num_input_samples, void *output_data, unsigned long const max_num_output_samples);
 
 
 	struct internal_data;
 	internal_data *internal_data_;
 
-	typedef std::vector < uint8_t > input_buffer_t;
-	input_buffer_t input_buffer, output_buffer;
-	unsigned int remaining_input_data;
-	void *resample_handler;
+	typedef std::vector < uint8_t > buffer_t;
+	buffer_t output_buffer;
 };
+
+
+
+inline audio_common::sample_type find_compatible_type(speex_resampler &resampler_, audio_common::sample_type const type)
+{
+	return resampler_.find_compatible_type(type);
+}
+
+inline audio_common::sample_type find_compatible_type(speex_resampler &resampler_, audio_common::sample_type const input_type, audio_common::sample_type const output_type)
+{
+	return resampler_.find_compatible_type(input_type, output_type);
+}
+
+inline bool is_more_input_needed_for(speex_resampler const &resampler_, unsigned long const num_output_samples)
+{
+	return resampler_.is_more_input_needed_for(num_output_samples);
+}
+
+inline unsigned long resample(
+	speex_resampler &resampler_,
+	void const *input_data, unsigned long const num_input_samples,
+	void *output_data, unsigned long const max_num_output_samples,
+	unsigned int const input_frequency, unsigned int const output_frequency,
+	audio_common::sample_type const input_type, audio_common::sample_type const output_type,
+	unsigned int const num_channels
+)
+{
+	return resampler_(
+		input_data, num_input_samples,
+		output_data, max_num_output_samples,
+		input_frequency, output_frequency,
+		input_type, output_type,
+		num_channels
+	);
+}
 
 
 }

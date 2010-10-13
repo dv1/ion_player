@@ -39,33 +39,37 @@ namespace speex_resampler
 
 
 /* TODO:
-- testing; check if the byte <-> sample roundings in the () operator work properly
 - handle bit depths other than 16
-- support decoders that change the frequency while playing
+- test with decoders that change the frequency while playing
 */
 
 
-struct resampler::internal_data
+struct speex_resampler::internal_data
 {
 	SpeexResamplerState *speex_resampler;
 	unsigned int num_channels, quality, input_frequency, output_frequency;
+	audio_common::sample_type sample_type_;
+
+	internal_data():
+		speex_resampler(0),
+		num_channels(0),
+		quality(0),
+		input_frequency(0),
+		output_frequency(0),
+		sample_type_(audio_common::sample_unknown)
+	{
+	}
 };
 
 
-resampler::resampler(unsigned int const initial_num_channels, unsigned int const initial_quality, unsigned int const initial_output_frequency):
+
+speex_resampler::speex_resampler(unsigned int const quality):
 	internal_data_(new internal_data)
 {
-	std::cerr << "resampler: setting initial output frequency to " << initial_output_frequency << std::endl;
-	internal_data_->speex_resampler = 0;
-	internal_data_->num_channels = initial_num_channels;
-	internal_data_->quality = initial_quality;
-	internal_data_->input_frequency = initial_output_frequency;
-	internal_data_->output_frequency = initial_output_frequency;
-	reset();
 }
 
 
-resampler::~resampler()
+speex_resampler::~speex_resampler()
 {
 	if (internal_data_->speex_resampler != 0)
 		speex_resampler_destroy(internal_data_->speex_resampler);
@@ -73,52 +77,7 @@ resampler::~resampler()
 }
 
 
-void resampler::set_num_channels(unsigned int const new_num_channels)
-{
-	if (internal_data_->num_channels == new_num_channels)
-		return;
-
-	internal_data_->num_channels = new_num_channels;
-	reset();
-}
-
-
-void resampler::set_quality(unsigned int const new_quality)
-{
-	if (internal_data_->quality != new_quality)
-	{
-		internal_data_->quality = new_quality;
-		speex_resampler_set_quality(internal_data_->speex_resampler, new_quality);
-	}
-}
-
-
-void resampler::set_input_frequency(unsigned int const new_input_frequency)
-{
-	if (internal_data_->input_frequency != new_input_frequency)
-	{
-		std::cerr << "resampler: setting input frequency to " << new_input_frequency << std::endl;
-		internal_data_->input_frequency = new_input_frequency;
-		speex_resampler_set_rate(internal_data_->speex_resampler, new_input_frequency, internal_data_->output_frequency);
-		input_buffer.clear();
-		remaining_input_data = 0;
-	}
-}
-
-
-void resampler::set_output_frequency(unsigned int const new_output_frequency)
-{
-	if (internal_data_->output_frequency != new_output_frequency)
-	{
-		std::cerr << "resampler: setting output frequency to " << new_output_frequency << std::endl;
-		internal_data_->output_frequency = new_output_frequency;
-		speex_resampler_set_rate(internal_data_->speex_resampler, internal_data_->input_frequency, new_output_frequency);
-		output_buffer.clear();
-	}
-}
-
-
-void resampler::reset()
+void speex_resampler::reset()
 {
 	if (internal_data_->speex_resampler != 0)
 	{
@@ -128,96 +87,161 @@ void resampler::reset()
 
 	int err;
 	internal_data_->speex_resampler = speex_resampler_init(internal_data_->num_channels, internal_data_->input_frequency, internal_data_->output_frequency, internal_data_->quality, &err);
-	remaining_input_data = 0;
-	input_buffer.clear();
 	output_buffer.clear();
 }
 
 
-unsigned int resampler::operator()(void *dest, unsigned int const num_samples_to_write, audio_common::decoder &decoder_)
+bool speex_resampler::is_more_input_needed_for(unsigned long const num_output_samples) const
 {
+	if (internal_data_->speex_resampler == 0)
+		return true;
+	else
 	{
-		unsigned int decoder_samplerate = decoder_.get_decoder_properties().frequency;
-		set_input_frequency(decoder_samplerate);
+		unsigned long sample_multiplier = internal_data_->num_channels * get_sample_size(internal_data_->sample_type_);
+		return (output_buffer.size() < (sample_multiplier * num_output_samples));
 	}
+}
 
 
-	if (internal_data_->input_frequency == internal_data_->output_frequency)
+audio_common::sample_type speex_resampler::find_compatible_type(audio_common::sample_type const suggested_type)
+{
+	switch (suggested_type)
 	{
-		unsigned int num_samples_written = decoder_.update(dest, num_samples_to_write);
-		return num_samples_written;
+		case audio_common::sample_s16:
+			return audio_common::sample_s16;
+		case audio_common::sample_s24:
+		case audio_common::sample_s24_x8_lsb:
+		case audio_common::sample_s24_x8_msb:
+		case audio_common::sample_s32:
+			return audio_common::sample_s32;
+		default:
+			return audio_common::sample_unknown;
 	}
+}
 
 
-	unsigned channel_sample_factor = internal_data_->num_channels * sizeof(spx_int16_t);
-	unsigned int num_samples_to_decode = static_cast < unsigned int > (float(num_samples_to_write) * float(internal_data_->input_frequency) / float(internal_data_->output_frequency) + 0.5f);
+audio_common::sample_type speex_resampler::find_compatible_type(audio_common::sample_type const input_type, audio_common::sample_type const/* suggested_output_type*/)
+{
+	return find_compatible_type(input_type);
+}
 
-	unsigned int num_samples_decoded;
 
-	bool loop = true;
-	while (loop)
+unsigned long speex_resampler::operator()(
+	void const *input_data, unsigned long const num_input_samples,
+	void *output_data, unsigned long const max_num_output_samples,
+	unsigned int const input_frequency, unsigned int const output_frequency,
+	audio_common::sample_type const input_type, audio_common::sample_type const output_type,
+	unsigned int const num_channels
+)
+{
+	if (num_input_samples == 0)
+		return 0;
+
+	assert(input_type == output_type);
+
+	bool input_frequency_changed = (input_frequency != internal_data_->input_frequency);
+	bool output_frequency_changed = (output_frequency != internal_data_->output_frequency);
+	bool input_type_changed = (input_type != internal_data_->sample_type_);
+
+	internal_data_->input_frequency = input_frequency;
+	internal_data_->output_frequency = output_frequency;
+	internal_data_->sample_type_ = input_type;
+	internal_data_->num_channels = num_channels;
+
+	if ((internal_data_->speex_resampler == 0) || input_type_changed)
+		reset();
+	else
 	{
-		unsigned int num_undecoded_samples;
-
+		if (input_frequency_changed || output_frequency_changed)
 		{
-			unsigned int previous_inputbuffer_size = input_buffer.size();
-
-			num_undecoded_samples = (num_samples_to_decode * channel_sample_factor - previous_inputbuffer_size) / channel_sample_factor;
-			input_buffer.resize(previous_inputbuffer_size + num_undecoded_samples * channel_sample_factor);
-			num_samples_decoded = decoder_.update(&input_buffer[previous_inputbuffer_size], num_undecoded_samples);
-			input_buffer.resize(previous_inputbuffer_size + num_samples_decoded * channel_sample_factor);
-		}
-
-		// TODO: is this ok? Check if this causes playback to stop too soon
-		if (num_samples_decoded == 0)
-			loop = false;
-		if (input_buffer.size() == 0)
-			return 0;
-
-		spx_uint32_t in_length = input_buffer.size() / channel_sample_factor;
-		spx_uint32_t out_length = num_samples_to_write;
-
-		{
-			unsigned int previous_outputbuffer_size = output_buffer.size();
-			output_buffer.resize(previous_outputbuffer_size + out_length * channel_sample_factor);
-
-			spx_int16_t const *src_ptr = reinterpret_cast < spx_int16_t const * > (&input_buffer[0]);
-			spx_int16_t *dst_ptr = reinterpret_cast < spx_int16_t * > (&output_buffer[previous_outputbuffer_size]);
-
-			int err;
-			err = speex_resampler_process_interleaved_int(
-				internal_data_->speex_resampler,
-				src_ptr,
-				&in_length,
-				dst_ptr,
-				&out_length
-			);
-
-
-			unsigned int remaining_in = input_buffer.size() - in_length * channel_sample_factor;
-
-			if (remaining_in > 0)
-				std::memmove(&input_buffer[0], &input_buffer[in_length * channel_sample_factor], remaining_in);
-			input_buffer.resize(remaining_in);
-
-			output_buffer.resize(previous_outputbuffer_size + out_length * channel_sample_factor);
-		}
-
-		if (output_buffer.size() >= (channel_sample_factor * num_samples_to_write))
-		{
-			std::memcpy(dest, &output_buffer[0], channel_sample_factor * num_samples_to_write);
-			unsigned int remaining_out = output_buffer.size() - channel_sample_factor * num_samples_to_write;
-
-			if (remaining_out > 0)
-				std::memmove(&output_buffer[0], &output_buffer[channel_sample_factor * num_samples_to_write], remaining_out);
-			output_buffer.resize(remaining_out);
-
-			return num_samples_to_write;
+			speex_resampler_set_rate(internal_data_->speex_resampler, input_frequency, output_frequency);
+			// clear input buffer
 		}
 	}
 
+	unsigned long sample_multiplier = num_channels * get_sample_size(input_type);
+	unsigned long num_samples_to_output = 0;
 
-	return 0;
+	if (is_more_input_needed_for(max_num_output_samples))
+	{
+		unsigned long offset = output_buffer.size();
+		unsigned long adjusted_max_num_output_samples = max_num_output_samples * output_frequency / input_frequency + 128;
+		output_buffer.resize(offset + adjusted_max_num_output_samples * sample_multiplier);
+
+		unsigned long num_written_samples = 0;
+
+		switch (input_type)
+		{
+			case audio_common::sample_s16: num_written_samples = resample_16bit(input_data, num_input_samples, &output_buffer[offset], adjusted_max_num_output_samples); break;
+			case audio_common::sample_s32: num_written_samples = resample_32bit(input_data, num_input_samples, &output_buffer[offset], adjusted_max_num_output_samples); break;
+			default: assert(0); return 0;
+		}
+
+		output_buffer.resize(offset + num_written_samples * sample_multiplier);
+		num_samples_to_output = std::min(max_num_output_samples, num_written_samples);
+	}
+	else
+	{
+	//	std::cerr << "no more input needed for resampler\n";
+		num_samples_to_output = max_num_output_samples;
+	}
+
+	{
+		unsigned long num_bytes_to_copy = num_samples_to_output * sample_multiplier;
+		unsigned long num_remaining_bytes = output_buffer.size() - num_bytes_to_copy;
+		std::memcpy(output_data, &output_buffer[0], num_bytes_to_copy);
+		std::memmove(&output_buffer[0], &output_buffer[num_bytes_to_copy], num_remaining_bytes);
+		output_buffer.resize(num_remaining_bytes);
+	}
+
+//	std::cerr << "num input samples: " << num_input_samples << "  samples  output buffer size: " << output_buffer.size() << " byte   send to output: " << num_samples_to_output << " samples\n";
+
+	return num_samples_to_output;
+}
+
+
+unsigned long speex_resampler::resample_16bit(void const *input_data, unsigned long const num_input_samples, void *output_data, unsigned long const max_num_output_samples)
+{
+	spx_uint32_t in_length = num_input_samples;
+	spx_uint32_t out_length = max_num_output_samples;
+
+	spx_int16_t const *in_ptr = reinterpret_cast < spx_int16_t const * > (input_data);
+	spx_int16_t *out_ptr = reinterpret_cast < spx_int16_t * > (output_data);
+
+	int err;
+	err = speex_resampler_process_interleaved_int(
+		internal_data_->speex_resampler,
+		in_ptr,
+		&in_length,
+		out_ptr,
+		&out_length
+	);
+
+//	if (in_length != num_input_samples)
+//		std::cerr << "WARNING: speex resampler used " << in_length << " out of " << num_input_samples << " input samples (all should be used)\n";
+
+	return out_length;
+}
+
+
+unsigned long speex_resampler::resample_32bit(void const *input_data, unsigned long const num_input_samples, void *output_data, unsigned long const max_num_output_samples)
+{
+	spx_uint32_t in_length = num_input_samples;
+	spx_uint32_t out_length = max_num_output_samples;
+
+	float const *in_ptr = reinterpret_cast < float const * > (input_data);
+	float *out_ptr = reinterpret_cast < float * > (output_data);
+
+	int err;
+	err = speex_resampler_process_interleaved_float(
+		internal_data_->speex_resampler,
+		in_ptr,
+		&in_length,
+		out_ptr,
+		&out_length
+	);
+
+	return out_length;
 }
 
 

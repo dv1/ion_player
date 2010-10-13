@@ -34,7 +34,8 @@ freely, subject to the following restrictions:
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/shared_ptr.hpp>
+//#include <boost/shared_ptr.hpp>
+#include "convert.hpp"
 #include "resampler.hpp"
 #include "sink.hpp"
 #include "sink_creator.hpp"
@@ -158,7 +159,6 @@ template < typename Derived >
 class common_sink_base:
 	public sink
 {
-	typedef boost::shared_ptr < speex_resampler::resampler > resampler_ptr_t;
 public:
 	typedef Derived derived_t;
 	typedef common_sink_base < Derived > self_t;
@@ -179,7 +179,7 @@ public:
 		{
 			// Playback is already running, the device does not have to be initialized - pause it to reset the resampler and set the new current & next decoders
 			pause(false);
-			resampler_->reset();
+			speex_resampler_.reset();
 		}
 		else
 		{
@@ -189,9 +189,6 @@ public:
 				send_event_callback("error", boost::assign::list_of("initializing the audio device failed -> not playing"));
 				return;
 			}
-
-			// The 5 is a quality setting; 0 is worst, 10 is best; better quality requires more computations at run-time
-			resampler_ = resampler_ptr_t(new speex_resampler::resampler(playback_properties_.num_channels, 5, playback_properties_.frequency));
 		}
 
 		// At this point, the device is initialized (and possibly in a paused state). This scope must still be synchronized, however,
@@ -215,8 +212,6 @@ public:
 						is_paused = false;
 						return;
 					}
-
-					resampler_->set_output_frequency(playback_properties_.frequency);
 				}
 			}
 
@@ -395,7 +390,9 @@ protected:
 		sink(send_event_callback),
 		run_playback_loop(false),
 		is_paused(false),
-		reinitialize_on_demand(initialize_on_demand)
+		reinitialize_on_demand(initialize_on_demand),
+		speex_resampler_(5), // The 5 is a quality setting; 0 is worst, 10 is best; better quality requires more computations at run-time
+		convert_(speex_resampler_)
 	{
 	}
 
@@ -454,8 +451,6 @@ protected:
 							is_paused = false;
 							return; // reinitialization failed -> shut down playback
 						}
-						// set the resampler's output frequency to match the device's
-						resampler_->set_output_frequency(playback_properties_.frequency);
 						// tell the current decoder about the new playback properties
 						current_decoder->set_playback_properties(playback_properties_);
 					}
@@ -468,29 +463,29 @@ protected:
 				if (!run_playback_loop)
 					return;
 
-				unsigned int
-					num_samples_to_write = playback_properties_.num_buffer_samples,
-					sample_offset = 0;
+				unsigned int num_samples_to_write = playback_properties_.num_buffer_samples;
 
 				num_buffer_samples = playback_properties_.num_buffer_samples;
 
 
-				// Inner loop; this loop fills the sample buffer, which will be played back
+				// This scope fills the sample buffer, which will be played back
 				// If the sink is paused, do not fill the sample buffer with decoder data
-				while (!is_paused && current_decoder)
+				if (!is_paused && current_decoder)
 				{
 					// Multiplier is used for getting byte counts out of sample counts
 					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
 					// This catches miscalculations that would otherwise lead to buffer overflows
-					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
+					assert(num_samples_to_write * multiplier <= get_derived().get_sample_buffer_size());
 
-					// Call the resampler, which pulls data from the current decoder and resamples it if necessary, returning the number of actually
-					// written samples. The resampler writes the samples into the audio device's sample buffer, at the current sample offset.
-					// The sample offset is used to implemented gapless playback; in case an earlier inner loop iteration only partially filled the sample buffer,
-					// the offset ensures filling will continue where the previous iteration left off.
-					unsigned int num_samples_written = (*resampler_)(&(get_derived().get_sample_buffer()[sample_offset  * multiplier]), num_samples_to_write, *current_decoder);
+					// Retrieve, and if necessary, convert/resample data from the current decoder. The output is written into the sink's sample buffer.
+					// The converter returns the number of actually written samples.
+					unsigned int num_samples_written = convert_(
+						*current_decoder, current_decoder->get_decoder_properties(),
+						&(get_derived().get_sample_buffer()[0]), num_samples_to_write, playback_properties_,
+						255, 255
+					);
 
-					// No samples were written -> try the next song
+					// No samples were written -> move to the next song
 					// (A count of zero means by definition "this decoder is done decoding, and will not write any more samples")
 					if (num_samples_written == 0)
 					{
@@ -534,45 +529,24 @@ protected:
 						// -> there is nothing more to play; set do_shutdown to true so the next playback loop iteration performs a shutdown and exits
 						if (!current_decoder)
 							do_shutdown = true;
+					}
 
-						// This inner loop cannot continue if the device needs restarting - the playback frequency might change after
-						// device reinitialization
-						// This does introduce a gap, which is documented at the beginning of this source
-						// Subsequent code will fill any space left in the buffer with zeros
-						if (restart_device)
-							break;
-					}
-					else if (num_samples_written < num_samples_to_write) // less samples were written than expected -> adjust offset and num samples to write
-					{
-						num_samples_to_write -= num_samples_written;
-						sample_offset += num_samples_written;
-					}
-					else // rest of buffer fully filled -> exit loop, we are done
-					{
-						num_samples_to_write = 0;
-						sample_offset = 0;
-						break;
-					}
+					num_buffer_samples = num_samples_written;
+					assert(num_buffer_samples <= playback_properties_.num_buffer_samples);
 				}
 
-
-				if (num_samples_to_write > 0)
-				{
-					// Not all samples that were supposed to be written actually were filled into the buffer; there are some samples left that
-					// did not get a value assigned -> fill these with zeros
-					// This code also ensures the sample buffer is fully zeroed in case the sink is paused, since in this case,
-					// num_samples_to_write will always equal the total amount of samples
-					unsigned int multiplier = playback_properties_.num_channels * get_sample_size(playback_properties_.sample_type_);
-					assert((sample_offset + num_samples_to_write) * multiplier <= get_derived().get_sample_buffer_size());
-					std::memset(&(get_derived().get_sample_buffer()[sample_offset * multiplier]), 0, num_samples_to_write * multiplier);
-				}
+				if (is_paused)
+					std::memset(&(get_derived().get_sample_buffer()[0]), 0, get_derived().get_sample_buffer_size());
 			}
 
-			// Second part of the loop: playback the prepared data
-			if (!get_derived().render_samples(num_buffer_samples))
+			// Second part of the loop: playback the prepared data (if there is any)
+			if (num_buffer_samples > 0)
 			{
-				// if a fatal error happened, end the playback loop
-				do_shutdown = true;
+				if (!get_derived().render_samples(num_buffer_samples))
+				{
+					// if a fatal error happened, end the playback loop
+					do_shutdown = true;
+				}
 			}
 		}
 	}
@@ -584,7 +558,8 @@ protected:
 	bool run_playback_loop, is_paused, reinitialize_on_demand;
 	boost::thread playback_thread;
 	boost::mutex mutex;
-	resampler_ptr_t resampler_;
+	speex_resampler::speex_resampler speex_resampler_;
+	convert < speex_resampler::speex_resampler > convert_;
 };
 
 

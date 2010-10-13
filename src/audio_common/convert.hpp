@@ -81,15 +81,22 @@ struct convert
 
 		// this value is adjusted for the difference between input and output frequency
 		// for example, if the input frequency is 48kHz, and the output frequency is 24kHz, the input buffer needs to be 48/24 = 2 times larger
-		unsigned long adjusted_num_output_samples = static_cast < unsigned long > (float(num_output_samples) * float(input_frequency) / float(output_frequency) + 0.5f);
+		//unsigned long adjusted_num_output_samples = static_cast < unsigned long > (float(num_output_samples) * float(input_frequency) / float(output_frequency) + 0.5f);
+		unsigned long adjusted_num_output_samples = num_output_samples;
+		unsigned long num_retrieved_samples = 0;
 
 
-		// with the adjusted value from above, retrieve samples from the sample source, and resize the buffer to the number of actually retrieved samples
-		// (since the sample source may have given us less samples than we requested)
-		unsigned long num_samples_to_retrieve = adjusted_num_output_samples;
-		source_data_buffer.resize(num_samples_to_retrieve * num_input_channels * get_sample_size(get_sample_type(input_properties)));
-		unsigned long num_retrieved_samples = retrieve_samples(sample_source, &source_data_buffer[0], num_samples_to_retrieve);
-		source_data_buffer.resize(num_retrieved_samples * num_input_channels * get_sample_size(get_sample_type(input_properties)));
+		if (frequencies_match || is_more_input_needed_for(resampler, num_output_samples))
+		{
+			// with the adjusted value from above, retrieve samples from the sample source, and resize the buffer to the number of actually retrieved samples
+			// (since the sample source may have given us less samples than we requested)
+			unsigned long num_samples_to_retrieve = adjusted_num_output_samples;
+			source_data_buffer.resize(num_samples_to_retrieve * num_input_channels * get_sample_size(get_sample_type(input_properties)));
+			num_retrieved_samples = retrieve_samples(sample_source, &source_data_buffer[0], num_samples_to_retrieve);
+			source_data_buffer.resize(num_retrieved_samples * num_input_channels * get_sample_size(get_sample_type(input_properties)));
+		}
+		else
+			num_retrieved_samples = adjusted_num_output_samples;
 
 
 		// here, the dest and dest_type values are set, as well as the resampler input (if necessary)
@@ -113,15 +120,15 @@ struct convert
 			// since with resampling, an intermediate step between sample type conversion & mixing and actual output is present anyway
 			dest_type = find_compatible_type(resampler, get_sample_type(input_properties));
 
-			if (sample_types_match)
+			if (sample_types_match && num_channels_match)
 			{
-				// if the sample types match, then no conversion step is necessary, and the resampler can pull data from the source data buffer directly
+				// if the sample types and channel count match, then no conversion step is necessary, and the resampler can pull data from the source data buffer directly
 				resampler_input = &source_data_buffer[0];
 				dest = 0;
 			}
 			else
 			{
-				// if the sample types do not match, then the resampler needs to pull data from the intermediate buffer dest points to
+				// if the sample types and channel count do not match, then the resampler needs to pull data from the intermediate buffer dest points to
 				// the conversion step will write to dest
 				resampling_input_buffer.resize(adjusted_num_output_samples * num_output_channels * get_sample_size(dest_type));
 				dest = &resampling_input_buffer[0];
@@ -131,35 +138,38 @@ struct convert
 
 
 		// first processing stage: convert samples & mix channels
-		if (num_channels_match)
+		if (frequencies_match || is_more_input_needed_for(resampler, num_output_samples))
 		{
-			// channel counts match, no mixing necessary
-
-			if (!sample_types_match)
+			if (num_channels_match)
 			{
-				assert(dest != 0);
+				// channel counts match, no mixing necessary
 
-				// sample types do not match
-				// go through all the input samples, convert them, and write them to dest
-				for (unsigned long i = 0; i < num_retrieved_samples * num_input_channels; ++i)
+				if (!sample_types_match)
 				{
-					set_sample_value(
-						dest, i,
-						convert_sample_value(
-							get_sample_value(&source_data_buffer[0], i, get_sample_type(input_properties)),
-							get_sample_type(input_properties), dest_type
-						),
-						dest_type
-					);
-				}
-			}
+					assert(dest != 0);
 
-			// if the sample types match, nothing needs to be done here
-		}
-		else
-		{
-			// channels count do not match - call the mixer
-			mix_channels(&source_data_buffer[0], dest, num_retrieved_samples, get_sample_type(input_properties), dest_type, get_num_channels(input_properties), get_num_channels(output_properties));
+					// sample types do not match
+					// go through all the input samples, convert them, and write them to dest
+					for (unsigned long i = 0; i < num_retrieved_samples * num_input_channels; ++i)
+					{
+						set_sample_value(
+							dest, i,
+							convert_sample_value(
+								get_sample_value(&source_data_buffer[0], i, get_sample_type(input_properties)),
+								get_sample_type(input_properties), dest_type
+							),
+							dest_type
+						);
+					}
+				}
+
+				// if the sample types match, nothing needs to be done here
+			}
+			else
+			{
+				// channels count do not match - call the mixer
+				mix_channels(&source_data_buffer[0], dest, num_retrieved_samples, get_sample_type(input_properties), dest_type, get_num_channels(input_properties), get_num_channels(output_properties));
+			}
 		}
 
 

@@ -374,7 +374,7 @@ void mpg123_decoder::set_playback_properties(playback_properties const &new_play
 
 decoder_properties mpg123_decoder::get_decoder_properties() const
 {
-	return decoder_properties(src_frequency, playback_properties_.num_channels, playback_properties_.sample_type_);
+	return decoder_properties(src_frequency, src_num_channels, playback_properties_.sample_type_);
 }
 
 
