@@ -98,6 +98,19 @@ struct playback_properties
 
 
 
+// extrinsic functions to let the decoder meet the AudioProperties concept requirements
+
+namespace
+{
+
+inline unsigned int get_num_channels(playback_properties const &audio_properties) { return audio_properties.num_channels; }
+inline unsigned int get_frequency(playback_properties const &audio_properties) { return audio_properties.frequency; }
+inline sample_type get_sample_type(playback_properties const &audio_properties) { return audio_properties.sample_type_; }
+
+}
+
+
+
 
 //////
 // decoder properties class
@@ -135,6 +148,19 @@ struct decoder_properties
 			;
 	}
 };
+
+
+
+// extrinsic functions to let the decoder meet the AudioProperties concept requirements
+
+namespace
+{
+
+inline unsigned int get_num_channels(decoder_properties const &audio_properties) { return audio_properties.num_channels; }
+inline unsigned int get_frequency(decoder_properties const &audio_properties) { return audio_properties.frequency; }
+inline sample_type get_sample_type(decoder_properties const &audio_properties) { return audio_properties.sample_type_; }
+
+}
 
 
 

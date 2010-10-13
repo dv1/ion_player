@@ -272,6 +272,20 @@ protected:
 };
 
 
+
+// extrinsic functions to let the decoder meet the SampleSource concept requirements
+
+namespace
+{
+
+inline unsigned long retrieve_samples(decoder &decoder_, void *output, unsigned long const num_output_samples)
+{
+	return decoder_.update(output, num_output_samples);
+}
+
+}
+
+
 typedef boost::shared_ptr < decoder > decoder_ptr_t;
 
 
