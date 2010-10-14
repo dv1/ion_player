@@ -177,9 +177,8 @@ public:
 
 		if (run_playback_loop)
 		{
-			// Playback is already running, the device does not have to be initialized - pause it to reset the resampler and set the new current & next decoders
+			// Playback is already running, the device does not have to be initialized - pause it
 			pause(false);
-			speex_resampler_.reset();
 		}
 		else
 		{
@@ -195,6 +194,9 @@ public:
 		// since the playback loop thread may take a short while before it is paused. Without synchronization, this would cause a race condition.
 		{
 			boost::lock_guard < boost::mutex > lock(mutex);
+
+			
+			speex_resampler_.reset();
 
 			// Reinitialization has been marked as necessary, and playback is running -> reinitialize device
 			// (reinitializing makes no sense if no playback is running yet)
