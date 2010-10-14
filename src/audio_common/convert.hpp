@@ -67,7 +67,7 @@ struct convert
 		unsigned int input_frequency = get_frequency(input_properties);
 		unsigned int output_frequency = get_frequency(output_properties);
 
-		if (input_frequency == 0)
+		if (input_frequency == 0) // if the input frequency is 0, then the sample source can adapt to the output frequency
 			input_frequency = output_frequency;
 
 		bool frequencies_match = (input_frequency == output_frequency);
@@ -82,67 +82,57 @@ struct convert
 		}
 
 
-		// this value is adjusted for the difference between input and output frequency
-		// for example, if the input frequency is 48kHz, and the output frequency is 24kHz, the input buffer needs to be 48/24 = 2 times larger
-		//unsigned long adjusted_num_output_samples = static_cast < unsigned long > (float(num_output_samples) * float(input_frequency) / float(output_frequency) + 0.5f);
-		unsigned long adjusted_num_output_samples = num_output_samples;
 		unsigned long num_retrieved_samples = 0;
-
+		uint8_t *resampler_input;
+		sample_type dest_type = sample_unknown;
 
 		if (frequencies_match || is_more_input_needed_for(resampler, num_output_samples))
 		{
 			// with the adjusted value from above, retrieve samples from the sample source, and resize the buffer to the number of actually retrieved samples
 			// (since the sample source may have given us less samples than we requested)
-			unsigned long num_samples_to_retrieve = adjusted_num_output_samples;
+			unsigned long num_samples_to_retrieve = num_output_samples;
 			source_data_buffer.resize(num_samples_to_retrieve * num_input_channels * get_sample_size(get_sample_type(input_properties)));
 			num_retrieved_samples = retrieve_samples(sample_source, &source_data_buffer[0], num_samples_to_retrieve);
 			source_data_buffer.resize(num_retrieved_samples * num_input_channels * get_sample_size(get_sample_type(input_properties)));
-		}
-		else
-			num_retrieved_samples = adjusted_num_output_samples;
 
-
-		// here, the dest and dest_type values are set, as well as the resampler input (if necessary)
-		// several optimizations are done here: if the resampler is not necessary, then dest points to the output - any conversion steps will write data directly to the output then
-		// if the resampler is necessary, and the sample types match, then the resampler's input is the source data buffer, otherwise it is the "dest" pointer
-		// the reason for this is: if the sample types match, no conversion step is necessary, and the resampler can pull data directly from the source data buffer;
-		// otherwise, the conversion step needs to convert to an intermediate buffer (the buffer the dest pointer points at), and then the resampler pulls data from this buffer
-		uint8_t *dest, *resampler_input;
-		sample_type dest_type;
-		if (frequencies_match)
-		{
-			// frequencies match - dest is set to point at the output, meaning that the next step will directly write to the output
-			dest_type = get_sample_type(output_properties);
-			dest = reinterpret_cast < uint8_t* > (output);
-		}
-		else
-		{
-			// frequencies do not match, resampling is necessary - dest is set to point at an intermediate buffer, which the resampler will use
-
-			// ask the resampler what resampling input type it needs - this may differ from the output properties' sample type, but this is ok,
-			// since with resampling, an intermediate step between sample type conversion & mixing and actual output is present anyway
-			dest_type = find_compatible_type(resampler, get_sample_type(input_properties));
-
-			if (sample_types_match && num_channels_match)
+			// here, the dest and dest_type values are set, as well as the resampler input (if necessary)
+			// several optimizations are done here: if the resampler is not necessary, then dest points to the output - any conversion steps will write data directly to the output then
+			// if the resampler is necessary, and the sample types match, then the resampler's input is the source data buffer, otherwise it is the "dest" pointer
+			// the reason for this is: if the sample types match, no conversion step is necessary, and the resampler can pull data directly from the source data buffer;
+			// otherwise, the conversion step needs to convert to an intermediate buffer (the buffer the dest pointer points at), and then the resampler pulls data from this buffer
+			uint8_t *dest;
+			if (frequencies_match)
 			{
-				// if the sample types and channel count match, then no conversion step is necessary, and the resampler can pull data from the source data buffer directly
-				resampler_input = &source_data_buffer[0];
-				dest = 0;
+				// frequencies match - dest is set to point at the output, meaning that the next step will directly write to the output
+				dest_type = get_sample_type(output_properties);
+				dest = reinterpret_cast < uint8_t* > (output);
 			}
 			else
 			{
-				// if the sample types and channel count do not match, then the resampler needs to pull data from the intermediate buffer dest points to
-				// the conversion step will write to dest
-				resampling_input_buffer.resize(adjusted_num_output_samples * num_output_channels * get_sample_size(dest_type));
-				dest = &resampling_input_buffer[0];
-				resampler_input = dest;
+				// frequencies do not match, resampling is necessary - dest is set to point at an intermediate buffer, which the resampler will use
+
+				// ask the resampler what resampling input type it needs - this may differ from the output properties' sample type, but this is ok,
+				// since with resampling, an intermediate step between sample type conversion & mixing and actual output is present anyway
+				dest_type = find_compatible_type(resampler, get_sample_type(input_properties));
+
+				if (sample_types_match && num_channels_match)
+				{
+					// if the sample types and channel count match, then no conversion step is necessary, and the resampler can pull data from the source data buffer directly
+					resampler_input = &source_data_buffer[0];
+					dest = 0;
+				}
+				else
+				{
+					// if the sample types and channel count do not match, then the resampler needs to pull data from the intermediate buffer dest points to
+					// the conversion step will write to dest
+					resampling_input_buffer.resize(num_output_samples * num_output_channels * get_sample_size(dest_type));
+					dest = &resampling_input_buffer[0];
+					resampler_input = dest;
+				}
 			}
-		}
 
 
-		// first processing stage: convert samples & mix channels
-		if (frequencies_match || is_more_input_needed_for(resampler, num_output_samples))
-		{
+			// first processing stage: convert samples & mix channels
 			if (num_channels_match)
 			{
 				// channel counts match, no mixing necessary
@@ -173,6 +163,17 @@ struct convert
 				// channels count do not match - call the mixer
 				mix_channels(&source_data_buffer[0], dest, num_retrieved_samples, get_sample_type(input_properties), dest_type, get_num_channels(input_properties), get_num_channels(output_properties));
 			}
+		}
+		else
+		{
+			// either resampling is not necessary, or the resampler does not need any new input for now
+			// set number of retrieved samples to number of output samples, and if resampling is necessary, set the dest_type value
+
+			num_retrieved_samples = num_output_samples;
+
+			// the dest_type value is set, since the resampler might reset itself if it sees a change in the input type
+			if (!frequencies_match)
+				dest_type = find_compatible_type(resampler, get_sample_type(input_properties));
 		}
 
 
@@ -236,6 +237,8 @@ struct convert
 		}
 
 
+		// finally, return the number of retrieved samples, either from the resampler, or from the source directly,
+		// depending on whether or not resampling was necessary
 		return num_retrieved_samples;
 	}
 
@@ -243,7 +246,7 @@ struct convert
 protected:
 	inline long adjust_sample_volume(long const sample_value, unsigned int const volume, unsigned int const max_volume)
 	{
-		return sample_value * long(volume) / long(max_volume);
+		return long(int64_t(sample_value) * int64_t(volume) / int64_t(max_volume));
 	}
 
 
