@@ -24,7 +24,7 @@
 
 namespace ion
 {
-namespace audio_player
+namespace audio_common
 {
 
 

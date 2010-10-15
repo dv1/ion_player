@@ -124,7 +124,7 @@ protected:
 
 
 
-	typedef boost::shared_ptr < audio_frontend > audio_frontend_ptr_t;
+	typedef boost::shared_ptr < audio_common::audio_frontend > audio_frontend_ptr_t;
 	audio_frontend_ptr_t audio_frontend_;
 
 	// TODO: put the unique_ids instance in the playlist class, as a flyweight (!), to guarantee that only one instance exists for all playlists

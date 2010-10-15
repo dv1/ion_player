@@ -13,7 +13,7 @@ def build(bld):
 		features = ['cxx', 'cprogram'],
 		uselib = 'QTCORE QTGUI QTWEBKIT BUILDMODE STRICT',
 		target = 'ion_player',
-		uselib_local = 'ion_common',
+		uselib_local = 'ion_audio_common ion_common',
 		includes = '.'
 	)
 	obj.find_sources_in_dirs('.')

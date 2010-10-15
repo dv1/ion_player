@@ -33,11 +33,18 @@
 
 namespace ion
 {
+
+
+namespace audio_common
+{
+class audio_frontend;
+}
+
+
 namespace audio_player
 {
 
 
-class audio_frontend;
 class settings;
 
 
@@ -45,7 +52,7 @@ class module_entries_model:
 	public QAbstractListModel
 {
 public:
-	explicit module_entries_model(QObject *parent, audio_frontend &audio_frontend_);
+	explicit module_entries_model(QObject *parent, audio_common::audio_frontend &audio_frontend_);
 	~module_entries_model();
 
 	virtual int columnCount(QModelIndex const & parent) const;
@@ -54,7 +61,7 @@ public:
 	virtual int rowCount(QModelIndex const & parent) const;
 
 protected:
-	audio_frontend &audio_frontend_;
+	audio_common::audio_frontend &audio_frontend_;
 	boost::signals2::connection module_entries_updated_signal_connection;
 };
 
@@ -70,7 +77,7 @@ public:
 
 	explicit settings_dialog(
 		QWidget *parent, settings &settings_,
-		audio_frontend &audio_frontend_,
+		audio_common::audio_frontend &audio_frontend_,
 		playlists_t const &playlists_,
 		change_backend_callback_t const &change_backend_callback,
 		settings_accepted_callback_t const &settings_accepted_callback,
@@ -89,12 +96,12 @@ protected slots:
 
 protected:
 	void showEvent(QShowEvent *event);
-	void set_module_ui(audio_frontend::module_entry const &module_entry_);
+	void set_module_ui(audio_common::audio_frontend::module_entry const &module_entry_);
 
 
-	audio_frontend::module_entry const *current_module_entry;
+	audio_common::audio_frontend::module_entry const *current_module_entry;
 	settings &settings_;
-	audio_frontend &audio_frontend_;
+	audio_common::audio_frontend &audio_frontend_;
 	playlists_t const &playlists_;
 	change_backend_callback_t change_backend_callback;
 	settings_accepted_callback_t settings_accepted_callback;

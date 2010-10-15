@@ -39,7 +39,7 @@ namespace audio_player
 {
 
 
-module_entries_model::module_entries_model(QObject *parent, audio_frontend &audio_frontend_):
+module_entries_model::module_entries_model(QObject *parent, audio_common::audio_frontend &audio_frontend_):
 	QAbstractListModel(parent),
 	audio_frontend_(audio_frontend_)
 {
@@ -64,8 +64,8 @@ QVariant module_entries_model::data(QModelIndex const & index, int role) const
 	if ((role != Qt::DisplayRole) || (index.column() > 1) || (index.row() >= rowCount(QModelIndex())))
 		return QVariant();
 
-	audio_frontend::module_entry_sequence_t const &module_entry_sequence = audio_frontend_.get_module_entries().get < audio_frontend::sequence_tag > ();
-	audio_frontend::module_entry_sequence_t::const_iterator iter = module_entry_sequence.begin() + index.row();
+	audio_common::audio_frontend::module_entry_sequence_t const &module_entry_sequence = audio_frontend_.get_module_entries().get < audio_common::audio_frontend::sequence_tag > ();
+	audio_common::audio_frontend::module_entry_sequence_t::const_iterator iter = module_entry_sequence.begin() + index.row();
 
 	if (iter == module_entry_sequence.end())
 		return QVariant();
@@ -96,7 +96,7 @@ int module_entries_model::rowCount(QModelIndex const & parent) const
 
 settings_dialog::settings_dialog(
 	QWidget *parent, settings &settings_,
-	audio_frontend &audio_frontend_,
+	audio_common::audio_frontend &audio_frontend_,
 	playlists_t const &playlists_,
 	change_backend_callback_t const &change_backend_callback,
 	settings_accepted_callback_t const &settings_accepted_callback,
@@ -157,8 +157,8 @@ void settings_dialog::selected_module_changed(QModelIndex const &new_selection)
 	}
 
 
-	audio_frontend::module_entry_sequence_t const &module_entry_sequence = audio_frontend_.get_module_entries().get < audio_frontend::sequence_tag > ();
-	audio_frontend::module_entry_sequence_t::const_iterator iter = module_entry_sequence.begin() + new_selection.row();
+	audio_common::audio_frontend::module_entry_sequence_t const &module_entry_sequence = audio_frontend_.get_module_entries().get < audio_common::audio_frontend::sequence_tag > ();
+	audio_common::audio_frontend::module_entry_sequence_t::const_iterator iter = module_entry_sequence.begin() + new_selection.row();
 
 	if (iter == module_entry_sequence.end())
 	{
@@ -229,7 +229,7 @@ void settings_dialog::showEvent(QShowEvent *event)
 }
 
 
-void settings_dialog::set_module_ui(audio_frontend::module_entry const &module_entry_)
+void settings_dialog::set_module_ui(audio_common::audio_frontend::module_entry const &module_entry_)
 {
 	current_module_entry = &module_entry_;
 	settings_dialog_ui.module_gui_view->setHtml(module_entry_.html_code.c_str());	

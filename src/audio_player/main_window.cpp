@@ -124,7 +124,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory()));
 
 
-	audio_frontend_ = audio_frontend_ptr_t(new audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
+	audio_frontend_ = audio_frontend_ptr_t(new audio_common::audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
 	audio_frontend_->get_current_uri_changed_signal().connect(boost::phoenix::bind(&main_window::current_uri_changed, this, boost::phoenix::arg_names::arg1));
 	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
 

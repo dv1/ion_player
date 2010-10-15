@@ -42,15 +42,15 @@ namespace audio_common
 
 
 //////
-// sample types
+// sample types and functions
 
 enum sample_type
 {
-	sample_s16,
-	sample_s24,
-	sample_s24_x8_lsb, // 24-bit sample with addition 8 bits of padding (-> 32 bit total); these 8 bits are the LSB
-	sample_s24_x8_msb, // 24-bit sample with addition 8 bits of padding (-> 32 bit total); these 8 bits are the MSB
-	sample_s32,
+	sample_s16,        // 16-bit integer sample, no padding (-> 16 bit total)
+	sample_s24,        // 24-bit integer sample, no padding (-> 24 bit total)
+	sample_s24_x8_lsb, // 24-bit integer sample, 8 bit of padding (-> 32 bit total); these 8 bit are the LSB; bitmask  MSB xxxxxxxxxxxxxxxxxxxxxxxx00000000 LSB  (x = sample bit)
+	sample_s24_x8_msb, // 24-bit integer sample, 8 bit of padding (-> 32 bit total); these 8 bit are the MSB; bitmask  MSB 00000000xxxxxxxxxxxxxxxxxxxxxxxx LSB  (x = sample bit)
+	sample_s32,        // 32-bit integer sample, no padding (-> 32 bit total)
 	sample_unknown
 };
 

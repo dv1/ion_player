@@ -34,7 +34,7 @@ freely, subject to the following restrictions:
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include "convert.hpp"
+#include "transform_samples.hpp"
 #include "resampler.hpp"
 #include "sink.hpp"
 #include "sink_creator.hpp"
@@ -422,7 +422,7 @@ protected:
 		is_paused(false),
 		reinitialize_on_demand(initialize_on_demand),
 		speex_resampler_(5), // The 5 is a quality setting; 0 is worst, 10 is best; better quality requires more computations at run-time
-		convert_(speex_resampler_)
+		transform_samples_(speex_resampler_)
 	{
 	}
 
@@ -515,7 +515,7 @@ protected:
 
 					// Retrieve, and if necessary, convert/resample data from the current decoder. The output is written into the sink's sample buffer.
 					// The converter returns the number of actually written samples.
-					num_samples_written = convert_(
+					num_samples_written = transform_samples_(
 						*current_decoder, current_decoder->get_decoder_properties(),
 						&(get_derived().get_sample_buffer()[0]), num_samples_to_write, playback_properties_,
 						255, 255
@@ -596,7 +596,7 @@ protected:
 	boost::thread playback_thread;
 	boost::mutex mutex;
 	speex_resampler::speex_resampler speex_resampler_;
-	convert < speex_resampler::speex_resampler > convert_;
+	transform_samples < speex_resampler::speex_resampler > transform_samples_;
 };
 
 

@@ -38,7 +38,7 @@ namespace audio_player
 {
 
 
-search_dialog::search_dialog(QWidget *parent, playlists_t &playlists_, audio_frontend &audio_frontend_):
+search_dialog::search_dialog(QWidget *parent, playlists_t &playlists_, audio_common::audio_frontend &audio_frontend_):
 	QDialog(parent),
 	playlists_(playlists_),
 	audio_frontend_(audio_frontend_)

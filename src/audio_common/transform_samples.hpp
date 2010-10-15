@@ -24,8 +24,8 @@ freely, subject to the following restrictions:
 ****************************************************************************/
 
 
-#ifndef ION_AUDIO_CONVERT_HPP
-#define ION_AUDIO_CONVERT_HPP
+#ifndef ION_AUDIO_TRANSFORM_SAMPLES_HPP
+#define ION_AUDIO_TRANSFORM_SAMPLES_HPP
 
 #include <assert.h>
 #include <vector>
@@ -42,10 +42,10 @@ namespace audio_common
 
 
 template < typename Resampler >
-struct convert
+struct transform_samples
 {
 	// resampler must meet the Resampler concept requirements
-	explicit convert(Resampler &resampler):
+	explicit transform_samples(Resampler &resampler):
 		resampler(resampler)
 	{
 	}
@@ -85,6 +85,12 @@ struct convert
 		unsigned long num_retrieved_samples = 0;
 		uint8_t *resampler_input;
 		sample_type dest_type = sample_unknown;
+
+
+
+		// first processing stage: convert samples & mix channels if necessary
+		// also, the resampler input is prepared here
+		// if resampling is necessary, and the resampler has enough input data for now, this stage is bypassed
 
 		if (frequencies_match || is_more_input_needed_for(resampler, num_output_samples))
 		{
@@ -132,7 +138,7 @@ struct convert
 			}
 
 
-			// first processing stage: convert samples & mix channels
+			// actual mixing and conversion is done here
 			if (num_channels_match)
 			{
 				// channel counts match, no mixing necessary
@@ -177,12 +183,12 @@ struct convert
 		}
 
 
-		// the final pass adjusts the output volume; if the volume equals the max volume, it is unnecessary
-		// use this boolean to conditionally enable this postpass
-		bool do_volume_postpass = (volume != max_volume);
+		// the final stage adjusts the output volume; if the volume equals the max volume, it is unnecessary
+		// this boolean conditionally enables this stage
+		bool do_volume_stage = (volume != max_volume);
 
 
-		// second processing stage: resample if necessary
+		// second processing stage: resample if necessary (otherwise this stage is bypassed)
 		if (!frequencies_match)
 		{
 			sample_type resampler_input_type = dest_type;
@@ -204,26 +210,37 @@ struct convert
 			if (resampler_output_type != get_sample_type(output_properties))
 			{
 				sample_type output_sample_type = get_sample_type(output_properties);
-				for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
-				{
-					set_sample_value(
-						output, i,
-						adjust_sample_volume(
-							get_sample_value(output, i, output_sample_type),
-							volume, max_volume
-						),
-						output_sample_type
-					);
-				}
 
-				// volume adjustment was done in-line in the conversion step above -> no volume post-pass necessary
-				do_volume_postpass = false;
+				if (do_volume_stage)
+				{
+					// if the volume stage is required, use the opportunity to do it together with the final conversion step
+					for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
+					{
+						set_sample_value(
+							output, i,
+							adjust_sample_volume(
+								get_sample_value(output, i, output_sample_type),
+								volume, max_volume
+							),
+							output_sample_type
+						);
+					}
+
+					// volume adjustment was done in-line in the conversion step above -> no further volume adjustment required
+					do_volume_stage = false;
+				}
+				else
+				{
+					// conversion without volume adjustment
+					for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
+						set_sample_value(output, i, get_sample_value(output, i, output_sample_type), output_sample_type);
+				}
 			}
 		}
 
 
-		// do the volume postpass if necessary
-		if (do_volume_postpass)
+		// do the volume stage if required
+		if (do_volume_stage)
 		{
 			for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
 			{

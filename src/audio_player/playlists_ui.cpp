@@ -150,7 +150,7 @@ void playlist_ui::playlist_renamed(std::string const &new_name)
 
 
 
-playlists_ui::playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_frontend_, QObject *parent):
+playlists_ui::playlists_ui(QTabWidget &tab_widget, audio_common::audio_frontend &audio_frontend_, QObject *parent):
 	QObject(parent),
 	tab_widget(tab_widget),
 	audio_frontend_(audio_frontend_)

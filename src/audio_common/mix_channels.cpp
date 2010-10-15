@@ -9,7 +9,11 @@ namespace audio_common
 {
 
 
-void mix_channels_1_to_2(
+namespace
+{
+
+
+inline void mix_channels_1_to_2(
 	void const *source_data, void *dest_data,
 	unsigned int const num_samples,
 	sample_type const input_type, sample_type const output_type
@@ -32,7 +36,7 @@ void mix_channels_1_to_2(
 }
 
 
-void mix_channels_2_to_1(
+inline void mix_channels_2_to_1(
 	void const *source_data, void *dest_data,
 	unsigned int const num_samples,
 	sample_type const input_type, sample_type const output_type
@@ -57,6 +61,10 @@ void mix_channels_2_to_1(
 		set_sample_value(dest_data, i, long((sample_value_1 + sample_value_2) / 2), output_type);
 	}
 }
+
+
+}
+
 
 
 void mix_channels(
@@ -85,10 +93,10 @@ void mix_channels(
 				);
 			}
 		}
+
+		return;
 	}
-
-
-	if ((num_input_channels == 1) && (num_output_channels == 2))
+	else if ((num_input_channels == 1) && (num_output_channels == 2))
 		mix_channels_1_to_2(source_data, dest_data, num_samples, input_type, output_type);
 	else if ((num_input_channels == 2) && (num_output_channels == 1))
 		mix_channels_2_to_1(source_data, dest_data, num_samples, input_type, output_type);

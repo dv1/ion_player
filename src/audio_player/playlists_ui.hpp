@@ -37,11 +37,18 @@ class QTreeView;
 
 namespace ion
 {
+
+
+namespace audio_common
+{
+class audio_frontend;
+}
+
+
 namespace audio_player
 {
 
 
-class audio_frontend;
 class playlists_ui;
 class playlist_qt_model;
 
@@ -100,12 +107,12 @@ public:
 	};
 
 
-	explicit playlists_ui(QTabWidget &tab_widget, audio_frontend &audio_frontend_, QObject *parent);
+	explicit playlists_ui(QTabWidget &tab_widget, audio_common::audio_frontend &audio_frontend_, QObject *parent);
 	~playlists_ui();
 
 	QTabWidget& get_tab_widget() { return tab_widget; }
 	playlists_t & get_playlists() { return playlists_; }
-	audio_frontend& get_audio_frontend() { return audio_frontend_; }
+	audio_common::audio_frontend& get_audio_frontend() { return audio_frontend_; }
 	playlist_ui* get_currently_visible_playlist_ui();
 	playlist* get_currently_visible_playlist();
 	playlist_ui* get_currently_playing_playlist_ui();
@@ -126,7 +133,7 @@ protected:
 
 	playlists_t playlists_;
 	QTabWidget &tab_widget;
-	audio_frontend &audio_frontend_;
+	audio_common::audio_frontend &audio_frontend_;
 
 	typedef std::vector < playlist_ui* > playlist_uis_t;
 	playlist_uis_t playlist_uis;

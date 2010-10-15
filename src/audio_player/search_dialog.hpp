@@ -40,11 +40,18 @@ class QMovie;
 
 namespace ion
 {
+
+
+namespace audio_common
+{
+class audio_frontend;
+}
+
+
 namespace audio_player
 {
 
 
-class audio_frontend;
 class playlist_qt_model;
 
 
@@ -53,7 +60,7 @@ class search_dialog:
 {
 	Q_OBJECT
 public:
-	explicit search_dialog(QWidget *parent, playlists_t &playlists_, audio_frontend &audio_frontend_);
+	explicit search_dialog(QWidget *parent, playlists_t &playlists_, audio_common::audio_frontend &audio_frontend_);
 	~search_dialog();
 
 
@@ -81,7 +88,7 @@ protected:
 	filter_playlist_ptr_t search_playlist_;
 	playlist_qt_model *search_qt_model_;
 	playlists_t &playlists_;
-	audio_frontend &audio_frontend_;
+	audio_common::audio_frontend &audio_frontend_;
 	boost::signals2::connection current_uri_changed_signal_connection;
 	Ui_search_dialog search_dialog_ui;
 };

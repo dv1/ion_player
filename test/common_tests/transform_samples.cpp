@@ -1,6 +1,6 @@
 #include "test.hpp"
 #include "types.hpp"
-#include "convert.hpp"
+#include "transform_samples.hpp"
 #include <stdint.h>
 
 
@@ -145,7 +145,7 @@ int test_main(int, char **)
 
 		int16_t output_samples[num_samples];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(1, 10000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(1, 10000, sample_s16),
 			255, 255
@@ -170,7 +170,7 @@ int test_main(int, char **)
 
 		int32_t output_samples[num_samples];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(1, 10000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(1, 10000, sample_s32),
 			255, 255
@@ -195,7 +195,7 @@ int test_main(int, char **)
 
 		int32_t output_samples[num_samples * 2];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(1, 10000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(2, 10000, sample_s32),
 			255, 255
@@ -225,7 +225,7 @@ int test_main(int, char **)
 
 		int32_t output_samples[num_samples];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(2, 10000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(1, 10000, sample_s32),
 			255, 255
@@ -255,7 +255,7 @@ int test_main(int, char **)
 
 		int16_t output_samples[num_samples];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(1, 20000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(1, 10000, sample_s16),
 			255, 255
@@ -276,7 +276,7 @@ int test_main(int, char **)
 
 		int16_t output_samples[num_samples];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(1, 10000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(1, 20000, sample_s16),
 			255, 255
@@ -297,7 +297,7 @@ int test_main(int, char **)
 
 		int32_t output_samples[num_samples];
 
-		unsigned long num_converted = convert < mock_resampler > (resampler)(
+		unsigned long num_converted = transform_samples < mock_resampler > (resampler)(
 			sample_source, mock_audio_properties(2, 20000, sample_s16),
 			output_samples, num_samples, mock_audio_properties(1, 10000, sample_s32),
 			255, 255

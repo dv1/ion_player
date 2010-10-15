@@ -19,10 +19,8 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_PLAYER_AUDIO_FRONTEND_HPP
-#define ION_AUDIO_PLAYER_AUDIO_FRONTEND_HPP
-
-#include <QObject>
+#ifndef ION_AUDIO_COMMON_AUDIO_FRONTEND_HPP
+#define ION_AUDIO_COMMON_AUDIO_FRONTEND_HPP
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -37,7 +35,7 @@
 
 namespace ion
 {
-namespace audio_player
+namespace audio_common
 {
 
 
