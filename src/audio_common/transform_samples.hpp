@@ -76,9 +76,25 @@ struct transform_samples
 
 
 		// if the properties fully match, no processing is necessary - just transmit the samples directly to the output and exit
+		// do a volume processing if necessary, but otherwise its just one transmission
 		if (frequencies_match && sample_types_match && num_channels_match)
 		{
-			return retrieve_samples(sample_source, output, num_output_samples);
+			unsigned long num_retrieved_samples = retrieve_samples(sample_source, output, num_output_samples);
+
+			if (volume != max_volume)
+			{
+				sample_type output_sample_type = get_sample_type(output_properties);
+				for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
+				{
+					set_sample_value(
+						output, i,
+						adjust_sample_volume(get_sample_value(output, i, output_sample_type), volume, max_volume),
+						output_sample_type
+					);
+				}
+			}
+
+			return num_retrieved_samples;
 		}
 
 
@@ -195,22 +211,29 @@ struct transform_samples
 
 			// the resampler may have only support for a fixed number of sample types - let it choose a suitable output one
 			sample_type resampler_output_type = find_compatible_type(resampler, resampler_input_type, get_sample_type(output_properties));
+			sample_type output_type = get_sample_type(output_properties);
+			bool conversion_needed = (resampler_output_type != output_type);
+
+			uint8_t *resampler_output = reinterpret_cast < uint8_t* > (output);
+			if (conversion_needed)
+			{
+				resampling_output_buffer.resize(num_output_samples * num_output_channels * get_sample_size(resampler_output_type));
+				resampler_output = &resampling_output_buffer[0];
+			}
 
 			// call the actual resampler, which returns the number of samples that were actually sent to output
 			num_retrieved_samples = resample(
 				resampler,
 				resampler_input, num_retrieved_samples,
-				output, num_output_samples,
+				resampler_output, num_output_samples,
 				input_frequency, output_frequency,
 				resampler_input_type, resampler_output_type,
 				num_output_channels
 			);
 
 			// the output type chosen by the resampler may not match the output type given by the output properties, so a final conversion step may be necessary
-			if (resampler_output_type != get_sample_type(output_properties))
+			if (conversion_needed)
 			{
-				sample_type output_sample_type = get_sample_type(output_properties);
-
 				if (do_volume_stage)
 				{
 					// if the volume stage is required, use the opportunity to do it together with the final conversion step
@@ -219,10 +242,10 @@ struct transform_samples
 						set_sample_value(
 							output, i,
 							adjust_sample_volume(
-								get_sample_value(output, i, output_sample_type),
+								get_sample_value(resampler_output, i, resampler_output_type),
 								volume, max_volume
 							),
-							output_sample_type
+							output_type
 						);
 					}
 
@@ -233,7 +256,7 @@ struct transform_samples
 				{
 					// conversion without volume adjustment
 					for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
-						set_sample_value(output, i, get_sample_value(output, i, output_sample_type), output_sample_type);
+						set_sample_value(output, i, get_sample_value(resampler_output, i, output_type), output_type);
 				}
 			}
 		}
@@ -242,9 +265,9 @@ struct transform_samples
 		// do the volume stage if required
 		if (do_volume_stage)
 		{
+			sample_type output_sample_type = get_sample_type(output_properties);
 			for (unsigned long i = 0; i < num_retrieved_samples * num_output_channels; ++i)
 			{
-				sample_type output_sample_type = get_sample_type(output_properties);
 				set_sample_value(
 					output, i,
 					adjust_sample_volume(get_sample_value(output, i, output_sample_type), volume, max_volume),
@@ -268,7 +291,7 @@ protected:
 
 
 	typedef std::vector < uint8_t > buffer_t;
-	buffer_t resampling_input_buffer, source_data_buffer;
+	buffer_t resampling_input_buffer, resampling_output_buffer, source_data_buffer;
 	Resampler &resampler;
 };
 
