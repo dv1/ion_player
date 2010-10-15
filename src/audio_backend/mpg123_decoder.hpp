@@ -55,9 +55,6 @@ public:
 	virtual long set_current_position(long const new_position);
 	virtual long get_current_position() const;
 
-	virtual long set_current_volume(long const new_volume);
-	virtual long get_current_volume() const;
-
 	virtual metadata_t get_metadata() const;
 
 	virtual std::string get_type() const;
@@ -87,7 +84,6 @@ protected:
 	mpg123_id3v1 *id3v1_data;
 	mpg123_id3v2 *id3v2_data;
 	buffer_t in_buffer, out_buffer;
-	long current_volume;
 	unsigned long const in_buffer_size, out_buffer_pad_size;
 	int last_read_return_value;
 	bool has_song_length;

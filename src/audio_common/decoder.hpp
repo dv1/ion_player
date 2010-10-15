@@ -57,11 +57,6 @@ public:
 	}
 
 
-	// Minimum and maximum volume constants; deliberately not using integers here, to help platforms where floating point is expensive
-	inline static long min_volume() { return 0; }
-	inline static long max_volume() { return 16777215; }
-
-
 	/**
 	* Reports whether or not the decoder is in an initialized state, meaning that it's properly initialized and operational.
 	* is_initialized() always returns the same; its return value solely depends on the outcome of the decoder initialization. In other words,
@@ -123,24 +118,6 @@ public:
 	* @return The current position
 	*/
 	virtual long get_current_position() const = 0;
-
-	/**
-	* Sets the current volume to the one specified. Valid range is 0 (silence) to 16777215 (full volume). The decoder does _not_ have to guarantee that the current volume
-	* will exactly match the given one after this call is done (this may not be possible, depending on resource and decoder, sometimes one can only set the volume with coarse granularity).
-	* The return value will be the new current volume, which as described may differ from new_volume.
-	*
-	* @param new_volume The new volume; valid range = 0 (silence) to 16777215 (full volume)
-	* @return The new current volume
-	* @pre new_volume must be within the valid range; the decoder must be correctly initialized
-	* @post The current volume will have been changed if the precondition was met; if not, this call will be ignored
-	*/
-	virtual long set_current_volume(long const new_volume) = 0;
-
-	/**
-	* Returns the current volume. The valid range goes from 0 (silence) to 16777215 (full volume).
-	* @return The current volume
-	*/
-	virtual long get_current_volume() const = 0;
 
 	/**
 	* Gets the metadata for the resource that is decoded.

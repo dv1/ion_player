@@ -183,18 +183,6 @@ long vorbis_decoder::get_current_position() const
 }
 
 
-long vorbis_decoder::set_current_volume(long const new_volume)
-{
-	return max_volume(); // TODO:
-}
-
-
-long vorbis_decoder::get_current_volume() const
-{
-	return max_volume(); // TODO:
-}
-
-
 namespace
 {
 

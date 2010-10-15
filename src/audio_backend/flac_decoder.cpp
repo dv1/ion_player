@@ -287,18 +287,6 @@ long flac_decoder::get_current_position() const
 }
 
 
-long flac_decoder::set_current_volume(long const new_volume)
-{
-	return max_volume();
-}
-
-
-long flac_decoder::get_current_volume() const
-{
-	return max_volume();
-}
-
-
 metadata_t flac_decoder::get_metadata() const
 {
 	return empty_metadata();

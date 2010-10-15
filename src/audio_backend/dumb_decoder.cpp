@@ -150,7 +150,6 @@ dumb_decoder::dumb_decoder(send_event_callback_t const send_event_callback, sour
 	duh(0),
 	duh_sigrenderer(0),
 	module_type_(module_type_),
-	current_volume(max_volume()),
 	source_(source_)
 {
 	if (!source_)
@@ -213,23 +212,6 @@ long dumb_decoder::get_current_position() const
 
 	// DUMB does not reset the position when looping - compensate
 	return duh_sigrenderer_get_position(duh_sigrenderer) - loop_data_.cur_num_loops * duh_get_length(duh);
-}
-
-
-long dumb_decoder::set_current_volume(long const new_volume)
-{
-	if ((new_volume < 0) || (new_volume > max_volume()))
-		return -1;
-
-	boost::lock_guard < boost::mutex > lock(mutex_);
-	current_volume = new_volume;
-	return current_volume;
-}
-
-
-long dumb_decoder::get_current_volume() const
-{
-	return current_volume;
 }
 
 
@@ -385,7 +367,7 @@ unsigned int dumb_decoder::update(void *dest, unsigned int const num_samples_to_
 	if ((duh == 0) || (duh_sigrenderer == 0))
 		return 0;
 
-	unsigned int l = duh_render(duh_sigrenderer, 16, 0, float(current_volume) / float(max_volume()), 65536.0f / float(playback_properties_.frequency), num_samples_to_write, dest);
+	unsigned int l = duh_render(duh_sigrenderer, 16, 0, 1.0f, 65536.0f / float(playback_properties_.frequency), num_samples_to_write, dest);
 	return l;
 }
 

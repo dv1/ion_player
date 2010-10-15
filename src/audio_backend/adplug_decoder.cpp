@@ -236,18 +236,6 @@ long adplug_decoder::get_current_position() const
 }
 
 
-long adplug_decoder::set_current_volume(long const)
-{
-	return max_volume(); // TODO:
-}
-
-
-long adplug_decoder::get_current_volume() const
-{
-	return max_volume(); // TODO:
-}
-
-
 metadata_t adplug_decoder::get_metadata() const
 {
 	metadata_t metadata_ = empty_metadata();

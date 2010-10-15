@@ -29,7 +29,6 @@ Qt4 audio frontend:
 
 Audio backend:
 * sidplay decoder (http://sidplay2.sourceforge.net/)
-* volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * implement decoder deletion thread
 * Handle I/O failures (for example, SMB share + network cable disconnected)
 * audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
@@ -66,6 +65,7 @@ Both:
 =======================================================================================
 DONE:
 
+* volume control to adplug, gme, ogg vorbis decoders (-> write generic volume control function) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * sampleformat conversion code (16->24 bit, 24->16, 16->32 bit float etc.) - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * mono->stereo conversion if source is mono - combine this with the resampler if possible, to minimize the amount of intermediate steps
 * handle different sample formats and channel counts in decoders

@@ -493,18 +493,6 @@ long uade_decoder::get_current_position() const
 }
 
 
-long uade_decoder::set_current_volume(long const new_volume)
-{
-	return max_volume(); // TODO:
-}
-
-
-long uade_decoder::get_current_volume() const
-{
-	return max_volume(); // TODO:
-}
-
-
 metadata_t uade_decoder::get_metadata() const
 {
 	metadata_t metadata_ = empty_metadata();

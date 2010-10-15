@@ -368,6 +368,20 @@ public:
 	}
 
 
+	virtual long set_current_volume(long const new_volume)
+	{
+		boost::lock_guard < boost::mutex > lock(mutex);
+		current_volume = std::min(max_volume(), std::max(min_volume(), new_volume));
+		return current_volume;
+	}
+
+
+	virtual long get_current_volume() const
+	{
+		return current_volume;
+	}
+
+
 	virtual void clear_next_decoder()
 	{
 		if (!get_derived().is_initialized()) // No playback? -> Do nothing, and exit
@@ -422,7 +436,8 @@ protected:
 		is_paused(false),
 		reinitialize_on_demand(initialize_on_demand),
 		speex_resampler_(5), // The 5 is a quality setting; 0 is worst, 10 is best; better quality requires more computations at run-time
-		transform_samples_(speex_resampler_)
+		transform_samples_(speex_resampler_),
+		current_volume(sink::max_volume())
 	{
 	}
 
@@ -518,7 +533,7 @@ protected:
 					num_samples_written = transform_samples_(
 						*current_decoder, current_decoder->get_decoder_properties(),
 						&(get_derived().get_sample_buffer()[0]), num_samples_to_write, playback_properties_,
-						255, 255
+						current_volume, sink::max_volume()
 					);
 
 					// No samples were written -> move to the next song, so that the next loop iteration uses that next one
@@ -597,6 +612,7 @@ protected:
 	boost::mutex mutex;
 	speex_resampler::speex_resampler speex_resampler_;
 	transform_samples < speex_resampler::speex_resampler > transform_samples_;
+	long current_volume;
 };
 
 

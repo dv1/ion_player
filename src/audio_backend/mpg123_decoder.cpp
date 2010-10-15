@@ -40,7 +40,6 @@ mpg123_decoder::mpg123_decoder(send_event_callback_t const send_event_callback, 
 	mpg123_handle_(0),
 	id3v1_data(0),
 	id3v2_data(0),
-	current_volume(16777215),
 	in_buffer_size(16384),
 	out_buffer_pad_size(32768),
 	has_song_length(false)
@@ -247,26 +246,6 @@ long mpg123_decoder::get_current_position() const
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
 	return mpg123_tell(mpg123_handle_);
-}
-
-
-long mpg123_decoder::set_current_volume(long const new_volume)
-{
-	if ((new_volume < 0) || (new_volume > max_volume()))
-		return -1;
-
-	boost::lock_guard < boost::mutex > lock(mutex_);
-
-	mpg123_volume(mpg123_handle_, double(new_volume) / double(max_volume()));
-	current_volume = new_volume;
-
-	return current_volume;
-}
-
-
-long mpg123_decoder::get_current_volume() const
-{
-	return current_volume;
 }
 
 

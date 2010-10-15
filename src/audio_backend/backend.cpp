@@ -41,7 +41,6 @@ using namespace audio_common;
 
 
 backend::backend():
-	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
 }
@@ -49,7 +48,6 @@ backend::backend():
 
 backend::backend(send_event_callback_t const &send_event_callback):
 	send_event_callback(send_event_callback),
-	current_volume(decoder::max_volume()),
 	loop_count(-1)
 {
 }
@@ -180,12 +178,11 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		}
 		else if (command == "set_current_volume")
 		{
-			DECODER_GUARD;
-			if (current_decoder)
-			{
-				exec_command_set_value < long > (boost::phoenix::bind(&decoder::set_current_volume,   current_decoder.get(), boost::phoenix::arg_names::arg1), params);
-				current_volume = current_decoder->get_current_volume();
-			}
+			if (params.size() == 0)
+				throw std::invalid_argument(std::string("missing arguments"));
+
+			if (current_sink)
+				current_sink->set_current_volume(boost::lexical_cast < long > (params[0]));
 		}
 		else if (command == "get_current_position")
 		{
@@ -195,8 +192,11 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		}
 		else if (command == "get_current_volume")
 		{
-			response_command = "current_volume";
-			response_params.push_back(boost::lexical_cast < std::string > (current_volume));
+			if (current_sink)
+			{
+				response_command = "current_volume";
+				response_params.push_back(boost::lexical_cast < std::string > (current_sink->get_current_volume()));
+			}
 		}
 		else if (command == "get_module_ui")
 		{
@@ -627,7 +627,6 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 	// Apply some initial settings on the new decoder
 	if (new_decoder)
 	{
-		new_decoder->set_current_volume(current_volume);
 		new_decoder->set_loop_mode(loop_count);
 	}
 
