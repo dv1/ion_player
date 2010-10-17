@@ -122,6 +122,8 @@ protected:
 	void set_current_time_label(unsigned int const current_position);
 	QString get_time_string(int const minutes, int const seconds) const;
 
+	QString check_if_starts_with_file(QString const &uri_str) const;
+
 
 
 	typedef boost::shared_ptr < audio_common::audio_frontend > audio_frontend_ptr_t;

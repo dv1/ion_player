@@ -306,7 +306,7 @@ void main_window::add_file_to_playlist()
 
 	BOOST_FOREACH(QString const &filename, song_filenames)
 	{
-		ion::uri uri_(std::string("file://") + filename.toStdString());
+		ion::uri uri_(check_if_starts_with_file(filename).toStdString());
 		scanner_->start_scan(*currently_visible_playlist, uri_);
 	}
 }
@@ -422,6 +422,21 @@ void main_window::get_current_playback_position()
 }
 
 
+QString main_window::check_if_starts_with_file(QString const &uri_str) const
+{
+	/*
+	This function exists because sometimes, KDE file/director dialogs seem to return paths with file:// prepended.
+	It does not seem to happen all the time, may be a bug inside KDE, and was not observed with the default Qt dialogs.
+	(The KDE dialogs do get used even though this is not a KDE project - KDE replaces Qt's default file & director dialogs
+	with its own.)
+	*/
+	if (uri_str.startsWith("file://"))
+		return uri_str;
+	else
+		return QString("file://") + uri_str;
+}
+
+
 void main_window::scan_directory()
 {
 	if (scanner_ == 0)
@@ -436,8 +451,12 @@ void main_window::scan_directory()
 	if (dir_iterator->hasNext())
 	{
 		QString filename = dir_iterator->next();
-		ion::uri uri_(std::string("file://") + filename.toStdString());
-		scanner_->start_scan(*dir_iterator_playlist, uri_);
+		QFileInfo fileinfo(filename);
+		if (fileinfo.isFile() && fileinfo.isReadable()) // filter out directories and unreadable files
+		{
+			ion::uri uri_(check_if_starts_with_file(filename).toStdString());
+			scanner_->start_scan(*dir_iterator_playlist, uri_);
+		}
 	}
 	else
 	{
