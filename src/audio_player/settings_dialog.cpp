@@ -225,7 +225,7 @@ void settings_dialog::showEvent(QShowEvent *event)
 	{
 		settings_dialog_ui.singleplay_playlist->addItem(playlist_->get_name().c_str());
 	}
-	settings_dialog_ui.singleplay_playlist->setEditText(settings_.get_singleplay_playlist()); // and set the current singleplay playlist namie
+	settings_dialog_ui.singleplay_playlist->setEditText(settings_.get_singleplay_playlist()); // and set the current singleplay playlist name
 }
 
 

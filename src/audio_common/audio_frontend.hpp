@@ -39,6 +39,9 @@ namespace audio_common
 {
 
 
+/*
+Frontend code for communicating with the audio backend.
+*/
 class audio_frontend:
 	public frontend_base < playlist >
 {

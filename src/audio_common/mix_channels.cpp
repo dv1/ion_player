@@ -21,6 +21,7 @@ inline void mix_channels_1_to_2(
 {
 	int output_pos = 0;
 
+	// get a mono sample value and write it twice to the output
 	for (unsigned int i = 0; i < num_samples; ++i, output_pos += 2)
 	{
 		long sample_value = 
@@ -42,16 +43,17 @@ inline void mix_channels_2_to_1(
 	sample_type const input_type, sample_type const output_type
 )
 {
+	// get two sample values from the stereo input, average them, write the averaged value to the mono output
 	for (unsigned int i = 0; i < num_samples; ++i)
 	{
-		int64_t sample_value_1 = 
+		int64_t sample_value_1 =
 			convert_sample_value(
 				get_sample_value(source_data, i * 2 + 0, input_type),
 				input_type,
 				output_type
 			);
 
-		int64_t sample_value_2 = 
+		int64_t sample_value_2 =
 			convert_sample_value(
 				get_sample_value(source_data, i * 2 + 1, input_type),
 				input_type,
@@ -76,6 +78,9 @@ void mix_channels(
 {
 	if (num_input_channels == num_output_channels)
 	{
+		// the N input channels -> N output channels case; just do a copy if the sample types also match
+		// if the types don't match, do a conversion step, but do not mix anything (since it doesn't have to be done)
+	
 		if (input_type == output_type)
 			std::memcpy(dest_data, source_data, num_samples * get_sample_size(input_type));
 		else

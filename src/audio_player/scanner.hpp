@@ -23,8 +23,14 @@
 #define ION_AUDIO_PLAYER_SCANNER_HPP
 
 #include <QProcess>
+#include <QDirIterator>
+#include <QTimer>
+#include <boost/shared_ptr.hpp>
 #include <ion/scanner_base.hpp>
 #include "misc_types.hpp"
+
+
+class QTimer;
 
 
 namespace ion
@@ -47,6 +53,9 @@ public:
 
 
 	void start_scan(playlist_t &playlist_, ion::uri const &uri_to_be_scanned);
+	void scan_file(playlist_t &playlist_, QString const &filename);
+	void scan_directory(playlist_t &playlist_, QString const &directory_path);
+	bool is_already_scanning() const;
 
 	scan_queue_t const & get_scan_queue() const;
 
@@ -76,11 +85,20 @@ protected slots:
 	void try_read_stdout_line();
 	void started();
 	void finished(int exit_code, QProcess::ExitStatus exit_status);
+	void scan_directory_entry();
 
 
 protected:
+	QString check_if_starts_with_file(QString const &uri_str) const;
+
+
 	QProcess backend_process;
 	QString backend_filepath;
+
+	QTimer scan_directory_timer;
+	typedef boost::shared_ptr < QDirIterator > dir_iterator_ptr_t;
+	dir_iterator_ptr_t dir_iterator;
+	playlist *dir_iterator_playlist;
 };
 
 

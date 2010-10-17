@@ -38,11 +38,18 @@ scanner::scanner(QObject *parent, playlists_t &playlists_, QString const &backen
 	connect(&backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(finished(int, QProcess::ExitStatus)));
 	backend_process.setReadChannel(QProcess::StandardOutput);
 	backend_process.setProcessChannelMode(QProcess::SeparateChannels);
+
+	scan_directory_timer.setSingleShot(false);
+	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory_entry()));
 }
 
 
 scanner::~scanner()
 {
+	scan_directory_timer.stop();
+	dir_iterator_playlist = 0;
+	dir_iterator = dir_iterator_ptr_t();
+
 	scan_queue.clear();
 
 	backend_process.waitForFinished(30000);
@@ -69,6 +76,30 @@ void scanner::start_scan(playlist_t &playlist_, ion::uri const &uri_to_be_scanne
 
 	base_t::start_scan(playlist_, uri_to_be_scanned);
 	emit queue_updated();
+}
+
+
+void scanner::scan_file(playlist_t &playlist_, QString const &filename)
+{
+	ion::uri uri_(check_if_starts_with_file(filename).toStdString());
+	start_scan(playlist_, uri_);
+}
+
+
+void scanner::scan_directory(playlist_t &playlist_, QString const &directory_path)
+{
+	if (dir_iterator)
+		return;
+
+	dir_iterator_playlist = &playlist_;
+	dir_iterator = dir_iterator_ptr_t(new QDirIterator(directory_path, QDirIterator::Subdirectories));
+	scan_directory_timer.start(0);
+}
+
+
+bool scanner::is_already_scanning() const
+{
+	return (dir_iterator);
 }
 
 
@@ -114,6 +145,9 @@ void scanner::report_resource_error(std::string const &error_event, std::string 
 void scanner::cancel_scan_slot()
 {
 	cancel_scan();
+	dir_iterator_playlist = 0;
+	dir_iterator = dir_iterator_ptr_t();
+	scan_directory_timer.stop();
 	emit scan_canceled();
 }
 
@@ -146,6 +180,42 @@ void scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
 		case QProcess::NormalExit: scanning_process_finished(true); break;
 		case QProcess::CrashExit: scanning_process_terminated(true); break;
 	};
+}
+
+
+QString scanner::check_if_starts_with_file(QString const &uri_str) const
+{
+	/*
+	This function exists because sometimes, KDE file/director dialogs seem to return paths with file:// prepended.
+	It does not seem to happen all the time, may be a bug inside KDE, and was not observed with the default Qt dialogs.
+	(The KDE dialogs do get used even though this is not a KDE project - KDE replaces Qt's default file & director dialogs
+	with its own.)
+	*/
+	if (uri_str.startsWith("file://"))
+		return uri_str;
+	else
+		return QString("file://") + uri_str;
+}
+
+
+void scanner::scan_directory_entry()
+{
+	if (!dir_iterator || !dir_iterator_playlist)
+		return;
+
+	if (dir_iterator->hasNext())
+	{
+		QString filename = dir_iterator->next();
+		QFileInfo fileinfo(filename);
+		if (fileinfo.isFile() && fileinfo.isReadable()) // filter out directories and unreadable files
+			scan_file(*dir_iterator_playlist, filename);
+	}
+	else
+	{
+		dir_iterator_playlist = 0;
+		dir_iterator = dir_iterator_ptr_t();
+		scan_directory_timer.stop();
+	}
 }
 
 

@@ -24,8 +24,6 @@
 
 #include <QMainWindow>
 #include <QProcess>
-#include <QTimer>
-#include <QDirIterator>
 
 #include "ui_main_window.h"
 #include "ui_position_volume_widget.h"
@@ -45,6 +43,7 @@
 
 
 class QLabel;
+class QTimer;
 
 
 namespace ion
@@ -58,6 +57,7 @@ class scanner;
 class logger_dialog;
 class scan_dialog;
 class scan_indicator_icon;
+class status_bar_ui;
 
 
 class main_window:
@@ -99,9 +99,6 @@ protected slots:
 
 	void get_current_playback_position();
 
-	void scan_directory();
-	void scan_canceled();
-
 
 protected:
 	void start_backend(bool const start_scanner = true);
@@ -119,12 +116,6 @@ protected:
 	void current_uri_changed(uri_optional_t const &new_current_uri);
 	void current_metadata_changed(metadata_optional_t const &new_metadata);
 
-	void set_current_time_label(unsigned int const current_position);
-	QString get_time_string(int const minutes, int const seconds) const;
-
-	QString check_if_starts_with_file(QString const &uri_str) const;
-
-
 
 	typedef boost::shared_ptr < audio_common::audio_frontend > audio_frontend_ptr_t;
 	audio_frontend_ptr_t audio_frontend_;
@@ -136,11 +127,6 @@ protected:
 	QProcess *backend_process;
 	scanner *scanner_;
 	QTimer *current_position_timer;
-	QTimer scan_directory_timer;
-
-	typedef boost::shared_ptr < QDirIterator > dir_iterator_ptr_t;
-	dir_iterator_ptr_t dir_iterator;
-	playlist *dir_iterator_playlist;
 
 	playlists_ui *playlists_ui_;
 
@@ -154,9 +140,7 @@ protected:
 
 	scan_dialog *scan_dialog_;
 
-	QLabel *current_song_title, *current_playback_time, *current_song_length;
-	scan_indicator_icon *current_scan_status;
-	unsigned int current_num_ticks_per_second;
+	status_bar_ui *status_bar_ui_;
 
 	Ui_main_window main_window_ui;
 	Ui_position_volume_widget position_volume_widget_ui;

@@ -25,12 +25,12 @@
 
 #include <QFileInfo>
 #include <QFileDialog>
-#include <QLabel>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QProcess>
 #include <QMetaType>
+#include <QTimer>
 
 #include <boost/function.hpp>
 #include <boost/spirit/home/phoenix/bind.hpp>
@@ -47,6 +47,7 @@
 #include "logger_dialog.hpp"
 #include "scan_dialog.hpp"
 #include "scan_indicator_icon.hpp"
+#include "status_bar_ui.hpp"
 
 #include "../audio_common/sink.hpp"
 
@@ -102,31 +103,16 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	position_volume_widget_ui.position->setEnabled(false);
 	position_volume_widget_ui.volume->setEnabled(false);
 
-	current_song_title = new QLabel(this);
-	current_playback_time = new QLabel(this);
-	current_song_length = new QLabel(this);
-	current_scan_status = new scan_indicator_icon(this);
-	current_song_title->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	current_playback_time->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	current_song_length->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	current_scan_status->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-	main_window_ui.statusbar->addPermanentWidget(current_scan_status);
-	main_window_ui.statusbar->addPermanentWidget(current_song_title);
-	main_window_ui.statusbar->addPermanentWidget(current_playback_time);
-	main_window_ui.statusbar->addPermanentWidget(current_song_length);
-
-
 	current_position_timer = new QTimer(this);
 	current_position_timer->setInterval(500);
 	connect(current_position_timer, SIGNAL(timeout()), this, SLOT(get_current_playback_position()));
 
-	scan_directory_timer.setSingleShot(false);
-	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory()));
-
-
 	audio_frontend_ = audio_frontend_ptr_t(new audio_common::audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
 	audio_frontend_->get_current_uri_changed_signal().connect(boost::phoenix::bind(&main_window::current_uri_changed, this, boost::phoenix::arg_names::arg1));
 	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
+
+
+	status_bar_ui_ = new status_bar_ui(this, main_window_ui.statusbar, *audio_frontend_);
 
 
 	backend_log_dialog_ = new logger_dialog(this, 1000);
@@ -157,7 +143,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	apply_flags();
 
 	scan_dialog_ = new scan_dialog(this, 0);
-	connect(current_scan_status->get_open_scanner_dialog_action(), SIGNAL(triggered()), scan_dialog_, SLOT(show()));
+	connect(status_bar_ui_->get_scan_indicator_icon()->get_open_scanner_dialog_action(), SIGNAL(triggered()), scan_dialog_, SLOT(show()));
 
 
 	search_dialog_ = new search_dialog(this, playlists_ui_->get_playlists(), *audio_frontend_);
@@ -170,7 +156,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 main_window::~main_window()
 {
-	dir_iterator = dir_iterator_ptr_t();
 	stop_backend();
 	save_playlists();
 	delete ui_settings_;
@@ -238,7 +223,7 @@ void main_window::set_current_position()
 {
 	int new_position = position_volume_widget_ui.position->value();
 	audio_frontend_->set_current_position(new_position);
-	set_current_time_label(new_position);
+	status_bar_ui_->set_current_time_label(new_position);
 }
 
 
@@ -295,6 +280,9 @@ void main_window::delete_playlist()
 
 void main_window::add_file_to_playlist()
 {
+	if (scanner_ == 0)
+		return;
+
 	playlist *currently_visible_playlist = playlists_ui_->get_currently_visible_playlist();
 	if (currently_visible_playlist == 0)
 	{
@@ -306,18 +294,19 @@ void main_window::add_file_to_playlist()
 
 	BOOST_FOREACH(QString const &filename, song_filenames)
 	{
-		ion::uri uri_(check_if_starts_with_file(filename).toStdString());
-		scanner_->start_scan(*currently_visible_playlist, uri_);
+		scanner_->scan_file(*currently_visible_playlist, filename);
 	}
 }
 
 
 void main_window::add_folder_contents_to_playlist()
 {
-	if (dir_iterator)
+	if (scanner_ == 0)
+		return;
+	if (scanner_->is_already_scanning())
 		return;
 
-	dir_iterator_playlist = playlists_ui_->get_currently_visible_playlist();
+	playlist *dir_iterator_playlist = playlists_ui_->get_currently_visible_playlist();
 	if (dir_iterator_playlist == 0)
 	{
 		QMessageBox::warning(this, "Adding file failed", "No playlist available - cannot add a file");
@@ -328,8 +317,7 @@ void main_window::add_folder_contents_to_playlist()
 	if (dir.isNull())
 		return;
 
-	dir_iterator = dir_iterator_ptr_t(new QDirIterator(dir, QDirIterator::Subdirectories));
-	scan_directory_timer.start(0);
+	scanner_->scan_directory(*dir_iterator_playlist, dir);
 }
 
 
@@ -418,60 +406,7 @@ void main_window::get_current_playback_position()
 	if (position_volume_widget_ui.position->isEnabled())
 		position_volume_widget_ui.position->set_value(current_position);
 
-	set_current_time_label(current_position);
-}
-
-
-QString main_window::check_if_starts_with_file(QString const &uri_str) const
-{
-	/*
-	This function exists because sometimes, KDE file/director dialogs seem to return paths with file:// prepended.
-	It does not seem to happen all the time, may be a bug inside KDE, and was not observed with the default Qt dialogs.
-	(The KDE dialogs do get used even though this is not a KDE project - KDE replaces Qt's default file & director dialogs
-	with its own.)
-	*/
-	if (uri_str.startsWith("file://"))
-		return uri_str;
-	else
-		return QString("file://") + uri_str;
-}
-
-
-void main_window::scan_directory()
-{
-	if (scanner_ == 0)
-	{
-		dir_iterator = dir_iterator_ptr_t();
-		return;
-	}
-
-	if (!dir_iterator || !dir_iterator_playlist)
-		return;
-
-	if (dir_iterator->hasNext())
-	{
-		QString filename = dir_iterator->next();
-		QFileInfo fileinfo(filename);
-		if (fileinfo.isFile() && fileinfo.isReadable()) // filter out directories and unreadable files
-		{
-			ion::uri uri_(check_if_starts_with_file(filename).toStdString());
-			scanner_->start_scan(*dir_iterator_playlist, uri_);
-		}
-	}
-	else
-	{
-		dir_iterator_playlist = 0;
-		dir_iterator = dir_iterator_ptr_t();
-		scan_directory_timer.stop();
-	}
-}
-
-
-void main_window::scan_canceled()
-{
-	dir_iterator_playlist = 0;
-	dir_iterator = dir_iterator_ptr_t();
-	scan_directory_timer.stop();
+	status_bar_ui_->set_current_time_label(current_position);
 }
 
 
@@ -490,9 +425,8 @@ void main_window::start_backend(bool const start_scanner)
 	if (start_scanner)
 	{
 		scanner_ = new scanner(this, playlists_ui_->get_playlists(), backend_filepath);
-		connect(scanner_, SIGNAL(scan_running(bool)), current_scan_status, SLOT(set_running(bool)));
-		connect(current_scan_status->get_cancel_action(), SIGNAL(triggered()), scanner_, SLOT(cancel_scan_slot()));
-		connect(scanner_, SIGNAL(scan_canceled()), this, SLOT(scan_canceled()));
+		connect(scanner_, SIGNAL(scan_running(bool)), status_bar_ui_->get_scan_indicator_icon(), SLOT(set_running(bool)));
+		connect(status_bar_ui_->get_scan_indicator_icon()->get_cancel_action(), SIGNAL(triggered()), scanner_, SLOT(cancel_scan_slot()));
 		scan_dialog_->set_scanner(scanner_);
 	}
 
@@ -561,7 +495,6 @@ void main_window::stop_backend(bool const send_quit_message, bool const stop_sca
 
 	if (stop_scanner)
 	{
-		scan_directory_timer.stop();
 		scan_dialog_->set_scanner(0);
 		if (scanner_ != 0)
 			delete scanner_;
@@ -664,7 +597,6 @@ void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 	else
 		current_position_timer->stop();
 	position_volume_widget_ui.position->set_value(0);
-	current_playback_time->setText(get_time_string(0, 0));
 }
 
 
@@ -672,78 +604,25 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 {
 	if (new_metadata)
 	{
-		std::string title = get_metadata_value < std::string > (*new_metadata, "title", "");
-		if (title.empty())
-			current_song_title->setText("");
-		else
-			current_song_title->setText(QString::fromUtf8(title.c_str()));
-
 		unsigned int num_ticks = get_metadata_value < unsigned int > (*new_metadata, "num_ticks", 0);
-		current_num_ticks_per_second = get_metadata_value < unsigned int > (*new_metadata, "num_ticks_per_second", 0);
 
 		if (num_ticks > 0)
 		{
 			position_volume_widget_ui.position->setEnabled(true);
 			position_volume_widget_ui.position->set_value(0);
 			position_volume_widget_ui.position->setRange(0, num_ticks);
-
-			if (current_num_ticks_per_second > 0)
-			{
-				unsigned int length_in_seconds = num_ticks / current_num_ticks_per_second;
-				unsigned int minutes = length_in_seconds / 60;
-				unsigned int seconds = length_in_seconds % 60;
-
-				current_playback_time->setText(get_time_string(0, 0));
-				current_song_length->setText(get_time_string(minutes, seconds));
-			}
-			else
-			{
-				current_song_length->setText("");
-				current_playback_time->setText("");
-			}
 		}
 		else
 		{
 			position_volume_widget_ui.position->setEnabled(false);
 			position_volume_widget_ui.position->set_value(0);
 			position_volume_widget_ui.position->setRange(0, 1);
-			current_song_length->setText("");
-			current_playback_time->setText(get_time_string(0, 0));
 		}
 	}
 	else
 	{
-		current_song_title->setText("");
-		current_song_length->setText("");
-		current_playback_time->setText("");
 		position_volume_widget_ui.position->setEnabled(false);
 	}
-}
-
-
-void main_window::set_current_time_label(unsigned int const current_position)
-{
-	unsigned int time_in_seconds = 0;
-	if (current_num_ticks_per_second > 0)
-	{
-		time_in_seconds = current_position / current_num_ticks_per_second;
-
-		unsigned int minutes = time_in_seconds / 60;
-		unsigned int seconds = time_in_seconds % 60;
-
-		current_playback_time->setText(get_time_string(minutes, seconds));
-	}
-	else
-		current_playback_time->setText("");
-}
-
-
-QString main_window::get_time_string(int const minutes, int const seconds) const
-{
-	return QString("%1:%2")
-		.arg(minutes, 2, 10, QChar('0'))
-		.arg(seconds, 2, 10, QChar('0'))
-		;
 }
 
 
