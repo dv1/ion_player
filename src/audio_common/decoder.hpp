@@ -29,8 +29,7 @@ freely, subject to the following restrictions:
 
 #include <string>
 
-#include <boost/assign/list_of.hpp>
-#include <boost/lexical_cast.hpp>
+#include <boost/foreach.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
@@ -232,7 +231,29 @@ public:
 
 		{
 			std::string title = get_metadata_value(metadata_, "title", std::string(""));
-			if (title.empty())
+
+			// a title is considered empty if either it has zero characters or if its letters are only whitespace
+			// this code checks for both
+			bool is_empty = true;
+			BOOST_FOREACH(char const c, title)
+			{
+				switch (c)
+				{
+					case ' ':
+					case '\t':
+					case '\n':
+					case '\r':
+						break;
+					default:
+						is_empty = false;
+				}
+				if (!is_empty)
+					break;
+			}
+
+			// if the title was found to be empty, use the URI's basename as "title"
+			// (preferable to an empty string)
+			if (is_empty)
 				set_metadata_value(metadata_, "title", get_uri().get_basename());
 		}
 	}
