@@ -75,6 +75,8 @@ public:
 
 	virtual ~frontend_base()
 	{
+		resource_added_signal_connection.disconnect();
+		resource_removed_signal_connection.disconnect();
 	}
 
 

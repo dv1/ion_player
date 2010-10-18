@@ -171,6 +171,9 @@ playlists_ui::~playlists_ui()
 	{
 		delete ui;
 	}
+
+	playlist_added_signal_connection.disconnect();
+	playlist_removed_signal_connection.disconnect();
 }
 
 

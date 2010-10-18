@@ -123,6 +123,9 @@ BUG: resource_* signals cause crashes
 
 This happens rarely. It is unknown why as of yet - signals2 uses shared_ptr, in which the crash originates. Observed using boost 1.40 - perhaps fixed in newer versions.
 
+FIXED: the cause was incorrect use of signals2 connection - in filter_playlist, they did not get disconnected
+Solution: disconnecting connections explicitely
+
 
 =======================================================================================
 BUG: transitional deadlock in backend

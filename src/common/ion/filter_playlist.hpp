@@ -119,6 +119,7 @@ public:
 
 	~filter_playlist()
 	{
+		disconnect_all_playlist_connections();
 		playlist_added_connection.disconnect();
 		playlist_removed_connection.disconnect();
 	}
@@ -448,6 +449,20 @@ protected:
 		}
 
 		remove_other_playlist(&playlist_, true);
+	}
+
+
+	void disconnect_all_playlist_connections()
+	{
+		BOOST_FOREACH(playlist_connections_map_t::value_type &value, playlist_connections_map)
+		{
+			BOOST_FOREACH(boost::signals2::connection &connection_, *(value.second))
+			{
+				connection_.disconnect();
+			}
+		}
+
+		playlist_connections_map.clear();
 	}
 
 

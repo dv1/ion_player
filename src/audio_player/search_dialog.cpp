@@ -58,6 +58,7 @@ search_dialog::search_dialog(QWidget *parent, playlists_t &playlists_, audio_com
 
 search_dialog::~search_dialog()
 {
+	current_uri_changed_signal_connection.disconnect();
 }
 
 
