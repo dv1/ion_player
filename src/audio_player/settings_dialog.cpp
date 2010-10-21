@@ -27,10 +27,12 @@
 #include <boost/foreach.hpp>
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/spirit/home/phoenix/core/argument.hpp>
+#include <json/writer.h>
 #include <ion/playlists.hpp>
 #include "audio_frontend.hpp"
 #include "settings.hpp"
 #include "settings_dialog.hpp"
+#include "variant_to_json.hpp"
 
 
 namespace ion
@@ -176,7 +178,7 @@ void settings_dialog::populate_javascript()
 		return;
 
 	// This transmits ui properties to WebKit; uiProperties becomes a global variable in the Javascript
-	settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript(QString("uiProperties = ") + get_metadata_string(current_module_entry->ui_properties).c_str() + ";");
+	settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript(QString("uiProperties = ") + Json::FastWriter().write(current_module_entry->ui_properties).c_str() + ";");
 }
 
 
@@ -198,10 +200,15 @@ void settings_dialog::new_settings_accepted()
 		change_backend_callback();
 	}
 
+	// tell the frontend to update the properties of the current module entry
+	if (current_module_entry != 0)
 	{
 		QVariant ui_properties_variant = settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript("uiProperties");
-		std::cerr << ui_properties_variant.typeName() << std::endl;
-		// TODO: send module UI properties to backend through the audio frontend
+		if (ui_properties_variant.isValid())
+		{
+			Json::Value json_value = variant_to_json(ui_properties_variant);
+			audio_frontend_.update_module_properties(current_module_entry->id, json_value);
+		}
 	}
 
 	if (settings_accepted_callback)

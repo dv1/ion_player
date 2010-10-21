@@ -51,10 +51,14 @@ public:
 	// The type specifier; it is used for creating components akin to the factory pattern
 	virtual std::string get_type() const = 0;
 
+	virtual void update_properties(Json::Value const &/*properties*/)
+	{
+	}
+
 	// UI for common settings for the components this creator instantiates. The UI is written in HTML. See the design document for more about module GUIs.
 	virtual module_ui get_ui() const
 	{
-		return module_ui("<html><head></head><body>No user interface for this module available.</body></html>", empty_metadata());
+		return module_ui("<html><head></head><body>No user interface for this module available.</body></html>", Json::Value(Json::objectValue));
 	}
 };
 

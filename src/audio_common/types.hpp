@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
 #ifndef ION_AUDIO_COMMON_TYPES_HPP
 #define ION_AUDIO_COMMON_TYPES_HPP
 
-#include <ion/metadata.hpp>
+#include <json/value.h>
 
 
 /*
@@ -172,16 +172,16 @@ inline sample_type get_sample_type(decoder_properties const &audio_properties) {
 struct module_ui
 {
 	std::string html_code;
-	metadata_t properties;
+	Json::Value properties;
 
 	explicit module_ui():
-		properties(empty_metadata())
+		properties(Json::objectValue)
 	{
 	}
 
-	explicit module_ui(std::string const &html_code, metadata_t const &properties):
+	explicit module_ui(std::string const &html_code, Json::Value const &properties):
 		html_code(html_code),
-		properties(properties)
+		properties(Json::objectValue)
 	{
 	}
 };

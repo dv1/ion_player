@@ -28,8 +28,9 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/signals2/signal.hpp>
 
+#include <json/value.h>
+
 #include <ion/frontend_base.hpp>
-#include <ion/metadata.hpp>
 #include <ion/playlist.hpp>
 
 
@@ -52,7 +53,7 @@ public:
 	{
 		std::string type, id;
 		std::string html_code;
-		metadata_t ui_properties;
+		Json::Value ui_properties;
 
 		explicit module_entry();
 		explicit module_entry(std::string const &type, std::string const &id):
@@ -104,8 +105,9 @@ public:
 	void update_module_entries();
 
 	module_entries_t const & get_module_entries() const { return module_entries; }
-
 	module_entries_updated_signal_t & get_module_entries_updated_signal() { return module_entries_updated_signal; }
+
+	void update_module_properties(std::string const &module_id, Json::Value const &ui_properties);
 
 
 protected:

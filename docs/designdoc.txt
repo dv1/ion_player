@@ -482,7 +482,7 @@ Tells the backend to return a user interface for the specified module. The user 
 
 
 --- set_module_properties < module ID > < properties >
-Sets the properties of a module. The properties are in JSON format. (Do not confuse this with resource metadata.)
+Sets the properties of a module. The properties are formatted as a JSON object. (Do not confuse this with resource metadata.)
 It is up to the module to interpret the properties; the HTML UI generates them, the frontend just passes the JSON object through.
 
 
@@ -516,6 +516,6 @@ The list of available modules. The amount of arguments is always even (since for
 
 
 --- module_ui < module ID > < html_ui > < properties >
-Returns a user interface for the given module. The user interface is provided in HTML format. The properties are in JSON format.
+Returns a user interface for the given module. The user interface is provided in HTML format. The properties are formatted as a JSON object.
 The frontend then tries to map the properties to the HTML UI.
 

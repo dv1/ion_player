@@ -113,7 +113,11 @@ public:
 	virtual decoder_ptr_t create(source_ptr_t source_, metadata_t const &metadata, send_event_callback_t const &send_event_callback);
 	virtual std::string get_type() const { return "dumb"; }
 
+	virtual void update_properties(Json::Value const &properties);
+	virtual module_ui get_ui() const;
+
 protected:
+	Json::Value get_properties_as_json() const;
 	dumb_decoder::module_type test_if_module_file(source_ptr_t source_);
 
 

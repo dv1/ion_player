@@ -427,6 +427,68 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 }
 
 
+Json::Value dumb_decoder_creator::get_properties_as_json() const
+{
+	Json::Value properties(Json::objectValue);
+
+	std::string resampling_quality_str = "none";
+	switch (dumb_resampling_quality)
+	{
+		case DUMB_RQ_CUBIC: resampling_quality_str = "cubic"; break;
+		case DUMB_RQ_LINEAR: resampling_quality_str = "linear"; break;
+		case DUMB_RQ_ALIASING: break;
+		default:properties["resampling_quality"] = "none"; break;
+	}
+	properties["resampling_quality"] = resampling_quality_str;
+
+	return properties;
+}
+
+
+void dumb_decoder_creator::update_properties(Json::Value const &properties)
+{
+	std::string resampling_quality_str = properties.get("resampling_quality", "").asString();
+
+	if (resampling_quality_str == "none")
+		dumb_resampling_quality = DUMB_RQ_ALIASING;
+	else if (resampling_quality_str == "linear")
+		dumb_resampling_quality = DUMB_RQ_LINEAR;
+	else if (resampling_quality_str == "cubic")
+		dumb_resampling_quality = DUMB_RQ_CUBIC;
+}
+
+
+module_ui dumb_decoder_creator::get_ui() const
+{
+	char const *html_ui =
+"<html>  \n"
+"<head>  \n"
+"<script type=\"text/javascript\">  \n"
+"function option_picked(form)  \n"
+"{  \n"
+"	var option_index = form.resampling_quality.selectedIndex;  \n"
+"	var option_value = form.resampling_quality.options[option_index].value;  \n"
+"	uiProperties.resampling_quality = option_value;  \n"
+"}  \n"
+"</script>  \n"
+"</head>  \n"
+"<body>  \n"
+"<form name=\"main_form\">  \n"
+"  Resampling quality:  \n"
+"  <select name=\"resampling_quality\" size=\"1\" onChange=\"option_picked(this.form)\">  \n"
+"    <option value=\"none\">No resampling</option>  \n"
+"    <option value=\"linear\">Linear interpolation</option>  \n"
+"    <option value=\"cubic\">Cubic interpolation</option>  \n"
+"  </select>  \n"
+"</form>  \n"
+"</body>  \n"
+"</html>  \n"
+;
+
+	return module_ui(html_ui, get_properties_as_json());
+}
+
+
 dumb_decoder::module_type dumb_decoder_creator::test_if_module_file(source_ptr_t source_)
 {
 	if (!source_->can_seek(source::seek_absolute))

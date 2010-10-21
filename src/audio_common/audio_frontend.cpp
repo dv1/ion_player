@@ -19,6 +19,8 @@
 **************************************************************************/
 
 
+#include <json/reader.h>
+#include <json/writer.h>
 #include "audio_frontend.hpp"
 
 
@@ -158,6 +160,25 @@ void audio_frontend::parse_modules_list(params_t const &event_params)
 }
 
 
+void audio_frontend::update_module_properties(std::string const &module_id, Json::Value const &ui_properties)
+{
+	if (!ui_properties.isObject())
+		return;
+
+	module_entries_by_id_t &module_entries_by_id = module_entries.get < id_tag > ();
+	module_entries_by_id_t::iterator iter = module_entries_by_id.find(module_id);
+	if (iter == module_entries_by_id.end())
+		return;
+
+	module_entry entry = *iter;
+	entry.ui_properties = ui_properties;
+	module_entries_by_id.replace(iter, entry);
+
+	std::string json_string = Json::FastWriter().write(ui_properties);
+	send_line_to_backend_callback(recombine_command_line("set_module_properties", boost::assign::list_of(module_id)(json_string)));
+}
+
+
 void audio_frontend::read_module_ui(params_t const &event_params)
 {
 	if (event_params.size() < 3)
@@ -168,18 +189,24 @@ void audio_frontend::read_module_ui(params_t const &event_params)
 	if (iter == module_entries_by_id.end())
 		return;
 
-	metadata_optional_t properties = parse_metadata(event_params[2]);
-	if (!properties)
+	Json::Reader json_reader;
+	Json::Value json_properties_value;
+	if (!json_reader.parse(event_params[2], json_properties_value))
 		return;
 
 	module_entry entry = *iter;
+	entry.ui_properties = json_properties_value;
+#if 1
+	entry.html_code = event_params[1];
+#else
 	entry.html_code = "<html><head> \n\
 		<script type=\"text/javascript\"> \n\
 			setTimeout(\"alert(uiProperties[\\\"somekey\\\"]);\", 1000); \n\
 		</script></head> \n\
-		<body>No user interface for this module available.</body></html>";//event_params[1];
-	entry.ui_properties = *properties;
-	set_metadata_value(entry.ui_properties, "somekey", "somevalue");
+		<body>No user interface for this module available.</body></html>";
+	entry.ui_properties["somekey"] = "somevalue";
+#endif
+
 	module_entries_by_id.replace(iter, entry);
 }
 

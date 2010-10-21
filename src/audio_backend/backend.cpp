@@ -26,6 +26,8 @@
 #include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <boost/foreach.hpp>
 #include <boost/thread/locks.hpp>
+#include <json/reader.h>
+#include <json/writer.h>
 #include <ion/metadata.hpp>
 #include <ion/resource_exceptions.hpp>
 #include "backend.hpp"
@@ -224,8 +226,31 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 					response_command = "module_ui";
 					response_params.push_back(params[0]);
 					response_params.push_back(ui.html_code);
-					response_params.push_back(get_metadata_string(ui.properties));
+					response_params.push_back(Json::FastWriter().write(ui.properties));
 				}
+			}
+		}
+		else if (command == "set_module_properties")
+		{
+			if (params.size() < 2)
+				throw std::invalid_argument(std::string("missing arguments"));
+
+			std::string module_id = params[0];
+			Json::Value module_properties;
+			Json::Reader reader;
+			if (!reader.parse(params[1], module_properties))
+				throw std::invalid_argument(std::string("could not parse module properties (invalid JSON data?)"));
+
+			// TODO: tighten this code; for instance, put the two maps in an MPL sequence, which can be iterated over
+			{
+				decoder_creators_t::ordered_t::iterator iter = decoder_creators.get < decoder_creators_t::ordered_tag > ().find(module_id);
+				if (iter != decoder_creators.get < decoder_creators_t::ordered_tag > ().end())
+					(*iter)->update_properties(module_properties);
+			}
+			{
+				sink_creators_t::ordered_t::iterator iter = sink_creators.get < sink_creators_t::ordered_tag > ().find(module_id);
+				if (iter != sink_creators.get < sink_creators_t::ordered_tag > ().end())
+					(*iter)->update_properties(module_properties);
 			}
 		}
 		else if (command == "get_metadata")
