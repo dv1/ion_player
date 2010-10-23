@@ -214,7 +214,7 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 					response_command = "module_ui";
 					response_params.push_back(params[0]);
 					response_params.push_back(ui.html_code);
-					response_params.push_back(get_metadata_string(ui.properties));
+					response_params.push_back(Json::FastWriter().write(ui.properties));
 				}
 			}
 

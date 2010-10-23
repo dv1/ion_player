@@ -28,7 +28,6 @@ configuration_html_page_controller::configuration_html_page_controller(
 {
 	assert(!javascript_property_variable_name.isNull());
 	assert(!javascript_property_variable_name.isEmpty());
-	assert(web_page != 0);
 	assert(get_properties_callback);
 	assert(set_properties_callback);
 
@@ -44,13 +43,15 @@ configuration_html_page_controller::~configuration_html_page_controller()
 
 void configuration_html_page_controller::connect_slots()
 {
-	connect(web_page->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
+	if (web_page != 0)
+		connect(web_page->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
 }
 
 
 void configuration_html_page_controller::disconnect_slots()
 {
-	disconnect(web_page->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
+	if (web_page != 0)
+		disconnect(web_page->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
 }
 
 

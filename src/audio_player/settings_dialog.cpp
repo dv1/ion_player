@@ -32,7 +32,7 @@
 #include "audio_frontend.hpp"
 #include "settings.hpp"
 #include "settings_dialog.hpp"
-#include "variant_to_json.hpp"
+#include "configuration_html_page_controller.hpp"
 
 
 namespace ion
@@ -118,20 +118,31 @@ settings_dialog::settings_dialog(
 	module_entries_model_ = new module_entries_model(this, audio_frontend_);
 	settings_dialog_ui.modules_list_view->setModel(module_entries_model_);
 
+	configuration_html_page_controller_ = new configuration_html_page_controller(
+		this,
+		settings_dialog_ui.module_gui_view->page(),
+		boost::phoenix::bind(&settings_dialog::get_properties, this),
+		boost::phoenix::bind(&settings_dialog::set_properties, this, boost::phoenix::arg_names::arg1),
+		"uiProperties"
+	);
+
 	// TODO: the web inspector can't store its settings; perhaps because a QSettings instance is around already?
 	QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
 
 	connect(settings_dialog_ui.buttonBox->button(QDialogButtonBox::Apply), SIGNAL(clicked()), this, SLOT(new_settings_accepted()));
+	connect(settings_dialog_ui.buttonBox->button(QDialogButtonBox::Apply), SIGNAL(clicked()), configuration_html_page_controller_, SLOT(apply_configuration()));
 	connect(settings_dialog_ui.open_backend_filedialog, SIGNAL(clicked()), this, SLOT(open_backend_filepath_filedialog()));
 	connect(settings_dialog_ui.show_log, SIGNAL(clicked()), this, SLOT(show_log()));
 	connect(settings_dialog_ui.modules_list_view->selectionModel(), SIGNAL(currentChanged(QModelIndex const &, QModelIndex const &)), this, SLOT(selected_module_changed(QModelIndex const &)));
-	connect(settings_dialog_ui.module_gui_view->page()->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
+	//connect(settings_dialog_ui.module_gui_view->page()->mainFrame(), SIGNAL(javaScriptWindowObjectCleared()), this, SLOT(populate_javascript()));
 	connect(this, SIGNAL(accepted()), this, SLOT(new_settings_accepted()));
+	connect(this, SIGNAL(accepted()), configuration_html_page_controller_, SLOT(apply_configuration()));
 }
 
 
 settings_dialog::~settings_dialog()
 {
+	delete configuration_html_page_controller_;
 }
 
 
@@ -172,13 +183,19 @@ void settings_dialog::selected_module_changed(QModelIndex const &new_selection)
 }
 
 
-void settings_dialog::populate_javascript()
+Json::Value settings_dialog::get_properties()
 {
 	if (current_module_entry == 0)
-		return;
+		return Json::Value();
+	else
+		return current_module_entry->ui_properties;
+}
 
-	// This transmits ui properties to WebKit; uiProperties becomes a global variable in the Javascript
-	settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript(QString("uiProperties = ") + Json::FastWriter().write(current_module_entry->ui_properties).c_str() + ";");
+
+void settings_dialog::set_properties(Json::Value const &properties)
+{
+	if (current_module_entry != 0)
+		audio_frontend_.update_module_properties(current_module_entry->id, properties);
 }
 
 
@@ -198,17 +215,6 @@ void settings_dialog::new_settings_accepted()
 	{
 		settings_.set_backend_filepath(settings_dialog_ui.backend_filepath->text());
 		change_backend_callback();
-	}
-
-	// tell the frontend to update the properties of the current module entry
-	if (current_module_entry != 0)
-	{
-		QVariant ui_properties_variant = settings_dialog_ui.module_gui_view->page()->mainFrame()->evaluateJavaScript("uiProperties");
-		if (ui_properties_variant.isValid())
-		{
-			Json::Value json_value = variant_to_json(ui_properties_variant);
-			audio_frontend_.update_module_properties(current_module_entry->id, json_value);
-		}
 	}
 
 	if (settings_accepted_callback)
@@ -239,7 +245,7 @@ void settings_dialog::showEvent(QShowEvent *event)
 void settings_dialog::set_module_ui(audio_common::audio_frontend::module_entry const &module_entry_)
 {
 	current_module_entry = &module_entry_;
-	settings_dialog_ui.module_gui_view->setHtml(module_entry_.html_code.c_str());	
+	settings_dialog_ui.module_gui_view->setHtml(module_entry_.html_code.c_str());
 }
 
 

@@ -46,6 +46,7 @@ namespace audio_player
 
 
 class settings;
+class configuration_html_page_controller;
 
 
 class module_entries_model:
@@ -90,13 +91,14 @@ protected slots:
 	void open_backend_filepath_filedialog();
 	void show_log();
 	void selected_module_changed(QModelIndex const &new_selection);
-	void populate_javascript();
 	void new_settings_accepted();
 
 
 protected:
 	void showEvent(QShowEvent *event);
 	void set_module_ui(audio_common::audio_frontend::module_entry const &module_entry_);
+	Json::Value get_properties();
+	void set_properties(Json::Value const &properties);
 
 
 	audio_common::audio_frontend::module_entry const *current_module_entry;
@@ -108,6 +110,7 @@ protected:
 	show_log_callback_t show_log_callback;
 	module_entries_model *module_entries_model_;
 	Ui_settings_dialog settings_dialog_ui;
+	configuration_html_page_controller *configuration_html_page_controller_;
 };
 
 
