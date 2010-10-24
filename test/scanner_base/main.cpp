@@ -25,11 +25,13 @@ int main(int argc, char **argv)
 
 		test_scanner::playlists_t playlists;
 
-		test_scanner test_scanner_(playlists, 3);
-		test_scanner_.start_scan(p1, ion::uri("file://test/sound_samples/mods/test.xm?id=1"));
-		test_scanner_.start_scan(p2, ion::uri("file://test/sound_samples/mods/test.xm?id=2"));
-		test_scanner_.start_scan(p3, ion::uri("file://test/sound_samples/mods/test.xm?id=3"));
-		test_scanner_.start_scan(p4, ion::uri("file://test/sound_samples/mods/test.xm?id=4"));
+		test_scanner test_scanner_(playlists, 4);
+		test_scanner_.issue_scan_request(ion::uri("file://test/sound_samples/mods/test.xm?id=1"), p1);
+		test_scanner_.issue_scan_request(ion::uri("file://test/sound_samples/mods/nebularia_-_ultima_ratio.it?id=515"), p2);
+		test_scanner_.issue_scan_request(ion::uri("file://test/sound_samples/mods/test.xm?id=2"), p2);
+		test_scanner_.issue_scan_request(ion::uri("file://test/sound_samples/mods/test.xm?id=3"), p3);
+		test_scanner_.issue_scan_request(ion::uri("file://test/sound_samples/adplug-examples/ZAKMIX4.D00"), p3);
+		test_scanner_.issue_scan_request(ion::uri("file://test/sound_samples/mods/test.xm?id=4"), p4);
 
 		return_value = application.exec();
 	}

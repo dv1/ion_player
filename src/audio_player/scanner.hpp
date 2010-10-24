@@ -46,35 +46,38 @@ class scanner:
         Q_OBJECT
 public:
 	typedef scanner_base < scanner, ion::audio_player::playlists_t > base_t;
-	typedef base_t::scan_queue_t scan_queue_t;
+	typedef base_t::queue_t queue_t;
 
 	explicit scanner(QObject *parent, playlists_t &playlists_, QString const &backend_filepath);
 	~scanner();
 
-
-	void start_scan(playlist_t &playlist_, ion::uri const &uri_to_be_scanned);
 	void scan_file(playlist_t &playlist_, QString const &filename);
 	void scan_directory(playlist_t &playlist_, QString const &directory_path);
-	bool is_already_scanning() const;
-
-	scan_queue_t const & get_scan_queue() const;
 
 
-	// These three functions are public only because the CRTP requires it (see scanner_base)
+	// These functions are public only because the CRTP requires it (see scanner_base)
 	// TODO: use the protected-fail technique to get them back to protected access
-	bool is_process_running() const;
-	void start_process(ion::uri const &uri_to_be_scanned);
-	void add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t const &new_metadata);
-	void report_general_error(std::string const &error_string);
-	void report_resource_error(std::string const &error_event, std::string const &uri);
+	void send_to_backend(std::string const &command_line);
+	void restart_watchdog_timer();
+	void stop_watchdog_timer();
+	void restart_backend();
+	void adding_queue_entry(ion::uri const &uri_, playlist_t &playlist_, bool const before);
+	void removing_queue_entry(ion::uri const &uri_, playlist_t &playlist_, bool const before);
+	void scanning_in_progress(bool const state);
+	void resource_successfully_scanned(ion::uri const &uri_, playlist_t &playlist_, ion::metadata_t const &new_metadata);
+	void unrecognized_resource(ion::uri const &uri_, playlist_t &playlist_);
+	void resource_corrupted(ion::uri const &uri_, playlist_t &playlist_);
+	void scanning_failed(ion::uri const &uri_, playlist_t &playlist_);
 
 
 signals:
-	void queue_updated();
-	void scan_running(bool);
 	void scan_canceled();
-	void general_scan_error(QString const &error_string);
 	void resource_scan_error(QString const &error_type, QString const &uri_string);
+	void scan_running(bool);
+
+	// these may get replaced later
+	void general_scan_error(QString const &error_string);
+	void queue_updated();
 
 
 public slots:

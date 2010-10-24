@@ -36,6 +36,10 @@ freely, subject to the following restrictions:
 #include <boost/signals2/connection.hpp>
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/spirit/home/phoenix/core/argument.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/member.hpp>
 #include <ion/command_line_tools.hpp>
 #include <ion/metadata.hpp>
 #include <ion/uri.hpp>
@@ -47,31 +51,26 @@ namespace ion
 
 
 /*
-Derived must contain:
-- bool is_process_running() const
-- void start_process(ion::uri const &uri_to_be_scanned)
-- void add_entry_to_playlist(ion::uri const &new_uri, metadata_t const &new_metadata)
-- void report_general_error(std::string const &error_string)
-- void report_resource_error(std::string const &error_event, std::string const &uri)
-*/
+functions the derived class must implement:
+
+void send_to_backend(std::string const &command_line)
+void restart_watchdog_timer()
+void stop_watchdog_timer()
+void restart_backend()
+void adding_queue_entry(ion::uri const &uri_, playlist_t &playlist_, bool const before)
+void removing_queue_entry(ion::uri const &uri_, playlist_t &playlist_, bool const before)
+void scanning_in_progress(bool const state)
+void resource_successfully_scanned(ion::uri const &uri_, playlist_t &playlist_)
+void unrecognized_resource(ion::uri const &uri_, playlist_t &playlist_)
+void resource_corrupted(ion::uri const &uri_, playlist_t &playlist_)
+void scanning_failed(ion::uri const &uri_, playlist_t &playlist_)
 
 
-/*
-TODO: add crash handling and multiple backend support.
-
-Multiple backends:
-Add get_backend_range() method for iterating through a list of backends. The range values are std::strings - filepaths to backend executables.
-
-Crashes & scan failures:
-1. Pick a backend for the URI. Typically, the first backend will be picked. A user preference can affect this step (for instance,
-   when the user wants a specific backend to scan this resource).
-2. Call the backend, asking for metadata for the given URI.
-3. For each metadata event, store it in an internal metadata results list.
-     For each unknown_resource event, store it in an internal URI scan failure list.
-4. If the backend finished successfully, call add_entry_to_playlist() for each entry in the metadata results list. Then, clear that list.
-     If the backend crashed, transfer all entries in the metadata results list to the URI scan failure list.
-5. If the URI scan failure list is not empty, pick the next backend, and go to step 3.
-6. If all backends have been tried, mark the URIs in the URI scan failure list as unreadable.
+functions from this base class the derived class can/should use:
+	void issue_scan_request(ion::uri const &uri_, playlist_t &playlist_)
+	void backend_crashed()
+	void cancel_scan()
+	void parse_backend_event(std::string const &line)
 */
 
 
@@ -85,9 +84,44 @@ public:
 	typedef Playlists playlists_t;
 	typedef typename playlists_traits < Playlists > ::playlist_t playlist_t;
 
+	struct sequence_tag {};
+	struct uri_tag {};
+	struct playlist_tag {};
+
+	struct entry
+	{
+		ion::uri uri_;
+		playlist_t *playlist_;
+
+		entry(): playlist_(0) {}
+		entry(ion::uri const &uri_, playlist_t *playlist_):
+			uri_(uri_),
+			playlist_(playlist_)
+		{
+		}
+	};
+
+	typedef boost::multi_index::multi_index_container <
+		entry,
+		boost::multi_index::indexed_by <
+			boost::multi_index::sequenced < boost::multi_index::tag < sequence_tag > >,
+			boost::multi_index::ordered_unique <
+				boost::multi_index::tag < uri_tag >,
+				boost::multi_index::member < entry, ion::uri, &entry::uri_ >
+			>,
+			boost::multi_index::ordered_non_unique <
+				boost::multi_index::tag < playlist_tag >,
+				boost::multi_index::member < entry, playlist_t*, &entry::playlist_ >
+			>
+		>
+	> queue_t;
+
+	typedef typename queue_t::template index < sequence_tag > ::type  queue_sequence_t;
+	typedef typename queue_t::template index < uri_tag > ::type       queue_by_uri_t;
+	typedef typename queue_t::template index < playlist_tag > ::type  queue_by_playlist_t;
+
 
 	explicit scanner_base(playlists_t &playlists_):
-		current_playlist(0),
 		playlists_(playlists_)
 	{
 		playlist_removed_connection = playlists_.get_playlist_removed_signal().connect(boost::phoenix::bind(&self_t::playlist_removed, this, boost::phoenix::arg_names::arg1));
@@ -100,96 +134,119 @@ public:
 	}
 
 
-	void start_scan(playlist_t &playlist, ion::uri const &uri_to_be_scanned)
+	void issue_scan_request(ion::uri const &uri_, playlist_t &playlist_)
 	{
-		scan_queue.push_back(scan_entry_t(&playlist, uri_to_be_scanned));
-		if (!static_cast < Derived* > (this)->is_process_running())
-			init_scanning();
-	}
-
-
-	void cancel_scan()
-	{
-		scan_queue.clear();
+		bool queue_was_empty = queue.empty();
+		get_derived().adding_queue_entry(uri_, playlist_, true);
+		queue.push_back(entry(uri_, &playlist_));
+		get_derived().adding_queue_entry(uri_, playlist_, false);
+		if (queue_was_empty)
+		{
+			get_derived().scanning_in_progress(true);
+			get_derived().restart_watchdog_timer();
+			request_next_metadata();
+		}
 	}
 
 
 protected:
-	typedef std::pair < playlist_t *, ion::uri > scan_entry_t;
-	typedef std::deque < scan_entry_t > scan_queue_t;
-
-
-	void init_scanning()
+	derived_t& get_derived()
 	{
-		if (scan_queue.empty())
-			return;
-
-		scan_entry_t scan_entry = scan_queue.front();
-		current_playlist = scan_entry.first;
-		scan_queue.pop_front();
-
-		static_cast < Derived* > (this)->start_process(scan_entry.second);
-	}
-
-
-	static bool is_from_playlist(playlist_t *playlist_, scan_entry_t const &scan_entry)
-	{
-		return scan_entry.first == playlist_;
+		return *(static_cast < derived_t* > (this));
 	}
 
 
 	void playlist_removed(playlist_t &playlist_)
 	{
-		typename scan_queue_t::iterator iter = std::remove_if(scan_queue.begin(), scan_queue.end(), boost::phoenix::bind(&is_from_playlist, &playlist_, boost::phoenix::arg_names::arg1));
-		scan_queue.erase(iter, scan_queue.end());
+		queue_by_playlist_t &queue_by_playlist = queue.template get < playlist_tag > ();
+		queue_by_playlist.erase(queue_by_playlist.lower_bound(&playlist_), queue_by_playlist.upper_bound(&playlist_));
 	}
 
 
-	void read_process_stdin_line(std::string const &line)
+	void request_next_metadata()
 	{
-		if (current_playlist == 0)
+		if (queue.empty())
 			return;
 
-		if (!has_playlist(playlists_, *current_playlist))
-			return;
+		entry front_entry = queue.front();
+		get_derived().send_to_backend(std::string("get_metadata \"") + front_entry.uri_.get_full() + '"');
+	}
 
-		std::string event_command_name;
-		params_t event_params;
-		split_command_line(line, event_command_name, event_params);
 
-		if ((event_command_name == "metadata") && (event_params.size() >= 2))
+	void cancel_scan()
+	{
+		queue.clear();
+	}
+
+
+	// called by the derived class when the backend dies unexpectedly
+	void backend_crashed()
+	{
+		if (!queue.empty())
 		{
-			try
+			entry front_entry = queue.front();
+			queue.pop_front();
+			get_derived().scanning_failed(front_entry.uri_, *(front_entry.playlist_));
+		}
+
+		get_derived().restart_backend();
+
+		if (!queue.empty())
+		{
+			get_derived().restart_watchdog_timer();
+			request_next_metadata();
+		}
+		else
+			get_derived().stop_watchdog_timer();
+	}
+
+
+	void parse_backend_event(std::string const &line)
+	{
+		std::string command;
+		params_t params;
+		split_command_line(line, command, params);
+
+		queue_by_uri_t &queue_by_uri = queue.template get < uri_tag > ();
+		typename queue_by_uri_t::iterator resource_by_uri_iter = queue_by_uri.end();
+
+		if (params.size() > 0)
+			resource_by_uri_iter = queue_by_uri.find(params[0]);
+
+		if (resource_by_uri_iter != queue_by_uri.end())
+		{
+			uri uri_ = resource_by_uri_iter->uri_;
+			playlist_t *playlist_ = resource_by_uri_iter->playlist_;
+
+			if ((command == "metadata") && (params.size() >= 2))
 			{
-				ion::uri uri_(event_params[0]);
-				metadata_optional_t metadata_ = parse_metadata(event_params[1]);
+				metadata_optional_t new_metadata = parse_metadata(params[1]);
 
-				if (!metadata_)
+				if (new_metadata)
 				{
-					metadata_ = empty_metadata();
-					static_cast < Derived* > (this)->report_general_error(std::string("Metadata for URI \"") + uri_.get_full() + "\" is invalid!");
-				}
-				else
-				{
-					long num_sub_resources = 1;
-					if (has_metadata_value(*metadata_, "num_sub_resources"))
-					{
-						num_sub_resources = get_metadata_value < long > (*metadata_, "num_sub_resources", 1);
-						if (num_sub_resources < 1)
-							num_sub_resources = 1;
-					}
-
-					long min_sub_resource_index = 0;
-					if (has_metadata_value(*metadata_, "min_sub_resource_index"))
-						min_sub_resource_index = get_metadata_value < long > (*metadata_, "min_sub_resource_index", 1);
-
+					long num_sub_resources = get_metadata_value < long > (*new_metadata, "num_sub_resources", 0);
+					long min_sub_resource_index = get_metadata_value < long > (*new_metadata, "min_sub_resource_index", 0);
 					uri::options_t::const_iterator uri_resource_index_iter = uri_.get_options().find("sub_resource_index");
 					bool has_resource_index = (uri_resource_index_iter != uri_.get_options().end());
-					if ((num_sub_resources == 1) || has_resource_index)
+
+					if ((num_sub_resources > 1) && !has_resource_index)
 					{
-						if (has_metadata_value(*metadata_, "title") && has_resource_index)
+						for (int i = 0; i < num_sub_resources; ++i)
 						{
-							std::string title = get_metadata_value < std::string > (*metadata_, "title", "");
+							unsigned int sub_resource_index = min_sub_resource_index + i;
+							uri sub_uri = uri_;
+							sub_uri.get_options()["sub_resource_index"] = boost::lexical_cast < std::string > (sub_resource_index);
+
+							//queue_sequence_t &queue_sequence = queue.template get < sequence_tag > ();
+							typename queue_sequence_t::iterator seq_iter = queue.template project < sequence_tag > (resource_by_uri_iter);
+							queue.insert(seq_iter, entry(sub_uri, playlist_));
+						}
+					}
+					else
+					{
+						if (has_metadata_value(*new_metadata, "title") && has_resource_index)
+						{
+							std::string title = get_metadata_value < std::string > (*new_metadata, "title", "");
 							std::stringstream sstr;
 							std::string resource_index_str = uri_resource_index_iter->second;
 
@@ -204,67 +261,49 @@ protected:
 							}
 
 							sstr << title << " (" << resource_index_str << "/" << num_sub_resources << ")";
-							set_metadata_value(*metadata_, "title", sstr.str());
+							set_metadata_value(*new_metadata, "title", sstr.str());
 						}
 
-						static_cast < Derived* > (this)->add_entry_to_playlist(uri_, *metadata_);
-					}
-					else
-					{
-						for (long sub_resource_nr = 0; sub_resource_nr < num_sub_resources; ++sub_resource_nr)
-						{
-							ion::uri temp_uri(uri_);
-							temp_uri.get_options()["sub_resource_index"] = boost::lexical_cast < std::string > (sub_resource_nr + min_sub_resource_index);
-							start_scan(*current_playlist, temp_uri);
-						}
+						get_derived().resource_successfully_scanned(uri_, *playlist_, *new_metadata);
 					}
 				}
+				else
+					get_derived().unrecognized_resource(uri_, *playlist_);
 			}
-			catch (ion::uri::invalid_uri const &invalid_uri_)
+			else if (command == "resource_corrupted")
 			{
-				static_cast < Derived* > (this)->report_resource_error("invalid_uri", invalid_uri_.what());
+				get_derived().resource_corrupted(uri_, *playlist_);
+			}
+			else if (command == "unrecognized_resource")
+			{
+				get_derived().unrecognized_resource(uri_, *playlist_);
+			}
+			/*else if (command == "error")
+			{
+				get_derived().resource_scan_error(uri_, *playlist_, (params.size() >= 2) ? params[1] : boost::none);
+			}*/
+
+			{
+				get_derived().removing_queue_entry(uri_, *playlist_, true);
+				queue_by_uri.erase(resource_by_uri_iter);
+				get_derived().removing_queue_entry(uri_, *playlist_, false);
+			}
+
+			if (queue.empty())
+			{
+				get_derived().stop_watchdog_timer();
+				get_derived().scanning_in_progress(false);
+			}
+			else
+			{
+				get_derived().restart_watchdog_timer();
+				request_next_metadata();
 			}
 		}
-		else if ((event_command_name == "unrecognized_resource")  && (event_params.size() >= 1))
-			static_cast < Derived* > (this)->report_resource_error("unrecognized_resource", event_params[0]);
-		else if ((event_command_name == "resource_not_found")  && (event_params.size() >= 1))
-			static_cast < Derived* > (this)->report_resource_error("resource_not_found", event_params[0]);
-		else if ((event_command_name == "resource_corrupted")  && (event_params.size() >= 1))
-			static_cast < Derived* > (this)->report_resource_error("resource_corrupted", event_params[0]);
-		else if (event_command_name == "error")
-			static_cast < Derived* > (this)->report_general_error(line);
-		else
-			static_cast < Derived* > (this)->report_general_error(line);
 	}
 
 
-	void scanning_process_started()
-	{
-	}
-
-
-	void scanning_process_terminated(bool const continue_scanning)
-	{
-		current_playlist = 0;
-		if (continue_scanning)
-			init_scanning();
-
-		// TODO: implement crash handling (also mind multiple backend support!)
-	}
-
-
-	void scanning_process_finished(bool const continue_scanning)
-	{
-		current_playlist = 0;
-		if (continue_scanning)
-			init_scanning();
-	}
-
-
-
-
-	scan_queue_t scan_queue;
-	playlist_t *current_playlist;
+	queue_t queue;
 	playlists_t &playlists_;
 	boost::signals2::connection playlist_removed_connection;
 };

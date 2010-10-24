@@ -71,12 +71,13 @@ optional (these can be missing, but then corresponding parts will not be built &
 ogg >= 1.1
 vorbis >= 1.2
 flac++ >= 1.2
+faad >= 2.7
 
 
 Ubuntu/Debian package list (including optionals):
 -------------------------------------------------
 
-g++  libstdc++-dev  libqt4-dev  libboost-dev  libboost-thread-dev  libasound2-dev  libogg-dev  libvorbis-dev  libflac++-dev
+g++  libstdc++-dev  libqt4-dev  libboost-dev  libboost-thread-dev  libasound2-dev  libogg-dev  libvorbis-dev  libflac++-dev libfaad-dev
 
 
 

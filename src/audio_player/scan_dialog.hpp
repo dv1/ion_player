@@ -37,9 +37,9 @@ class scan_queue_model:
 	public QAbstractListModel
 {
 public:
-	explicit scan_queue_model(QObject *parent, scanner::scan_queue_t const *scan_queue_);
+	explicit scan_queue_model(QObject *parent/*, scanner::scan_queue_t const *scan_queue_*/);
 
-	void set_scan_queue(scanner::scan_queue_t const *new_scan_queue);
+	//void set_scan_queue(scanner::scan_queue_t const *new_scan_queue);
 	void reset();
 
 	virtual int columnCount(QModelIndex const & parent) const;
@@ -48,7 +48,7 @@ public:
 	virtual int rowCount(QModelIndex const & parent) const;
 
 protected:
-	scanner::scan_queue_t const *scan_queue;
+	//scanner::scan_queue_t const *scan_queue;
 };
 
 

@@ -30,19 +30,19 @@ namespace audio_player
 {
 
 
-scan_queue_model::scan_queue_model(QObject *parent, scanner::scan_queue_t const *scan_queue_):
-	QAbstractListModel(parent),
-	scan_queue(0)
+scan_queue_model::scan_queue_model(QObject *parent/*, scanner::scan_queue_t const *scan_queue_*/):
+	QAbstractListModel(parent)/*,
+	scan_queue(0)*/
 {
-	set_scan_queue(scan_queue_);
+//	set_scan_queue(scan_queue_);
 }
 
 
-void scan_queue_model::set_scan_queue(scanner::scan_queue_t const *new_scan_queue)
+/*void scan_queue_model::set_scan_queue(scanner::scan_queue_t const *new_scan_queue)
 {
 	scan_queue = new_scan_queue;
 	reset();
-}
+}*/
 
 
 void scan_queue_model::reset()
@@ -59,10 +59,11 @@ int scan_queue_model::columnCount(QModelIndex const &) const
 
 QVariant scan_queue_model::data(QModelIndex const & index, int role) const
 {
-	if ((scan_queue == 0) || (role != Qt::DisplayRole) || (index.column() >= columnCount(QModelIndex())) || (index.row() >= rowCount(QModelIndex())))
+	return QVariant();
+/*	if ((scan_queue == 0) || (role != Qt::DisplayRole) || (index.column() >= columnCount(QModelIndex())) || (index.row() >= rowCount(QModelIndex())))
 		return QVariant();
 
-	return QString((*scan_queue)[index.row()].second.get_full().c_str());
+	return QString((*scan_queue)[index.row()].second.get_full().c_str());*/
 }
 
 
@@ -74,7 +75,8 @@ QModelIndex scan_queue_model::parent(QModelIndex const & index) const
 
 int scan_queue_model::rowCount(QModelIndex const &) const
 {
-	return (scan_queue != 0) ? scan_queue->size() : 0;
+	return 0;
+	//return (scan_queue != 0) ? scan_queue->size() : 0;
 }
 
 
@@ -88,7 +90,7 @@ scan_dialog::scan_dialog(QWidget *parent, scanner *scanner_):
 {
 	scan_dialog_ui.setupUi(this);
 
-	scan_queue_model_ = new scan_queue_model(this, (scanner_ != 0) ? &(scanner_->get_scan_queue()) : 0);
+	scan_queue_model_ = new scan_queue_model(this/*, (scanner_ != 0) ? &(scanner_->get_scan_queue()) : 0*/);
 	scan_dialog_ui.error_log_view->initialize(1000);
 	scan_dialog_ui.scan_queue_view->setModel(scan_queue_model_);
 	connect(scan_dialog_ui.clear_log_button, SIGNAL(clicked()), scan_dialog_ui.error_log_view, SLOT(clear()));
@@ -122,9 +124,9 @@ void scan_dialog::set_scanner(scanner *new_scanner)
 		connect(scan_dialog_ui.cancel_scan_button, SIGNAL(clicked()), scanner_, SLOT(cancel_scan_slot()));
 	}
 
-	scan_queue_model_->set_scan_queue((scanner_ != 0) ? &(scanner_->get_scan_queue()) : 0);
+	//scan_queue_model_->set_scan_queue((scanner_ != 0) ? &(scanner_->get_scan_queue()) : 0);
 
-	scan_queue_updated();
+//	scan_queue_updated();
 }
 
 
@@ -152,8 +154,8 @@ void scan_dialog::showEvent(QShowEvent *event)
 
 void scan_dialog::scan_queue_updated()
 {
-	if (!frozen)
-		scan_queue_model_->reset();
+/*	if (!frozen)
+		scan_queue_model_->reset();*/
 }
 
 
