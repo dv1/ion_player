@@ -246,7 +246,7 @@ QString scanner::check_if_starts_with_file(QString const &uri_str) const
 
 void scanner::start_backend()
 {
-	backend_process.start(backend_filepath);
+	backend_process.start(backend_filepath, (QStringList() << "-scan"), QIODevice::ReadWrite);
 	backend_process.waitForStarted(30000);
 }
 

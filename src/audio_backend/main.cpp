@@ -56,10 +56,11 @@
 
 
 /*
-The backend can be called in three ways:
+The backend can be called in these ways:
 1. Without arguments: the backend starts normally, listens to stdin for command lines, and outputs events to stdout
 2. With the -id argument: the backend outputs its type ID to stdout (this is *not* the C++ typeid, but the get_backend_type() result!)
 3. With the -info argument and one or more URIs: the backend then scans each URI for metadata, and outputs said metadata to stdout, formatted like a metadata event
+3. With the -scan argument: similar to (1), the backend listens to stdin, but only for get_metadata command lines - no sink is initialized, no playback is possible
 */
 
 // TODO: right now, the modules (decoders, sinks ..) are hardcoded in here. This is not the way it shall work in the
@@ -76,13 +77,16 @@ struct creators
 #endif
 	ion::audio_backend::file_source_creator file_source_creator_;
 
-	explicit creators(ion::audio_backend::backend &backend_)
+	explicit creators(ion::audio_backend::backend &backend_, bool const with_sinks)
 	{
 		backend_.get_source_creators().push_back(&file_source_creator_);
 
+		if (with_sinks)
+		{
 #ifdef WITH_ALSA_SINK
-		backend_.get_sink_creators().push_back(&alsa_sink_creator_);
+			backend_.get_sink_creators().push_back(&alsa_sink_creator_);
 #endif
+		}
 
 #ifdef WITH_DUMB_DECODER
 		decoder_creators_container.push_back(new ion::audio_backend::dumb_decoder_creator);
@@ -127,7 +131,8 @@ int main(int argc, char **argv)
 	{
 		default_run_mode,
 		print_id_mode,
-		get_resource_info_mode
+		get_resource_info_mode,
+		scan_mode
 	};
 
 	run_mode_type run_mode;
@@ -147,6 +152,8 @@ int main(int argc, char **argv)
 		run_mode = print_id_mode;
 	else if ((params[0] == "-info") && (params.size() >= 2)) // 2 params: -info <url>
 		run_mode = get_resource_info_mode;
+	else if (params[0] == "-scan")
+		run_mode = scan_mode;
 	else
 		return -1;
 
@@ -161,7 +168,7 @@ int main(int argc, char **argv)
 		{
 
 			ion::backend_main_loop < ion::audio_backend::backend > backend_main_loop(std::cin, std::cout, backend_);
-			creators_ = creators_ptr_t(new creators(backend_));
+			creators_ = creators_ptr_t(new creators(backend_, true));
 #ifdef WITH_ALSA_SINK
 			backend_.create_sink("alsa"); // Use the alsa sink for sound output (TODO: this is platform specific; on Windows, one would use Waveout, on OSX it would be CoreAudio etc.)
 #else
@@ -184,7 +191,7 @@ int main(int argc, char **argv)
 
 		case get_resource_info_mode:
 		{
-			creators_ = creators_ptr_t(new creators(backend_));
+			creators_ = creators_ptr_t(new creators(backend_, false));
 
 			for (unsigned int i = 1; i < params.size(); ++i)
 			{
@@ -211,6 +218,15 @@ int main(int argc, char **argv)
 					std::cout << ion::recombine_command_line("invalid_uri", boost::assign::list_of(exc.what())) << std::endl;
 				}
 			}
+			break;
+		}
+
+
+		case scan_mode:
+		{
+			ion::backend_main_loop < ion::audio_backend::backend > backend_main_loop(std::cin, std::cout, backend_);
+			creators_ = creators_ptr_t(new creators(backend_, false));
+			backend_main_loop.run();
 			break;
 		}
 
