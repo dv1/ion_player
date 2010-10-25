@@ -19,6 +19,8 @@
 **************************************************************************/
 
 
+#include <boost/spirit/home/phoenix/bind.hpp>
+#include <boost/spirit/home/phoenix/core/argument.hpp>
 #include "scanner.hpp"
 
 
@@ -28,14 +30,17 @@ namespace audio_player
 {
 
 
-#if 1
-
-
 scanner::scanner(QObject *parent, playlists_t &playlists_, QString const &backend_filepath):
 	QObject(parent),
 	base_t(playlists_),
-	backend_filepath(backend_filepath)
+	backend_filepath(backend_filepath),
+	terminate_sent(false)
 {
+	playlist_removed_connection = playlists_.get_playlist_removed_signal().connect(boost::phoenix::bind(&scanner::playlist_removed, this, boost::phoenix::arg_names::arg1));
+
+	connect(&watchdog_timer, SIGNAL(timeout()), this, SLOT(watchdog_timeout()));
+	watchdog_timer.setSingleShot(false);
+
 	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));
 	connect(&backend_process, SIGNAL(started()), this, SLOT(started()));
 	connect(&backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(finished(int, QProcess::ExitStatus)));
@@ -45,13 +50,14 @@ scanner::scanner(QObject *parent, playlists_t &playlists_, QString const &backen
 	scan_directory_timer.setSingleShot(false);
 	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory_entry()));
 
-	backend_process.start(backend_filepath);
-	backend_process.waitForStarted(30000);
+	start_backend();
 }
 
 
 scanner::~scanner()
 {
+	playlist_removed_connection.disconnect();
+
 	scan_directory_timer.stop();
 	dir_iterator_playlist = 0;
 	dir_iterator = dir_iterator_ptr_t();
@@ -60,18 +66,9 @@ scanner::~scanner()
 
 	backend_process.write("quit\n");
 
-	backend_process.waitForFinished(30000);
+	backend_process.waitForFinished(10000);
 	if (backend_process.state() != QProcess::NotRunning)
-	{
-		backend_process.terminate();
-		std::cerr << "sending scan backend the TERM signal" << std::endl;
-	}
-	backend_process.waitForFinished(30000);
-	if (backend_process.state() != QProcess::NotRunning)
-	{
-		backend_process.kill();
-		std::cerr << "sending scan backend the KILL signal" << std::endl;
-	}
+		terminate_backend(true);
 }
 
 
@@ -93,6 +90,12 @@ void scanner::scan_directory(playlist_t &playlist_, QString const &directory_pat
 }
 
 
+bool scanner::is_scanning_directory() const
+{
+	return (dir_iterator);
+}
+
+
 void scanner::send_to_backend(std::string const &command_line)
 {
 	backend_process.write((command_line + "\n").c_str());
@@ -101,16 +104,19 @@ void scanner::send_to_backend(std::string const &command_line)
 
 void scanner::restart_watchdog_timer()
 {
+	watchdog_timer.start(10000);
 }
 
 
 void scanner::stop_watchdog_timer()
 {
+	watchdog_timer.stop();
 }
 
 
 void scanner::restart_backend()
 {
+	start_backend();
 }
 
 
@@ -181,6 +187,8 @@ void scanner::started()
 
 void scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
 {
+	terminate_sent = false;
+
 	switch (exit_status)
 	{
 		case QProcess::CrashExit: backend_crashed(); break;
@@ -189,6 +197,17 @@ void scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
 }
 
 
+void scanner::playlist_removed(playlist_t &playlist_)
+{
+	if (&playlist_ == dir_iterator_playlist)
+	{
+		dir_iterator_playlist = 0;
+		dir_iterator = dir_iterator_ptr_t();
+		scan_directory_timer.stop();
+	}
+}
+
+
 void scanner::scan_directory_entry()
 {
 	if (!dir_iterator || !dir_iterator_playlist)
@@ -225,213 +244,44 @@ QString scanner::check_if_starts_with_file(QString const &uri_str) const
 }
 
 
-#else
-
-
-scanner::scanner(QObject *parent, playlists_t &playlists_, QString const &backend_filepath):
-	QObject(parent),
-	base_t(playlists_),
-	backend_filepath(backend_filepath)
+void scanner::start_backend()
 {
-	connect(&backend_process, SIGNAL(readyRead()), this, SLOT(try_read_stdout_line()));
-	connect(&backend_process, SIGNAL(started()), this, SLOT(started()));
-	connect(&backend_process, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(finished(int, QProcess::ExitStatus)));
-	backend_process.setReadChannel(QProcess::StandardOutput);
-	backend_process.setProcessChannelMode(QProcess::SeparateChannels);
-
-	scan_directory_timer.setSingleShot(false);
-	connect(&scan_directory_timer, SIGNAL(timeout()), this, SLOT(scan_directory_entry()));
-
 	backend_process.start(backend_filepath);
 	backend_process.waitForStarted(30000);
 }
 
 
-scanner::~scanner()
+void scanner::terminate_backend(bool const do_wait)
 {
-	scan_directory_timer.stop();
-	dir_iterator_playlist = 0;
-	dir_iterator = dir_iterator_ptr_t();
-
-	scan_queue.clear();
-
-	backend_process.write("quit\n");
-
-	backend_process.waitForFinished(30000);
 	if (backend_process.state() != QProcess::NotRunning)
 	{
-		backend_process.terminate();
-		std::cerr << "sending scan backend the TERM signal" << std::endl;
-	}
-	backend_process.waitForFinished(30000);
-	if (backend_process.state() != QProcess::NotRunning)
-	{
-		backend_process.kill();
-		std::cerr << "sending scan backend the KILL signal" << std::endl;
-	}
-}
-
-
-void scanner::start_scan(playlist_t &playlist_, ion::uri const &uri_to_be_scanned)
-{
-	if (scan_queue.empty())
-	{
-		emit scan_running(true);
+		if (terminate_sent)
+		{
+			std::cerr << "sending scan backend the KILL signal" << std::endl;
+			backend_process.kill();
+		}
+		else
+		{
+			backend_process.terminate();
+			std::cerr << "sending scan backend the TERM signal" << std::endl;
+		}
 	}
 
-	base_t::start_scan(playlist_, uri_to_be_scanned);
-	emit queue_updated();
-}
-
-
-void scanner::scan_file(playlist_t &playlist_, QString const &filename)
-{
-	ion::uri uri_(check_if_starts_with_file(filename).toStdString());
-	start_scan(playlist_, uri_);
-}
-
-
-void scanner::scan_directory(playlist_t &playlist_, QString const &directory_path)
-{
-	if (dir_iterator)
-		return;
-
-	dir_iterator_playlist = &playlist_;
-	dir_iterator = dir_iterator_ptr_t(new QDirIterator(directory_path, QDirIterator::Subdirectories));
-	scan_directory_timer.start(0);
-}
-
-
-bool scanner::is_already_scanning() const
-{
-	return (dir_iterator);
-}
-
-
-scanner::scan_queue_t const & scanner::get_scan_queue() const
-{
-	return scan_queue;
-}
-
-
-bool scanner::is_process_running() const
-{
-	//return (backend_process.state() != QProcess::NotRunning);
-	return false;
-}
-
-
-void scanner::start_process(ion::uri const &uri_to_be_scanned)
-{
-	emit queue_updated();
-
-	backend_process.write(std::string("get_metadata \"" + uri_to_be_scanned.get_full() + "\"\n").c_str());
-	/*backend_process.start(backend_filepath, (QStringList() << "-info" << uri_to_be_scanned.get_full().c_str()), QIODevice::ReadOnly);
-	backend_process.waitForStarted(30000);*/
-}
-
-
-void scanner::add_entry_to_playlist(ion::uri const &new_uri, ion::metadata_t const &new_metadata)
-{
-	add_entry(*current_playlist, create_entry(*current_playlist, new_uri, new_metadata), true);
-//	scanning_process_finished(false);
-
-/*	if (scan_queue.empty())
-		emit scan_running(false);*/
-}
-
-
-void scanner::report_general_error(std::string const &error_string)
-{
-	emit general_scan_error(QString(error_string.c_str()));
-}
-
-
-void scanner::report_resource_error(std::string const &error_event, std::string const &uri)
-{
-	emit resource_scan_error(QString(error_event.c_str()), QString(uri.c_str()));
-}
-
-
-void scanner::cancel_scan_slot()
-{
-	cancel_scan();
-	dir_iterator_playlist = 0;
-	dir_iterator = dir_iterator_ptr_t();
-	scan_directory_timer.stop();
-	emit scan_canceled();
-}
-
-
-void scanner::try_read_stdout_line()
-{
-	while (backend_process.canReadLine())
+	if (do_wait)
 	{
-		QString line = backend_process.readLine().trimmed();
-		read_process_stdin_line(line.toStdString());
-	}
-}
-
-
-void scanner::started()
-{
-	scanning_process_started();
-}
-
-
-void scanner::finished(int exit_code, QProcess::ExitStatus exit_status)
-{
-	if (scan_queue.empty())
-	{
-		emit scan_running(false);
-	}
-
-	switch (exit_status)
-	{
-		case QProcess::NormalExit: scanning_process_finished(false); break;
-		case QProcess::CrashExit: scanning_process_terminated(false); break;
-		default: break;
-	};
-}
-
-
-QString scanner::check_if_starts_with_file(QString const &uri_str) const
-{
-	/*
-	This function exists because sometimes, KDE file/director dialogs seem to return paths with file:// prepended.
-	It does not seem to happen all the time, may be a bug inside KDE, and was not observed with the default Qt dialogs.
-	(The KDE dialogs do get used even though this is not a KDE project - KDE replaces Qt's default file & director dialogs
-	with its own.)
-	*/
-	if (uri_str.startsWith("file://"))
-		return uri_str;
-	else
-		return QString("file://") + uri_str;
-}
-
-
-void scanner::scan_directory_entry()
-{
-	if (!dir_iterator || !dir_iterator_playlist)
-		return;
-
-	if (dir_iterator->hasNext())
-	{
-		QString filename = dir_iterator->next();
-		QFileInfo fileinfo(filename);
-		if (fileinfo.isFile() && fileinfo.isReadable()) // filter out directories and unreadable files
-			scan_file(*dir_iterator_playlist, filename);
+		backend_process.waitForFinished(10000);
+		if (backend_process.state() != QProcess::NotRunning)
+			backend_process.kill();
 	}
 	else
-	{
-		dir_iterator_playlist = 0;
-		dir_iterator = dir_iterator_ptr_t();
-		scan_directory_timer.stop();
-	}
+		terminate_sent = true;
 }
 
 
-#endif
+void scanner::watchdog_timeout()
+{
+	terminate_backend();
+}
 
 
 }

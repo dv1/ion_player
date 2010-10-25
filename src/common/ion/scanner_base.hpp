@@ -130,6 +130,8 @@ public:
 
 	~scanner_base()
 	{
+		if (!queue.empty())
+			cancel_scan();
 		playlist_removed_connection.disconnect();
 	}
 
@@ -158,8 +160,15 @@ protected:
 
 	void playlist_removed(playlist_t &playlist_)
 	{
+		// TODO: call removing_queue_entry() for each entry before and after removing them
 		queue_by_playlist_t &queue_by_playlist = queue.template get < playlist_tag > ();
 		queue_by_playlist.erase(queue_by_playlist.lower_bound(&playlist_), queue_by_playlist.upper_bound(&playlist_));
+
+		if (queue.empty())
+		{
+			get_derived().stop_watchdog_timer();
+			get_derived().scanning_in_progress(false);
+		}
 	}
 
 
@@ -176,6 +185,8 @@ protected:
 	void cancel_scan()
 	{
 		queue.clear();
+		get_derived().stop_watchdog_timer();
+		get_derived().scanning_in_progress(false);
 	}
 
 
@@ -197,7 +208,10 @@ protected:
 			request_next_metadata();
 		}
 		else
+		{
 			get_derived().stop_watchdog_timer();
+			get_derived().scanning_in_progress(false);
+		}
 	}
 
 
@@ -218,75 +232,86 @@ protected:
 			uri uri_ = resource_by_uri_iter->uri_;
 			playlist_t *playlist_ = resource_by_uri_iter->playlist_;
 
-			if ((command == "metadata") && (params.size() >= 2))
+			bool playlist_exists = has_playlist(playlists_, *playlist_);
+
+			if (playlist_exists)
 			{
-				metadata_optional_t new_metadata = parse_metadata(params[1]);
-
-				if (new_metadata)
+				if ((command == "metadata") && (params.size() >= 2))
 				{
-					long num_sub_resources = get_metadata_value < long > (*new_metadata, "num_sub_resources", 0);
-					long min_sub_resource_index = get_metadata_value < long > (*new_metadata, "min_sub_resource_index", 0);
-					uri::options_t::const_iterator uri_resource_index_iter = uri_.get_options().find("sub_resource_index");
-					bool has_resource_index = (uri_resource_index_iter != uri_.get_options().end());
+					metadata_optional_t new_metadata = parse_metadata(params[1]);
 
-					if ((num_sub_resources > 1) && !has_resource_index)
+					if (new_metadata)
 					{
-						for (int i = 0; i < num_sub_resources; ++i)
-						{
-							unsigned int sub_resource_index = min_sub_resource_index + i;
-							uri sub_uri = uri_;
-							sub_uri.get_options()["sub_resource_index"] = boost::lexical_cast < std::string > (sub_resource_index);
+						long num_sub_resources = get_metadata_value < long > (*new_metadata, "num_sub_resources", 0);
+						long min_sub_resource_index = get_metadata_value < long > (*new_metadata, "min_sub_resource_index", 0);
+						uri::options_t::const_iterator uri_resource_index_iter = uri_.get_options().find("sub_resource_index");
+						bool has_resource_index = (uri_resource_index_iter != uri_.get_options().end());
 
-							//queue_sequence_t &queue_sequence = queue.template get < sequence_tag > ();
-							typename queue_sequence_t::iterator seq_iter = queue.template project < sequence_tag > (resource_by_uri_iter);
-							queue.insert(seq_iter, entry(sub_uri, playlist_));
+						if ((num_sub_resources > 1) && !has_resource_index)
+						{
+							for (int i = 0; i < num_sub_resources; ++i)
+							{
+								unsigned int sub_resource_index = min_sub_resource_index + i;
+								uri sub_uri = uri_;
+								sub_uri.get_options()["sub_resource_index"] = boost::lexical_cast < std::string > (sub_resource_index);
+
+								//queue_sequence_t &queue_sequence = queue.template get < sequence_tag > ();
+								typename queue_sequence_t::iterator seq_iter = queue.template project < sequence_tag > (resource_by_uri_iter);
+								queue.insert(seq_iter, entry(sub_uri, playlist_));
+							}
+						}
+						else
+						{
+							if (has_metadata_value(*new_metadata, "title") && has_resource_index)
+							{
+								std::string title = get_metadata_value < std::string > (*new_metadata, "title", "");
+								std::stringstream sstr;
+								std::string resource_index_str = uri_resource_index_iter->second;
+
+								try
+								{
+									// This compensates for the 0-starting indices
+									int resource_index = boost::lexical_cast < int > (resource_index_str);
+									resource_index_str = boost::lexical_cast < std::string > (resource_index + 1 - min_sub_resource_index);
+								}
+								catch (boost::bad_lexical_cast const &)
+								{
+								}
+
+								sstr << title << " (" << resource_index_str << "/" << num_sub_resources << ")";
+								set_metadata_value(*new_metadata, "title", sstr.str());
+							}
+
+							get_derived().resource_successfully_scanned(uri_, *playlist_, *new_metadata);
 						}
 					}
 					else
-					{
-						if (has_metadata_value(*new_metadata, "title") && has_resource_index)
-						{
-							std::string title = get_metadata_value < std::string > (*new_metadata, "title", "");
-							std::stringstream sstr;
-							std::string resource_index_str = uri_resource_index_iter->second;
-
-							try
-							{
-								// This compensates for the 0-starting indices
-								int resource_index = boost::lexical_cast < int > (resource_index_str);
-								resource_index_str = boost::lexical_cast < std::string > (resource_index + 1 - min_sub_resource_index);
-							}
-							catch (boost::bad_lexical_cast const &)
-							{
-							}
-
-							sstr << title << " (" << resource_index_str << "/" << num_sub_resources << ")";
-							set_metadata_value(*new_metadata, "title", sstr.str());
-						}
-
-						get_derived().resource_successfully_scanned(uri_, *playlist_, *new_metadata);
-					}
+						get_derived().unrecognized_resource(uri_, *playlist_);
 				}
-				else
+				else if (command == "resource_corrupted")
+				{
+					get_derived().resource_corrupted(uri_, *playlist_);
+				}
+				else if (command == "unrecognized_resource")
+				{
 					get_derived().unrecognized_resource(uri_, *playlist_);
+				}
+				/*else if (command == "error")
+				{
+					get_derived().resource_scan_error(uri_, *playlist_, (params.size() >= 2) ? params[1] : boost::none);
+				}*/
 			}
-			else if (command == "resource_corrupted")
-			{
-				get_derived().resource_corrupted(uri_, *playlist_);
-			}
-			else if (command == "unrecognized_resource")
-			{
-				get_derived().unrecognized_resource(uri_, *playlist_);
-			}
-			/*else if (command == "error")
-			{
-				get_derived().resource_scan_error(uri_, *playlist_, (params.size() >= 2) ? params[1] : boost::none);
-			}*/
+			else
+				std::cerr << "uri " << uri_.get_full() << " playlist is from a playlist that does not exist\n";
 
 			{
-				get_derived().removing_queue_entry(uri_, *playlist_, true);
+				if (playlist_exists)
+					get_derived().removing_queue_entry(uri_, *playlist_, true);
+
 				queue_by_uri.erase(resource_by_uri_iter);
-				get_derived().removing_queue_entry(uri_, *playlist_, false);
+
+				if (playlist_exists)
+					get_derived().removing_queue_entry(uri_, *playlist_, false);
 			}
 
 			if (queue.empty())

@@ -303,8 +303,12 @@ void main_window::add_folder_contents_to_playlist()
 {
 	if (scanner_ == 0)
 		return;
-	//if (scanner_->is_already_scanning())
-	//	return;
+		
+	if (scanner_->is_scanning_directory())
+	{
+		QMessageBox::information(this, "Adding directory failed", "A directory is already being scanned");
+		return;
+	}
 
 	playlist *dir_iterator_playlist = playlists_ui_->get_currently_visible_playlist();
 	if (dir_iterator_playlist == 0)

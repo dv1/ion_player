@@ -40,7 +40,7 @@ test_scanner::~test_scanner()
 	std::cerr << "Quitting\n";
 	backend_process.waitForFinished(3000);
 	if (backend_process.state() != QProcess::NotRunning)
-		terminate_backend();
+		terminate_backend(false);
 }
 
 

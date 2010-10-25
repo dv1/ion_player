@@ -26,6 +26,7 @@
 #include <QDirIterator>
 #include <QTimer>
 #include <boost/shared_ptr.hpp>
+#include <boost/signals2/connection.hpp>
 #include <ion/scanner_base.hpp>
 #include "misc_types.hpp"
 
@@ -53,6 +54,8 @@ public:
 
 	void scan_file(playlist_t &playlist_, QString const &filename);
 	void scan_directory(playlist_t &playlist_, QString const &directory_path);
+
+	bool is_scanning_directory() const;
 
 
 	// These functions are public only because the CRTP requires it (see scanner_base)
@@ -89,19 +92,25 @@ protected slots:
 	void started();
 	void finished(int exit_code, QProcess::ExitStatus exit_status);
 	void scan_directory_entry();
+	void watchdog_timeout();
 
 
 protected:
+	void start_backend();
+	void terminate_backend(bool const do_wait = false);
+	void playlist_removed(playlist_t &playlist_);
 	QString check_if_starts_with_file(QString const &uri_str) const;
 
 
 	QProcess backend_process;
 	QString backend_filepath;
 
-	QTimer scan_directory_timer;
+	QTimer scan_directory_timer, watchdog_timer;
 	typedef boost::shared_ptr < QDirIterator > dir_iterator_ptr_t;
 	dir_iterator_ptr_t dir_iterator;
 	playlist *dir_iterator_playlist;
+	boost::signals2::connection playlist_removed_connection;
+	bool terminate_sent;
 };
 
 
