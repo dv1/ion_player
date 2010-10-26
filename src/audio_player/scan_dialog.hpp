@@ -36,19 +36,26 @@ namespace audio_player
 class scan_queue_model:
 	public QAbstractListModel
 {
+	Q_OBJECT
 public:
-	explicit scan_queue_model(QObject *parent/*, scanner::scan_queue_t const *scan_queue_*/);
-
-	//void set_scan_queue(scanner::scan_queue_t const *new_scan_queue);
-	void reset();
+	explicit scan_queue_model(QObject *parent);
 
 	virtual int columnCount(QModelIndex const & parent) const;
 	virtual QVariant data(QModelIndex const & index, int role) const;
 	virtual QModelIndex parent(QModelIndex const & index) const;
 	virtual int rowCount(QModelIndex const & parent) const;
 
+	void set_scanner(scanner *new_scanner);
+
+
+public slots:
+	void reload_entries();
+	void queue_entry_being_added(QString const &uri_string, scanner::playlist_t *playlist_, bool const before);
+	void queue_entry_being_removed(QString const &uri_string, scanner::playlist_t *playlist_, bool const before);
+
+
 protected:
-	//scanner::scan_queue_t const *scan_queue;
+	scanner *scanner_;
 };
 
 
@@ -66,7 +73,7 @@ public:
 
 
 protected slots:
-	void scan_queue_updated();
+	void scan_running(bool const state);
 	void general_scan_error(QString const &error_string);
 	void resource_scan_error(QString const &error_type, QString const &uri_string);
 

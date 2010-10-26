@@ -66,7 +66,7 @@ scanner::~scanner()
 
 	backend_process.write("quit\n");
 
-	backend_process.waitForFinished(10000);
+	backend_process.waitForFinished(30000);
 	if (backend_process.state() != QProcess::NotRunning)
 		terminate_backend(true);
 }
@@ -104,7 +104,7 @@ void scanner::send_to_backend(std::string const &command_line)
 
 void scanner::restart_watchdog_timer()
 {
-	watchdog_timer.start(10000);
+	watchdog_timer.start(30000);
 }
 
 
@@ -122,11 +122,13 @@ void scanner::restart_backend()
 
 void scanner::adding_queue_entry(ion::uri const &uri_, playlist_t &playlist_, bool const before)
 {
+	emit queue_entry_being_added(QString(uri_.get_full().c_str()), &playlist_, before);
 }
 
 
 void scanner::removing_queue_entry(ion::uri const &uri_, playlist_t &playlist_, bool const before)
 {
+	emit queue_entry_being_removed(QString(uri_.get_full().c_str()), &playlist_, before);
 }
 
 
@@ -269,7 +271,7 @@ void scanner::terminate_backend(bool const do_wait)
 
 	if (do_wait)
 	{
-		backend_process.waitForFinished(10000);
+		backend_process.waitForFinished(20000);
 		if (backend_process.state() != QProcess::NotRunning)
 			backend_process.kill();
 	}

@@ -75,12 +75,13 @@ public:
 
 signals:
 	void scan_canceled();
-	void resource_scan_error(QString const &error_type, QString const &uri_string);
+	void resource_scan_error(QString const &error_type, QString const &uri_string); // TODO: add playlist parameter here
 	void scan_running(bool);
+	void queue_entry_being_added(QString const &uri_string, scanner::playlist_t *playlist_, bool const before);
+	void queue_entry_being_removed(QString const &uri_string, scanner::playlist_t *playlist_, bool const before);
 
 	// these may get replaced later
 	void general_scan_error(QString const &error_string);
-	void queue_updated();
 
 
 public slots:
