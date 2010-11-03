@@ -272,13 +272,6 @@ long dumb_decoder::get_num_ticks_per_second() const
 }
 
 
-void dumb_decoder::set_loop_mode(int const new_loop_mode)
-{
-	boost::lock_guard < boost::mutex > lock(mutex_);
-	set_loop_mode_impl(new_loop_mode);
-}
-
-
 namespace
 {
 

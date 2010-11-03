@@ -66,8 +66,6 @@ public:
 	virtual long get_num_ticks() const;
 	virtual long get_num_ticks_per_second() const;
 
-	virtual void set_loop_mode(int const new_loop_mode);
-
 	virtual void set_playback_properties(playback_properties const &new_playback_properties);
 
 	virtual decoder_properties get_decoder_properties() const;

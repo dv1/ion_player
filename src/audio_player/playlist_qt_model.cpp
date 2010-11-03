@@ -22,6 +22,7 @@
 #include <QApplication>
 #include <QBrush>
 #include <QFont>
+#include <QIcon>
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/spirit/home/phoenix/core/argument.hpp>
 #include <boost/fusion/sequence/intrinsic/at.hpp>
@@ -71,6 +72,7 @@ QVariant playlist_qt_model::headerData(int section, Qt::Orientation orientation,
 		case 1: return "Album";
 		case 2: return "Title";
 		case 3: return "Length";
+		case 4: return "Repeat";
 		default: return QVariant();
 	}
 }
@@ -78,14 +80,14 @@ QVariant playlist_qt_model::headerData(int section, Qt::Orientation orientation,
 
 int playlist_qt_model::columnCount(QModelIndex const &parent) const
 {
-	// artist, album, song title, song length
-	return 4;
+	// artist, album, song title, song length, repeat mode
+	return 5;
 }
 
 
 QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 {
-	if ((index.column() >= 4) || (index.row() >= int(get_num_entries(playlist_))))
+	if ((index.column() >= 5) || (index.row() >= int(get_num_entries(playlist_))))
 		return QVariant();
 
 
@@ -122,7 +124,7 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 		{
 			if (current_uri)
 			{
-				if (/*(&playlist_ == active_playlist) && */(entry_uri == *current_uri))
+				if (entry_uri == *current_uri)
 				{
 					QFont font = QApplication::font();
 					font.setBold(true);
@@ -133,6 +135,24 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 				return QVariant();
 
 			break;
+		}
+
+
+		case Qt::DecorationRole:
+		{
+			metadata_t metadata = boost::fusion::at_c < 1 > (*entry);
+			switch (index.column())
+			{
+				case 4:
+				{
+					int num_loops = get_metadata_value < int > (metadata, "num_loops", -1);
+					if (num_loops < 0)
+						return QVariant();
+					else
+						return QIcon(":/icons/repeat");
+				}
+				default: return QVariant();
+			}
 		}
 
 
@@ -165,6 +185,16 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 						unsigned int seconds = length_in_seconds % 60;
 						return QString("%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0'));
 					}
+				}
+				case 4:
+				{
+					int num_loops = get_metadata_value < int > (metadata, "num_loops", -1);
+					if (num_loops < 0)
+						return QVariant();
+					else if (num_loops == 0)
+						return QString("inf.");
+					else
+						return QString::number(num_loops);
 				}
 				default: return QVariant();
 			}

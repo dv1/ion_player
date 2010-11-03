@@ -111,11 +111,6 @@ public:
 	// If something is playing, playback will cease, and the current decoder is uninitialized. If a next resource is set, its decoder too will be uninitialized.
 	void stop_playback();
 
-	// Sets the loop mode, putting the response in the two response_* arguments. See the set_loop_mode command for details.
-	// pre: nothing.
-	// post: if an integer was given, the loop mode will be set accordingly. Otherwise, nothing is changed.
-	void set_loop_mode(params_t const &params, std::string &response_command_out, params_t &response_params);
-
 	// Generates a list of modules, putting the response in the two arguments.
 	// pre: nothing.
 	// post: does not affect backend states.
@@ -144,8 +139,6 @@ protected:
 	sink_ptr_t current_sink;
 
 	boost::mutex decoder_mutex;
-
-	int loop_count;
 };
 
 

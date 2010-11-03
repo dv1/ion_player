@@ -246,11 +246,6 @@ long gme_decoder::get_num_ticks_per_second() const
 }
 
 
-void gme_decoder::set_loop_mode(int const new_loop_mode)
-{
-}
-
-
 void gme_decoder::set_playback_properties(playback_properties const &new_playback_properties)
 {
 	if (!is_initialized())

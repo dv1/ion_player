@@ -157,13 +157,6 @@ public:
 	virtual long get_num_ticks_per_second() const = 0;
 
 	/**
-	* Sets the loop mode. See the set_loop_mode command for details.
-	* @pre: nothing.
-	* @post: the loop mode will be set accordingly.
-	*/
-	virtual void set_loop_mode(int const new_loop_mode) = 0;
-
-	/**
 	* Sets playback properties, telling the decoder what the output should be like.
 	* Note that there is no room for tolerance here; the decoder MUST ensure the output matches these properties.
 	* If necessary, convert in the decoder. The one exception is the samplerate, which may be ignored. In this case, get_decoder_samplerate() must return a meaningful

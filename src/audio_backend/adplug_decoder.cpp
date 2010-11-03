@@ -284,12 +284,12 @@ long adplug_decoder::get_num_ticks_per_second() const
 }
 
 
-void adplug_decoder::set_loop_mode(int const new_loop_mode)
+/*void adplug_decoder::set_loop_mode(int const new_loop_mode)
 {
 	boost::lock_guard < boost::mutex > lock(mutex_);
 	loop_mode = new_loop_mode;
 	cur_num_loops = 0;
-}
+}*/
 
 
 void adplug_decoder::set_playback_properties(playback_properties const &new_playback_properties)

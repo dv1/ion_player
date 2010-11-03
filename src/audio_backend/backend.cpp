@@ -42,15 +42,13 @@ namespace audio_backend
 using namespace audio_common;
 
 
-backend::backend():
-	loop_count(-1)
+backend::backend()
 {
 }
 
 
 backend::backend(send_event_callback_t const &send_event_callback):
-	send_event_callback(send_event_callback),
-	loop_count(-1)
+	send_event_callback(send_event_callback)
 {
 }
 
@@ -162,15 +160,6 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		else if (command == "get_modules")
 		{
 			generate_modules_list(response_command, response_params);
-		}
-		else if (command == "get_loop_mode")
-		{
-			response_command = "loop_mode";
-			response_params.push_back(boost::lexical_cast < std::string > (loop_count));
-		}
-		else if (command == "set_loop_mode")
-		{
-			set_loop_mode(params, response_command, response_params);
 		}
 		else if (command == "set_current_position")
 		{
@@ -460,24 +449,6 @@ void backend::stop_playback()
 }
 
 
-void backend::set_loop_mode(params_t const &params, std::string &response_command_out, params_t &response_params)
-{
-	if (params.empty())
-		throw std::invalid_argument("no count specified");
-
-	loop_count = boost::lexical_cast < int > (params[0]);
-
-	boost::lock_guard < boost::mutex > lock(decoder_mutex);
-	if (current_decoder)
-		current_decoder->set_loop_mode(loop_count);
-	if (next_decoder)
-		next_decoder->set_loop_mode(loop_count);
-
-	response_command_out = "loop_mode";
-	response_params.push_back(boost::lexical_cast < std::string > (loop_count));
-}
-
-
 void backend::generate_modules_list(std::string &response_command_out, params_t &response_params)
 {
 	response_command_out = "modules";
@@ -646,13 +617,6 @@ decoder_ptr_t backend::create_new_decoder(ion::uri const &uri_, std::string cons
 				std::cerr << "Exception thrown while trying out decoder creator " << decoder_creator_->get_type() << ": " << exc.what() << std::endl;
 			}
 		}
-	}
-
-
-	// Apply some initial settings on the new decoder
-	if (new_decoder)
-	{
-		new_decoder->set_loop_mode(loop_count);
 	}
 
 

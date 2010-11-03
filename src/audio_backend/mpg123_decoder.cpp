@@ -334,12 +334,6 @@ long mpg123_decoder::get_num_ticks_per_second() const
 }
 
 
-void mpg123_decoder::set_loop_mode(int const new_loop_mode)
-{
-	// TODO: does song looping even make sense with mp3?
-}
-
-
 void mpg123_decoder::set_playback_properties(playback_properties const &new_playback_properties)
 {
 	if (!is_initialized())
