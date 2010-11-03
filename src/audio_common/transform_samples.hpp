@@ -101,6 +101,8 @@ struct transform_samples
 		unsigned long num_retrieved_samples = 0;
 		uint8_t *resampler_input = 0;
 		sample_type dest_type = sample_unknown;
+		// note that this returns true if the resampler is in an uninitialized state
+		bool resampler_needed_more_input = is_more_input_needed_for(resampler, num_output_samples);
 
 
 
@@ -108,7 +110,7 @@ struct transform_samples
 		// also, the resampler input is prepared here
 		// if resampling is necessary, and the resampler has enough input data for now, this stage is bypassed
 
-		if (frequencies_match || is_more_input_needed_for(resampler, num_output_samples))
+		if (frequencies_match || resampler_needed_more_input)
 		{
 			// with the adjusted value from above, retrieve samples from the sample source, and resize the buffer to the number of actually retrieved samples
 			// (since the sample source may have given us less samples than we requested)
@@ -221,9 +223,15 @@ struct transform_samples
 				resampler_output = &resampling_output_buffer[0];
 			}
 
-			assert(resampler_input != 0);
+			// resampler input -can- be zero - sometimes the resampler does not need any more input
+			assert(!resampler_needed_more_input || (resampler_input != 0));
 
 			// call the actual resampler, which returns the number of samples that were actually sent to output
+			// if this is the first call since the resampler was reset(), this call internally initializes the resampler
+			// and sets its internal values to the given ones
+			// note that the is_more_input_needed_for() call returns true if the resampler is in such an uninitialized state
+			// if the resampler was initialized already, it may reinitialize itself internally if certain parameters change
+			// (this is entirely implementation-dependent; from the outside, no such reinitialization is noticeable)
 			num_retrieved_samples = resample(
 				resampler,
 				resampler_input, num_retrieved_samples,
