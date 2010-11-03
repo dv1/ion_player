@@ -63,7 +63,7 @@ int test_main(int, char **)
 		TEST_VALUE(boost::fusion::at_c < 2 > (*ion::get_entry(filter_playlist, 1)), true);
 	}
 
-	// The following test the signal relay in filter_playlist
+	// The following code tests the signal relay in filter_playlist
 	// Internally, if one of the playlists that have URIs in the filter playlist proxy entry list get altered,
 	// the filter playlist is notified, and changes its proxy entry list accordingly.
 
@@ -84,6 +84,19 @@ int test_main(int, char **)
 	playlists.remove_playlist(*playlist1);
 	TEST_VALUE(ion::get_num_entries(filter_playlist), 1);
 	TEST_VALUE(boost::fusion::at_c < 0 > (*ion::get_entry(filter_playlist, 0)).get_path(), "bar24");
+
+
+	{
+		// The following code tests correct signal disconnection
+
+		playlists_t playlists_;
+
+		ion::flat_playlist *playlist1 = new ion::flat_playlist(unique_ids_);
+		filter_playlist_t *filter_playlist_ = new filter_playlist_t(playlists_, boost::phoenix::bind(&match, boost::phoenix::arg_names::arg1));
+		playlists_.add_playlist(playlists_t::playlist_ptr_t(playlist1));
+		delete filter_playlist_;
+		playlist1->add_entry(ion::flat_playlist::entry_t(ion::uri("foo://abc"), *ion::parse_metadata("{ \"title\" : \"ccccc\" }"), false), true);
+	}
 
 
 	return 0;

@@ -29,6 +29,7 @@ freely, subject to the following restrictions:
 
 #include <assert.h>
 #include <string>
+#include <cmath>
 
 #include <boost/assign/list_of.hpp>
 #include <boost/spirit/home/phoenix/bind.hpp>
@@ -372,6 +373,7 @@ public:
 	{
 		boost::lock_guard < boost::mutex > lock(mutex);
 		current_volume = std::min(max_volume(), std::max(min_volume(), new_volume));
+		current_volume_logarithmized = std::pow(double(current_volume) / double(max_volume()), 3.5) * double(max_volume());
 		return current_volume;
 	}
 
@@ -437,7 +439,8 @@ protected:
 		reinitialize_on_demand(initialize_on_demand),
 		speex_resampler_(5), // The 5 is a quality setting; 0 is worst, 10 is best; better quality requires more computations at run-time
 		transform_samples_(speex_resampler_),
-		current_volume(sink::max_volume())
+		current_volume(sink::max_volume()),
+		current_volume_logarithmized(sink::max_volume())
 	{
 	}
 
@@ -473,7 +476,7 @@ protected:
 		// actual loop
 		while (true)
 		{
-			unsigned int num_samples_written;
+			unsigned int num_samples_written = 0;
 
 			// First part of the loop: prepare data to be played
 			// This part is synchronized, since outside operations may affect its behavior, introducing race conditions otherwise
@@ -533,7 +536,7 @@ protected:
 					num_samples_written = transform_samples_(
 						*current_decoder, current_decoder->get_decoder_properties(),
 						&(get_derived().get_sample_buffer()[0]), num_samples_to_write, playback_properties_,
-						current_volume, sink::max_volume()
+						current_volume_logarithmized, sink::max_volume()
 					);
 
 					// No samples were written -> move to the next song, so that the next loop iteration uses that next one
@@ -587,7 +590,10 @@ protected:
 				}
 
 				if (is_paused)
+				{
+					num_samples_written = playback_properties_.num_buffer_samples;
 					std::memset(&(get_derived().get_sample_buffer()[0]), 0, get_derived().get_sample_buffer_size());
+				}
 			}
 
 			// Second part of the loop: playback the prepared data (if there is any)
@@ -612,7 +618,7 @@ protected:
 	boost::mutex mutex;
 	speex_resampler::speex_resampler speex_resampler_;
 	transform_samples < speex_resampler::speex_resampler > transform_samples_;
-	long current_volume;
+	long current_volume, current_volume_logarithmized;
 };
 
 

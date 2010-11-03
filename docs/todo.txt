@@ -62,6 +62,11 @@ Both:
 =======================================================================================
 DONE:
 
+* fix bug with deleted playlists:
+  1. play song S from playlist P  2. delete playlist P while S is playing  3. wait until s finishes  4. crash due to erroneous transition attempt
+* write filter_playlist unit test for checking for correct signal disconnection:
+  1. create flat_playlist  2. create filter_playlist  3. add flat to filter playlist  4. delete filter playlist  5. add entry to flat playlist
+* use nonlinear volume adjustment
 * Accelerate metadata scan by spawning the backend only at the beginning & when it crashes
 * Configuration UI subsystem for backend modules (decoders, sinks)
 * File/directory names are corrupt sometimes when adding them (they have a file:// prefix already sometimes; note, this is a Qt/KDE problem - just compensate for it)
@@ -116,6 +121,24 @@ DONE:
 * Save/restore playlists
 * Renaming and erasing of playlists
 * Write custom sliders that allow for an instant jump to where the user clicked (instead of the "paged" jump style the default QSliders have)
+
+
+=======================================================================================
+NOTE: per-resource configuration
+
+As stated in the TODO list, the settings shall be stored in the resource's metadata (not in the URI options). For this, a new command must be introduced:
+update_metadata <uri> <new_metadata>
+
+this transmits the new metadata over to the backend.
+
+Why not in the URI options? Because otherwise the resource would have to be re-inserted in the playlist, and settings do not belong inside the URI; the URI identifies the resource
+*location*.
+
+With the update_metadata command, the following issues can be resolved:
+- per-resource configuration UI
+- decoder switching (store the decoder ID in the metadata)
+- metadata editing
+- per-resource loops
 
 
 =======================================================================================

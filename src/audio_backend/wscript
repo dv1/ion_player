@@ -71,12 +71,18 @@ def configure(conf):
 		faad_ret_1 = conf.check_cc(header_name = 'neaacdec.h', uselib_store = 'FAAD')
 		if not faad_ret_1:
 			faad_ret_1 = conf.check_cc(header_name = 'faad.h', uselib_store = 'FAAD')
+			if faad_ret_1:
+				conf.define('USE_OLD_FAAD_HEADER', 1)
 		faad_ret_2 = conf.check_cc(lib = 'faad', uselib_store = 'FAAD')
 		if faad_ret_1 and faad_ret_2:
 			conf.define('WITH_FAAD_DECODER', 1)
 
 	if not Options.options.without_musepack_decoder:
 		mpcdec_ret_1 = conf.check_cc(header_name = 'mpcdec/mpcdec.h', uselib_store = 'MPCDEC')
+		if not mpcdec_ret_1:
+			mpcdec_ret_1 = conf.check_cc(header_name = 'mpc/mpcdec.h', uselib_store = 'MPCDEC')
+			if mpcdec_ret_1:
+				conf.define('USE_MPC_MPCDEC_INCLUDEPATH', 1)
 		mpcdec_ret_2 = conf.check_cc(lib = 'mpcdec', uselib_store = 'MPCDEC')
 		if mpcdec_ret_1 and mpcdec_ret_2:
 			conf.define('WITH_MUSEPACK_DECODER', 1)

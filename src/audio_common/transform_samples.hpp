@@ -99,7 +99,7 @@ struct transform_samples
 
 
 		unsigned long num_retrieved_samples = 0;
-		uint8_t *resampler_input;
+		uint8_t *resampler_input = 0;
 		sample_type dest_type = sample_unknown;
 
 
@@ -220,6 +220,8 @@ struct transform_samples
 				resampling_output_buffer.resize(num_output_samples * num_output_channels * get_sample_size(resampler_output_type));
 				resampler_output = &resampling_output_buffer[0];
 			}
+
+			assert(resampler_input != 0);
 
 			// call the actual resampler, which returns the number of samples that were actually sent to output
 			num_retrieved_samples = resample(

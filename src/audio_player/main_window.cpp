@@ -131,6 +131,8 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 		boost::phoenix::bind(&logger_dialog::show, backend_log_dialog_)
 	);
 
+	get_playlist_removed_signal(playlists_ui_->get_playlists()).connect(boost::phoenix::bind(&main_window::playlist_removed, this, boost::phoenix::arg_names::arg1));
+
 	if (!load_playlists())
 	{
 		playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist(unique_ids_));
@@ -626,6 +628,16 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 	else
 	{
 		position_volume_widget_ui.position->setEnabled(false);
+	}
+}
+
+
+void main_window::playlist_removed(playlist &playlist_)
+{
+	if (&playlist_ == audio_frontend_->get_current_playlist())
+	{
+		audio_frontend_->stop();
+		audio_frontend_->set_current_playlist(0);
 	}
 }
 

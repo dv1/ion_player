@@ -127,6 +127,9 @@ public:
 	}
 
 
+	playlist_t* get_current_playlist() { return current_playlist; }
+
+
 
 
 	// Actions
@@ -384,10 +387,12 @@ protected:
 			next_uri = get_succeeding_uri(*current_playlist, new_uri);
 			if (next_uri)
 				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
+			current_metadata = get_metadata_for(*current_playlist, new_uri);
+			current_uri_changed_signal(current_uri);
+			current_metadata_changed_signal(current_metadata);
 		}
-		current_metadata = get_metadata_for(*current_playlist, new_uri);
-		current_uri_changed_signal(current_uri);
-		current_metadata_changed_signal(current_metadata);
+		else
+			stopped(old_uri);
 	}
 
 
@@ -439,7 +444,7 @@ protected:
 	}
 
 
-	void stopped(uri const &uri_)
+	void stopped(uri const &/*uri_*/)
 	{
 		current_uri = boost::none;
 		next_uri = boost::none;
