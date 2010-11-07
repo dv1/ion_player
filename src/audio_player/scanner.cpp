@@ -74,7 +74,12 @@ scanner::~scanner()
 
 void scanner::scan_file(playlist_t &playlist_, QString const &filename)
 {
-	ion::uri uri_(check_if_starts_with_file(filename).toStdString());
+	// TODO: converting to utf8 here, which assumes that this is OK enough for file access
+	// however, this may not be the case - the file system may use some other encoding
+	// -> encode to a file system specific encoding
+	QByteArray filename_array = check_if_starts_with_file(filename).toUtf8();
+	std::string filename_str(filename_array.constData(), filename_array.length());
+	ion::uri uri_(filename_str);
 	issue_scan_request(uri_, playlist_);
 }
 
