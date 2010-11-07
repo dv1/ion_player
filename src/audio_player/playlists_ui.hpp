@@ -113,9 +113,10 @@ public:
 	QTabWidget& get_tab_widget() { return tab_widget; }
 	playlists_t & get_playlists() { return playlists_; }
 	audio_common::audio_frontend& get_audio_frontend() { return audio_frontend_; }
+	playlist_ui* get_playlist_ui_for(QWidget *page_widget);
 	playlist_ui* get_currently_visible_playlist_ui();
-	playlist* get_currently_visible_playlist();
 	playlist_ui* get_currently_playing_playlist_ui();
+	playlist* get_currently_visible_playlist();
 	void set_ui_visible(playlist_ui *ui);
 
 	ui_state get_ui_state() const;

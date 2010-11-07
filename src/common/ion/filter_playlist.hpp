@@ -148,17 +148,23 @@ public:
 		proxy_entry_sequence_t const &proxy_entry_sequence = proxy_entries.template get < sequence_tag > ();
 		typename proxy_entry_sequence_t::const_iterator seq_iter = proxy_entries.template project < sequence_tag > (get_uri_iterator_for(uri_));
 
+		if (proxy_entry_sequence.empty())
+			return boost::none;
+
 		if (seq_iter == proxy_entry_sequence.end())
 			return boost::none;
 		else
 		{
 			if (seq_iter == proxy_entry_sequence.begin())
-				return boost::none;
-			else
 			{
-				--seq_iter;
-				return seq_iter->uri_;
+				if (repeating)
+					seq_iter = proxy_entry_sequence.end();
+				else
+					return boost::none;
 			}
+
+			--seq_iter;
+			return seq_iter->uri_;
 		}
 	}
 
@@ -168,15 +174,23 @@ public:
 		proxy_entry_sequence_t const &proxy_entry_sequence = proxy_entries.template get < sequence_tag > ();
 		typename proxy_entry_sequence_t::const_iterator seq_iter = proxy_entries.template project < sequence_tag > (get_uri_iterator_for(uri_));
 
+		if (proxy_entry_sequence.empty())
+			return boost::none;
+
 		if (seq_iter == proxy_entry_sequence.end())
 			return boost::none;
 		else
 		{
 			++seq_iter;
 			if (seq_iter == proxy_entry_sequence.end())
-				return boost::none;
-			else
-				return seq_iter->uri_;
+			{
+				if (repeating)
+					seq_iter = proxy_entry_sequence.begin();
+				else
+					return boost::none;
+			}
+
+			return seq_iter->uri_;
 		}
 	}
 

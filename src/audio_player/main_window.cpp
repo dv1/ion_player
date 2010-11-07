@@ -121,6 +121,9 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	settings_ = new settings(this);
 
 	playlists_ui_ = new playlists_ui(*main_window_ui.playlist_tab_widget, *audio_frontend_, this);
+	connect(&(playlists_ui_->get_tab_widget()), SIGNAL(currentChanged(int)), this, SLOT(visible_playlist_changed(int)));
+	connect(main_window_ui.action_repeat, SIGNAL(toggled(bool)), this, SLOT(set_playlist_repeating(bool)));
+
 	settings_dialog_ = new settings_dialog(
 		this,
 		*settings_,
@@ -413,6 +416,39 @@ void main_window::get_current_playback_position()
 		position_volume_widget_ui.position->set_value(current_position);
 
 	status_bar_ui_->set_current_time_label(current_position);
+}
+
+
+void main_window::visible_playlist_changed(int page_index)
+{
+	QWidget *page_widget = playlists_ui_->get_tab_widget().widget(page_index);
+	if (page_widget == 0)
+	{
+		main_window_ui.action_repeat->setChecked(false);
+		main_window_ui.action_shuffle->setChecked(false);
+		main_window_ui.repeat_shuffle_toolbar->setEnabled(false);
+		return;
+	}
+
+	playlist_ui *playlist_ui_ = playlists_ui_->get_playlist_ui_for(page_widget);
+	if (playlist_ui_ == 0)
+	{
+		// This case is reached at startup -> ignore, just exit silently
+		return;
+	}
+
+	main_window_ui.repeat_shuffle_toolbar->setEnabled(true);
+	main_window_ui.action_repeat->setChecked(playlist_ui_->get_playlist().is_repeating());
+}
+
+
+void main_window::set_playlist_repeating(bool state)
+{
+	playlist_ui *playlist_ui_ = playlists_ui_->get_currently_visible_playlist_ui();
+	if (playlist_ui_ == 0)
+		return; // TODO: message box
+
+	playlist_ui_->get_playlist().set_repeating(state);
 }
 
 

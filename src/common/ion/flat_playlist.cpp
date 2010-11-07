@@ -73,17 +73,23 @@ uri_optional_t flat_playlist::get_preceding_uri(uri const &uri_) const
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
 	entry_sequence_t::const_iterator seq_iter = entries.project < sequence_tag > (get_uri_iterator_for(uri_));
 
+	if (entry_sequence.empty())
+		return boost::none;
+
 	if (seq_iter == entry_sequence.end())
 		return boost::none;
 	else
 	{
 		if (seq_iter == entry_sequence.begin())
-			return boost::none;
-		else
 		{
-			--seq_iter;
-			return boost::fusion::at_c < 0 > (*seq_iter);
+			if (repeating)
+				seq_iter = entry_sequence.end();
+			else
+				return boost::none;
 		}
+
+		--seq_iter;
+		return boost::fusion::at_c < 0 > (*seq_iter);
 	}
 }
 
@@ -93,15 +99,23 @@ uri_optional_t flat_playlist::get_succeeding_uri(uri const &uri_) const
 	entry_sequence_t const &entry_sequence = entries.get < sequence_tag > ();
 	entry_sequence_t::const_iterator seq_iter = entries.project < sequence_tag > (get_uri_iterator_for(uri_));
 
+	if (entry_sequence.empty())
+		return boost::none;
+
 	if (seq_iter == entry_sequence.end())
 		return boost::none;
 	else
 	{
 		++seq_iter;
 		if (seq_iter == entry_sequence.end())
-			return boost::none;
-		else
-			return boost::fusion::at_c < 0 > (*seq_iter);
+		{
+			if (repeating)
+				seq_iter = entry_sequence.begin();
+			else
+				return boost::none;
+		}
+
+		return boost::fusion::at_c < 0 > (*seq_iter);
 	}
 }
 
@@ -301,6 +315,7 @@ void flat_playlist::set_uri_id(uri &uri_, unique_ids_t::id_t const &new_id, bool
 void flat_playlist::load_from(Json::Value const &in_value)
 {
 	set_name(in_value["name"].asString());
+	set_repeating(in_value.get("repeating", false).asBool());
 
 	get_all_resources_changed_signal()(true);
 	clear_entries(false);
@@ -328,6 +343,7 @@ void flat_playlist::load_from(Json::Value const &in_value)
 void flat_playlist::save_to(Json::Value &out_value) const
 {
 	out_value["name"] = get_name();
+	out_value["repeating"] = is_repeating();
 
 	Json::Value entries_value(Json::arrayValue);
 	BOOST_FOREACH(flat_playlist::entry_t const &entry_, get_entry_range())

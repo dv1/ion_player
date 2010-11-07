@@ -177,23 +177,20 @@ playlists_ui::~playlists_ui()
 }
 
 
-playlist_ui* playlists_ui::get_currently_visible_playlist_ui()
+playlist_ui* playlists_ui::get_playlist_ui_for(QWidget *page_widget)
 {
-	QWidget *page_widget = tab_widget.currentWidget();
 	BOOST_FOREACH(playlist_ui *ui, playlist_uis)
 	{
 		if (ui->get_view_widget() == page_widget)
 			return ui;
 	}
-
 	return 0;
 }
 
 
-playlist* playlists_ui::get_currently_visible_playlist()
+playlist_ui* playlists_ui::get_currently_visible_playlist_ui()
 {
-	playlist_ui *ui = get_currently_visible_playlist_ui();
-	return (ui == 0) ? 0 : &(ui->get_playlist());
+	return get_playlist_ui_for(tab_widget.currentWidget());
 }
 
 
@@ -208,6 +205,13 @@ playlist_ui* playlists_ui::get_currently_playing_playlist_ui()
 	}
 
 	return 0;
+}
+
+
+playlist* playlists_ui::get_currently_visible_playlist()
+{
+	playlist_ui *ui = get_currently_visible_playlist_ui();
+	return (ui == 0) ? 0 : &(ui->get_playlist());
 }
 
 

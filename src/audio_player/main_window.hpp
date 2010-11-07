@@ -99,6 +99,9 @@ protected slots:
 
 	void get_current_playback_position();
 
+	void visible_playlist_changed(int page_index);
+	void set_playlist_repeating(bool state);
+
 
 protected:
 	void start_backend(bool const start_scanner = true);

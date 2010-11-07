@@ -125,6 +125,17 @@ public:
 	virtual metadata_t get_metadata() const = 0;
 
 	/**
+	* Updates the resource's metadata with the given values. Default implementation updates nothing.
+	* See the design document on update_metadata for more.
+	* @param metadata_updates The metadata updates
+	* @pre metadata_updates must be valid
+	* @post The metadata will be updated according to the update_metadata documentation
+	*/
+	virtual void update_metadata(metadata_t const &/*metadata_updates*/)
+	{
+	}
+
+	/**
 	* Gets the type of this decoder. This is used for an RTTI like functionality.
 	* @return The type of this decoder, as a string (this type does not have to equal the C++ type name, an unambigous type identification is enough)
 	*/
@@ -185,7 +196,7 @@ public:
 	* Subsequent update() calls will then always return zero (but still be valid calls). Consider zero as sort of an end-of-file indicator.
 	*
 	* IMPORTANT: in implementations, this function MUST be thread safe, since this function will almost always be used in a different thread by the sink. Thread safety between update() and
-	* the othe functions in this decoder class must be guaranteed, that is, for example, it should be safe to call set_current_position() while the sink is calling update() in another thread.
+	* the other functions in this decoder class must be guaranteed, that is, for example, it should be safe to call set_current_position() while the sink is calling update() in another thread.
 	*
 	* @param dest Pointer to start of the destination sample buffer, where the decoder shall write the samples to; this buffer must be at least num_samples_to_write * num_channels * sample_size_in_bytes big.
 	* @param num_samples_to_write Amount of samples to write to the sample buffer. Note that in ion, the unit "sample" ignores the amount of channels. Thus, if you say "256 samples" in a mono setup (1 channel),

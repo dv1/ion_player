@@ -253,6 +253,16 @@ to check whether or not the backend is still alive and reactive.
 Causes a backend_type event to be sent.
 
 
+--- update_metadata <uri> <metadata>
+Updates the metadata for the given URI. The given metadata does not have to contain all metadata for the given URI - it can be a partial update. For example, if
+only the member "mode_x" shall be updated, the given metadata only has to contain a "mode_x" member. Other members of the URI's metadata will not be deleted.
+
+Note that the given URI does not have to be loaded. Certain data such as a loop mode for songs only makes sense when it is played, but generally, this command
+is valid even for non-playing resources. This is useful for persistent modifications, such as changing the title of a song.
+If the URI is currently playing, this resource will be modified, otherwise it will be loaded, modified, unloaded.
+NOTE: the decoder must take care to implement barriers to prevent race conditions in case two different URIs actually refer to the same resource.
+
+
 
 3.3. Event list
 

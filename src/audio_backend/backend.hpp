@@ -125,6 +125,8 @@ protected:
 	source_ptr_t create_new_source(ion::uri const &uri_);
 	decoder_ptr_t create_new_decoder(ion::uri const &uri_, std::string const &decoder_type, metadata_t const &metadata);
 	void resource_finished_callback();
+	metadata_t update_metadata(ion::uri const &uri_, metadata_t const &metadata_updates);
+	metadata_t update_metadata_impl(decoder &decoder_, metadata_t const &metadata_updates);
 
 	metadata_t checked_parse_metadata(std::string const &metadata_str, std::string const &error_msg);
 

@@ -91,6 +91,9 @@ public:
 		playlist_renamed_signal(name);
 	}
 
+	bool is_repeating() const { return repeating; }
+	void set_repeating(bool const mode) { repeating = mode; }
+
 	virtual void add_entry(entry_t const &entry_, bool const emit_signal) = 0;
 	virtual void remove_entry(entry_t const &entry_, bool const emit_signal) = 0;
 	virtual void remove_entry(uri const &uri_, bool const emit_signal) = 0;
@@ -104,11 +107,18 @@ public:
 
 
 protected:
+	playlist():
+		repeating(false)
+	{
+	}
+
+
 	resource_event_signal_t resource_added_signal, resource_removed_signal, resource_metadata_changed_signal;
 	resource_incompatible_signal_t resource_incompatible_signal;
 	all_resources_changed_signal_t all_resources_changed_signal;
 	playlist_renamed_signal_t playlist_renamed_signal;
 	std::string name;
+	bool repeating;
 };
 
 

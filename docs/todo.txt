@@ -2,9 +2,8 @@
 OPEN:
 
 Qt4 audio frontend:
-* Add global loop support to frontend
 * Add resource specific loop support to frontend
-* introduce a PING to scan and playback backends to detect hung up backends
+* introduce a PING to playback backends to detect hung up backends
 * What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
   (Note: this does NOT refer to backend crashes)
 * Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
@@ -34,6 +33,7 @@ Audio backend:
 * timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
 * monkey's audio decoder
 * vqf decoder (decoding library not found yet)
+* m1/mame decoder
 * wavpack decoder (http://www.wavpack.com/)
 * musepack (mpcdec) decoder (http://musepack.net/)
 * modplug decoder (http://gnu.ethz.ch/linuks.mine.nu/modplugplay/)
@@ -62,10 +62,12 @@ Both:
 =======================================================================================
 DONE:
 
+* Add global loop support to frontend
 * fix bug with deleted playlists:
   1. play song S from playlist P  2. delete playlist P while S is playing  3. wait until s finishes  4. crash due to erroneous transition attempt
 * write filter_playlist unit test for checking for correct signal disconnection:
   1. create flat_playlist  2. create filter_playlist  3. add flat to filter playlist  4. delete filter playlist  5. add entry to flat playlist
+* introduce a PING to scan backends to detect hung up backends (solved by using a QTimer)
 * use nonlinear volume adjustment
 * Accelerate metadata scan by spawning the backend only at the beginning & when it crashes
 * Configuration UI subsystem for backend modules (decoders, sinks)
@@ -139,6 +141,9 @@ With the update_metadata command, the following issues can be resolved:
 - decoder switching (store the decoder ID in the metadata)
 - metadata editing
 - per-resource loops
+
+Note that the metadata passed in update_metadata can be partial. The fields that are not mentioned in there will not be touched. For example,
+if an URI's metadata has the entries "title" and "length", and the metadata given to update_metadata contains only "title", then "length" will not be deleted.
 
 
 =======================================================================================
