@@ -173,6 +173,38 @@ public:
 	}
 
 
+	void reacquire_next_resource()
+	{
+		if (current_playlist == 0)
+			return;
+		if (!current_uri)
+			return;
+
+		uri_optional_t new_next_uri = get_succeeding_uri(*current_playlist, *current_uri);
+
+		// some checks to catch redundant calls
+
+		// if there wasnt a new uri before, exit
+		if (!new_next_uri && !next_uri)
+			return;
+
+		// if there was a next value before, a new next value exists, and both are identical, exit
+		if (new_next_uri && next_uri)
+		{
+			if (*new_next_uri == *next_uri)
+				return;
+		}
+
+		// the next uri actually changed -> store the new next uri and send command to backend
+		next_uri = new_next_uri;
+
+		if (next_uri)
+			send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(new_next_uri->get_full())));
+		else
+			send_line_to_backend_callback("clear_next_resource");
+	}
+
+
 	void move_to_previous_resource()
 	{
 		if (current_playlist == 0)

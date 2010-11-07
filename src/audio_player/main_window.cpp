@@ -449,6 +449,10 @@ void main_window::set_playlist_repeating(bool state)
 		return; // TODO: message box
 
 	playlist_ui_->get_playlist().set_repeating(state);
+
+	// tell the frontend to check whether or not its current playlist's next decoder changed after repeating was set
+	if (&(playlist_ui_->get_playlist()) == audio_frontend_->get_current_playlist())
+		audio_frontend_->reacquire_next_resource();
 }
 
 
