@@ -109,6 +109,8 @@ public:
 
 	void update_module_properties(std::string const &module_id, Json::Value const &ui_properties);
 
+	void set_loop_mode(uri const &uri_, int const loop_mode);
+
 
 protected:
 	void parse_command(std::string const &event_command_name, params_t const &event_params);

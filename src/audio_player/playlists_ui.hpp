@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <QObject>
+#include <QModelIndex>
 #include <boost/signals2/connection.hpp>
 #include <ion/playlists.hpp>
 #include <ion/uri.hpp>
@@ -31,6 +32,7 @@
 #include "misc_types.hpp"
 
 
+class QMenu;
 class QTabWidget;
 class QTreeView;
 
@@ -79,10 +81,17 @@ public:
 
 protected slots:
 	void play_song_in_row(QModelIndex const &index);
+	void custom_context_menu_requested(QPoint const &clicked_point);
+	void play_clicked_song();
+	void set_no_repeat();
+	void set_repeat_once();
+	void set_repeat_forever();
+	void edit_metadata();
 
 
 protected:
 	void playlist_renamed(std::string const &new_name);
+	void set_loop_mode_for_clicked(int const mode);
 
 
 	playlist &playlist_;
@@ -90,6 +99,9 @@ protected:
 	QTreeView *view_widget;
 	playlist_qt_model *playlist_qt_model_;
 	boost::signals2::connection playlist_renamed_signal_connection, current_uri_changed_signal_connection;
+
+	QModelIndex clicked_model_index;
+	QMenu *context_menu;
 };
 
 

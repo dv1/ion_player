@@ -20,11 +20,14 @@
 
 
 #include <assert.h>
+#include <QAction>
+#include <QMenu>
 #include <QTreeView>
 #include <QTabWidget>
 #include <boost/foreach.hpp>
 #include <boost/spirit/home/phoenix/bind.hpp>
 #include <boost/spirit/home/phoenix/core/argument.hpp>
+#include <ion/uri.hpp>
 #include <ion/playlist.hpp>
 #include "playlist_qt_model.hpp"
 #include "playlists_ui.hpp"
@@ -56,10 +59,25 @@ playlist_ui::playlist_ui(QObject *parent, playlist &playlist_, playlists_ui &pla
 	view_widget->setAlternatingRowColors(true);
 	view_widget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	view_widget->setModel(playlist_qt_model_);
+	view_widget->setContextMenuPolicy(Qt::CustomContextMenu);
 	tab_widget.addTab(view_widget, get_name(playlist_).c_str());
 
-
 	connect(view_widget, SIGNAL(doubleClicked(QModelIndex const &)), this, SLOT(play_song_in_row(QModelIndex const &)));
+	connect(view_widget, SIGNAL(customContextMenuRequested(QPoint const &)), this, SLOT(custom_context_menu_requested(QPoint const &)));
+
+	context_menu = new QMenu(view_widget);
+	QAction *play_action = context_menu->addAction("Play");
+	QMenu *loop_submenu = context_menu->addMenu("Repeat mode");
+	QAction *no_looping_action = loop_submenu->addAction("No looping");
+	QAction *loop_once_action = loop_submenu->addAction("Loop once");
+	QAction *loop_forever_action = loop_submenu->addAction("Loop forever");
+	QAction *edit_action = context_menu->addAction("Edit");
+
+	connect(play_action,          SIGNAL(triggered()), this, SLOT(play_clicked_song()));
+	connect(no_looping_action,    SIGNAL(triggered()), this, SLOT(set_no_repeat()));
+	connect(loop_once_action,     SIGNAL(triggered()), this, SLOT(set_repeat_once()));
+	connect(loop_forever_action,  SIGNAL(triggered()), this, SLOT(set_repeat_forever()));
+	connect(edit_action,          SIGNAL(triggered()), this, SLOT(edit_metadata()));
 }
 
 
@@ -135,6 +153,59 @@ void playlist_ui::play_song_in_row(QModelIndex const &index)
 		playlists_ui_.get_audio_frontend().set_current_playlist(&playlist_);
 		playlists_ui_.get_audio_frontend().play(boost::fusion::at_c < 0 > (*playlist_entry));
 	}
+}
+
+
+void playlist_ui::play_clicked_song()
+{
+	play_song_in_row(clicked_model_index);
+}
+
+
+void playlist_ui::set_loop_mode_for_clicked(int const mode)
+{
+	playlist_traits < playlist > ::entry_t const *playlist_entry = get_entry(playlist_, clicked_model_index.row());
+	if (playlist_entry != 0)
+	{
+		try
+		{
+			playlists_ui_.get_audio_frontend().set_loop_mode(ion::uri(boost::fusion::at_c < 0 > (*playlist_entry)), mode);
+		}
+		catch (uri::invalid_uri const &)
+		{
+		}
+	}
+}
+
+
+void playlist_ui::set_no_repeat()
+{
+	set_loop_mode_for_clicked(-1);
+}
+
+
+void playlist_ui::set_repeat_once()
+{
+	set_loop_mode_for_clicked(1);
+}
+
+
+void playlist_ui::set_repeat_forever()
+{
+	set_loop_mode_for_clicked(0);
+}
+
+
+void playlist_ui::edit_metadata()
+{
+}
+
+
+void playlist_ui::custom_context_menu_requested(QPoint const &clicked_point)
+{
+	clicked_model_index = view_widget->indexAt(clicked_point);
+	if (clicked_model_index.isValid())
+		context_menu->popup(view_widget->mapToGlobal(clicked_point));
 }
 
 

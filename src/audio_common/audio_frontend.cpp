@@ -179,6 +179,14 @@ void audio_frontend::update_module_properties(std::string const &module_id, Json
 }
 
 
+void audio_frontend::set_loop_mode(uri const &uri_, int const loop_mode)
+{
+	metadata_t loopmode_metadata = empty_metadata();
+	set_metadata_value(loopmode_metadata, "loop_mode", loop_mode);
+	send_line_to_backend_callback(recombine_command_line("update_metadata", boost::assign::list_of(uri_.get_full())(get_metadata_string(loopmode_metadata))));
+}
+
+
 void audio_frontend::read_module_ui(params_t const &event_params)
 {
 	if (event_params.size() < 3)
