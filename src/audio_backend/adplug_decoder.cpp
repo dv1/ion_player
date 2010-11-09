@@ -169,7 +169,7 @@ adplug_decoder::adplug_decoder(send_event_callback_t const send_event_callback, 
 	is16bit(true),
 	current_position(0),
 	seek_to(-1),
-	loop_mode(0),
+	loop_mode(-1),
 	cur_num_loops(0)
 {
 	if (!source_)
