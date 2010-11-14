@@ -59,7 +59,7 @@ public:
 	typedef Playlist playlist_t;
 	typedef boost::function < void(std::string const &line) > send_line_to_backend_callback_t;
 	typedef boost::signals2::signal < void(uri_optional_t const &new_current_uri) > current_uri_changed_signal_t;
-	typedef boost::signals2::signal < void(metadata_optional_t const &new_metadata) > current_metadata_changed_signal_t;
+	typedef boost::signals2::signal < void(metadata_optional_t const &new_metadata, bool const reset_playback_position) > current_metadata_changed_signal_t;
 	typedef boost::signals2::signal < void(uri const &uri_, metadata_t const &uri_metadata) > new_metadata_signal_t;
 	typedef frontend_base < Playlist > self_t;
 
@@ -243,7 +243,7 @@ public:
 	void set_current_metadata(metadata_optional_t const &metadata)
 	{
 		current_metadata = metadata;
-		current_metadata_changed_signal(current_metadata);
+		current_metadata_changed_signal(current_metadata, true);
 	}
 
 
@@ -319,7 +319,15 @@ protected:
 		{
 			metadata_optional_t metadata_ = parse_metadata(event_params[1]);
 			if (metadata_)
-				new_metadata_signal(uri(event_params[0]), *metadata_);
+			{
+				uri uri_(event_params[0]);
+				new_metadata_signal(uri_, *metadata_);
+				if (current_uri)
+				{
+					if (uri_ == *current_uri)
+						current_metadata_changed_signal(*metadata_, false);
+				}
+			}
 		}
 		else if (event_command_name == "started")
 		{
@@ -429,7 +437,7 @@ protected:
 				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 			current_metadata = get_metadata_for(*current_playlist, new_uri);
 			current_uri_changed_signal(current_uri);
-			current_metadata_changed_signal(current_metadata);
+			current_metadata_changed_signal(current_metadata, true);
 		}
 		else
 			stopped(old_uri);
@@ -480,7 +488,7 @@ protected:
 
 		current_metadata = get_metadata_for(*current_playlist, current_uri_);
 		current_uri_changed_signal(current_uri);
-		current_metadata_changed_signal(current_metadata);
+		current_metadata_changed_signal(current_metadata, true);
 	}
 
 
@@ -490,7 +498,7 @@ protected:
 		next_uri = boost::none;
 		current_metadata = boost::none;
 		current_uri_changed_signal(current_uri);
-		current_metadata_changed_signal(current_metadata);
+		current_metadata_changed_signal(current_metadata, true);
 	}
 
 
@@ -500,7 +508,7 @@ protected:
 		next_uri = boost::none;
 		current_metadata = boost::none;
 		current_uri_changed_signal(current_uri);
-		current_metadata_changed_signal(current_metadata);
+		current_metadata_changed_signal(current_metadata, true);
 	}
 
 

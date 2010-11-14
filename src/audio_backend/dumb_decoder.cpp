@@ -197,6 +197,7 @@ long dumb_decoder::set_current_position(long const new_position)
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
+	// DUMB does not reset the position when looping - compensate
 	reinitialize_sigrenderer(playback_properties_.num_channels, new_position);
 
 	return duh_sigrenderer_get_position(duh_sigrenderer);
@@ -210,8 +211,9 @@ long dumb_decoder::get_current_position() const
 
 	boost::lock_guard < boost::mutex > lock(mutex_);
 
+	// TODO: correct for loop offsets
 	// DUMB does not reset the position when looping - compensate
-	return duh_sigrenderer_get_position(duh_sigrenderer) - loop_data_.cur_num_loops * duh_get_length(duh);
+	return duh_sigrenderer_get_position(duh_sigrenderer) % duh_get_length(duh);
 }
 
 

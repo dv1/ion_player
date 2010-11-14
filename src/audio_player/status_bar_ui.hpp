@@ -61,7 +61,7 @@ public:
 
 protected:
 	void current_uri_changed(uri_optional_t const &new_current_uri);
-	void current_metadata_changed(metadata_optional_t const &new_metadata);
+	void current_metadata_changed(metadata_optional_t const &new_metadata, bool const reset_playback_position);
 
 	QString get_time_string(int const minutes, int const seconds) const;
 

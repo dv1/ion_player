@@ -109,7 +109,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 	audio_frontend_ = audio_frontend_ptr_t(new audio_common::audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
 	audio_frontend_->get_current_uri_changed_signal().connect(boost::phoenix::bind(&main_window::current_uri_changed, this, boost::phoenix::arg_names::arg1));
-	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
+	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	audio_frontend_->get_new_metadata_signal().connect(boost::phoenix::bind(&main_window::handle_new_metadata, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 
 
@@ -647,7 +647,7 @@ void main_window::current_uri_changed(uri_optional_t const &new_current_uri)
 }
 
 
-void main_window::current_metadata_changed(metadata_optional_t const &new_metadata)
+void main_window::current_metadata_changed(metadata_optional_t const &new_metadata, bool const set_slider_value)
 {
 	if (new_metadata)
 	{
@@ -656,13 +656,15 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 		if (num_ticks > 0)
 		{
 			position_volume_widget_ui.position->setEnabled(true);
-			position_volume_widget_ui.position->set_value(0);
+			if (set_slider_value)
+				position_volume_widget_ui.position->set_value(0);
 			position_volume_widget_ui.position->setRange(0, num_ticks);
 		}
 		else
 		{
 			position_volume_widget_ui.position->setEnabled(false);
-			position_volume_widget_ui.position->set_value(0);
+			if (set_slider_value)
+				position_volume_widget_ui.position->set_value(0);
 			position_volume_widget_ui.position->setRange(0, 1);
 		}
 	}

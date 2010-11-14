@@ -129,6 +129,7 @@ public:
 	playlist_ui* get_currently_visible_playlist_ui();
 	playlist_ui* get_currently_playing_playlist_ui();
 	playlist* get_currently_visible_playlist();
+	playlist* get_currently_playing_playlist();
 	void set_ui_visible(playlist_ui *ui);
 
 	ui_state get_ui_state() const;

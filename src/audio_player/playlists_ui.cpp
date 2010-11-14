@@ -286,6 +286,13 @@ playlist* playlists_ui::get_currently_visible_playlist()
 }
 
 
+playlist* playlists_ui::get_currently_playing_playlist()
+{
+	playlist_ui *ui = get_currently_playing_playlist_ui();
+	return (ui == 0) ? 0 : &(ui->get_playlist());
+}
+
+
 void playlists_ui::set_ui_visible(playlist_ui *ui)
 {
 	if (ui != 0)

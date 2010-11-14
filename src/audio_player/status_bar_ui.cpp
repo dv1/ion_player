@@ -53,7 +53,7 @@ status_bar_ui::status_bar_ui(QWidget *parent, QStatusBar *status_bar, audio_comm
 	status_bar->addPermanentWidget(current_song_length);
 
 	current_uri_changed_signal_connection = audio_frontend_.get_current_uri_changed_signal().connect(boost::phoenix::bind(&status_bar_ui::current_uri_changed, this, boost::phoenix::arg_names::arg1));
-	current_metadata_changed_signal_connection = audio_frontend_.get_current_metadata_changed_signal().connect(boost::phoenix::bind(&status_bar_ui::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
+	current_metadata_changed_signal_connection = audio_frontend_.get_current_metadata_changed_signal().connect(boost::phoenix::bind(&status_bar_ui::current_metadata_changed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 }
 
 
@@ -70,7 +70,7 @@ void status_bar_ui::current_uri_changed(uri_optional_t const &)
 }
 
 
-void status_bar_ui::current_metadata_changed(metadata_optional_t const &new_metadata)
+void status_bar_ui::current_metadata_changed(metadata_optional_t const &new_metadata, bool const reset_playback_position)
 {
 	if (new_metadata)
 	{
@@ -91,26 +91,30 @@ void status_bar_ui::current_metadata_changed(metadata_optional_t const &new_meta
 				unsigned int minutes = length_in_seconds / 60;
 				unsigned int seconds = length_in_seconds % 60;
 
-				current_playback_time->setText(get_time_string(0, 0));
 				current_song_length->setText(get_time_string(minutes, seconds));
+				if (reset_playback_position)
+					current_playback_time->setText(get_time_string(0, 0));
 			}
 			else
 			{
 				current_song_length->setText("");
-				current_playback_time->setText("");
+				if (reset_playback_position)
+					current_playback_time->setText("");
 			}
 		}
 		else
 		{	
 			current_song_length->setText("");
-			current_playback_time->setText(get_time_string(0, 0));
+			if (reset_playback_position)
+				current_playback_time->setText(get_time_string(0, 0));
 		}
 	}
 	else
 	{
 		current_song_title->setText("");
 		current_song_length->setText("");
-		current_playback_time->setText("");
+		if (reset_playback_position)
+			current_playback_time->setText("");
 	}
 }
 
