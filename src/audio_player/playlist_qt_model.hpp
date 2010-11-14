@@ -57,8 +57,9 @@ public:
 
 
 protected:
-	void entries_added(uri_set_t const uri_, bool const before);
-	void entries_removed(uri_set_t const uri_, bool const before);
+	void entries_added(uri_set_t const uris, bool const before);
+	void entries_removed(uri_set_t const uris, bool const before);
+	void metadata_changed(uri_set_t const uris, bool const before);
 	void resource_incompatible(uri const uri_);
 	void all_resources_changed(bool const before);
 	void active_playlist_changed(playlists_traits < playlists_t > ::playlist_t *playlist_);
@@ -74,6 +75,7 @@ protected:
 	boost::signals2::connection
 		entry_added_signal_connection,
 		entry_removed_signal_connection,
+		metadata_changed_signal_connection,
 		resource_incompatible_connection,
 		all_resources_changed_connection,
 		active_playlist_changed_connection;

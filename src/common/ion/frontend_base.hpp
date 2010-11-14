@@ -60,6 +60,7 @@ public:
 	typedef boost::function < void(std::string const &line) > send_line_to_backend_callback_t;
 	typedef boost::signals2::signal < void(uri_optional_t const &new_current_uri) > current_uri_changed_signal_t;
 	typedef boost::signals2::signal < void(metadata_optional_t const &new_metadata) > current_metadata_changed_signal_t;
+	typedef boost::signals2::signal < void(uri const &uri_, metadata_t const &uri_metadata) > new_metadata_signal_t;
 	typedef frontend_base < Playlist > self_t;
 
 
@@ -233,6 +234,7 @@ public:
 
 	current_uri_changed_signal_t & get_current_uri_changed_signal() { return current_uri_changed_signal; }
 	current_metadata_changed_signal_t & get_current_metadata_changed_signal() { return current_metadata_changed_signal; }
+	new_metadata_signal_t & get_new_metadata_signal() { return new_metadata_signal; }
 
 
 	uri_optional_t const & get_current_uri() const { return current_uri; }
@@ -313,6 +315,12 @@ protected:
 	{
 		if ((event_command_name == "transition") && (event_params.size() >= 2))
 			transition(event_params[0], event_params[1]);
+		else if (event_command_name == "metadata")
+		{
+			metadata_optional_t metadata_ = parse_metadata(event_params[1]);
+			if (metadata_)
+				new_metadata_signal(uri(event_params[0]), *metadata_);
+		}
 		else if (event_command_name == "started")
 		{
 			if (event_params.size() >= 2 && !event_params[1].empty())
@@ -503,6 +511,7 @@ protected:
 	send_line_to_backend_callback_t send_line_to_backend_callback;
 	current_uri_changed_signal_t current_uri_changed_signal;
 	current_metadata_changed_signal_t current_metadata_changed_signal;
+	new_metadata_signal_t new_metadata_signal;
 	boost::signals2::connection resource_added_signal_connection, resource_removed_signal_connection;
 
 	// URIs

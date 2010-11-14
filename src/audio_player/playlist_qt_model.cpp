@@ -45,6 +45,7 @@ playlist_qt_model::playlist_qt_model(QObject *parent_, playlists_t &playlists_, 
 
 	entry_added_signal_connection = get_resource_added_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::entries_added, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	entry_removed_signal_connection = get_resource_removed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::entries_removed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
+	metadata_changed_signal_connection = get_resource_metadata_changed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::metadata_changed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	resource_incompatible_connection = get_resource_incompatible_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::resource_incompatible, this, boost::phoenix::arg_names::arg1));
 	all_resources_changed_connection = get_all_resources_changed_signal(playlist_).connect(boost::phoenix::bind(&playlist_qt_model::all_resources_changed, this, boost::phoenix::arg_names::arg1));
 	active_playlist_changed_connection = get_active_playlist_changed_signal(playlists_).connect(boost::phoenix::bind(&playlist_qt_model::active_playlist_changed, this, boost::phoenix::arg_names::arg1));
@@ -55,6 +56,7 @@ playlist_qt_model::~playlist_qt_model()
 {
 	entry_added_signal_connection.disconnect();
 	entry_removed_signal_connection.disconnect();
+	metadata_changed_signal_connection.disconnect();
 	resource_incompatible_connection.disconnect();
 	all_resources_changed_connection.disconnect();
 	active_playlist_changed_connection.disconnect();
@@ -145,8 +147,8 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 			{
 				case 4:
 				{
-					int num_loops = get_metadata_value < int > (metadata, "num_loops", -1);
-					if (num_loops < 0)
+					int loop_mode = get_metadata_value < int > (metadata, "loop_mode", -1);
+					if (loop_mode < 0)
 						return QVariant();
 					else
 						return QIcon(":/icons/repeat");
@@ -188,13 +190,13 @@ QVariant playlist_qt_model::data(QModelIndex const &index, int role) const
 				}
 				case 4:
 				{
-					int num_loops = get_metadata_value < int > (metadata, "num_loops", -1);
-					if (num_loops < 0)
+					int loop_mode = get_metadata_value < int > (metadata, "loop_mode", -1);
+					if (loop_mode < 0)
 						return QVariant();
-					else if (num_loops == 0)
+					else if (loop_mode == 0)
 						return QString("inf.");
 					else
-						return QString::number(num_loops);
+						return QString::number(loop_mode);
 				}
 				default: return QVariant();
 			}
@@ -287,6 +289,35 @@ void playlist_qt_model::entries_removed(uri_set_t const, bool const before)
 	// Using reset() instead of begin/endRemoveRows(), since the selection may be complex (that is, non-contiguous; example, 5 items, and 1 2 5 are selected)
 	if (!before)
 		reset();
+}
+
+
+void playlist_qt_model::metadata_changed(uri_set_t const uris, bool const before)
+{
+	if (before)
+		return;
+
+	playlist_traits < playlist > ::index_optional_t start, end;
+
+	BOOST_FOREACH(uri const &uri_, uris)
+	{
+		playlist_traits < playlist > ::index_optional_t uri_index = get_entry_index(playlist_, uri_);
+		if (!uri_index)
+			return;
+
+		if (start)
+			start = std::min(*start, *uri_index);
+		else
+			start = *uri_index;
+
+		if (end)
+			end = std::max(*end, *uri_index);
+		else
+			end = *uri_index;
+	}
+
+	if (start && end)
+		dataChanged(createIndex(*start, 0), createIndex(*end, columnCount(QModelIndex()) - 1));
 }
 
 

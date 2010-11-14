@@ -110,6 +110,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	audio_frontend_ = audio_frontend_ptr_t(new audio_common::audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
 	audio_frontend_->get_current_uri_changed_signal().connect(boost::phoenix::bind(&main_window::current_uri_changed, this, boost::phoenix::arg_names::arg1));
 	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1));
+	audio_frontend_->get_new_metadata_signal().connect(boost::phoenix::bind(&main_window::handle_new_metadata, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 
 
 	status_bar_ui_ = new status_bar_ui(this, main_window_ui.statusbar, *audio_frontend_);
@@ -668,6 +669,15 @@ void main_window::current_metadata_changed(metadata_optional_t const &new_metada
 	else
 	{
 		position_volume_widget_ui.position->setEnabled(false);
+	}
+}
+
+
+void main_window::handle_new_metadata(uri const &uri_, metadata_t const &new_metadata)
+{
+	BOOST_FOREACH(playlists_t::playlist_ptr_t playlist_, playlists_ui_->get_playlists().get_playlists())
+	{
+		set_resource_metadata(*playlist_, uri_, new_metadata);
 	}
 }
 

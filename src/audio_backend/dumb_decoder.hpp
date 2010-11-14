@@ -53,7 +53,7 @@ public:
 	};
 
 
-	explicit dumb_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, long const filesize, module_type const module_type_);
+	explicit dumb_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, long const filesize, module_type const module_type_, long const loop_mode);
 	~dumb_decoder();
 
 
@@ -64,6 +64,8 @@ public:
 	virtual long get_current_position() const;
 
 	virtual metadata_t get_metadata() const;
+
+	virtual void update_metadata(metadata_t const &metadata_update);
 
 	virtual std::string get_type() const;
 

@@ -118,6 +118,7 @@ protected:
 
 	void current_uri_changed(uri_optional_t const &new_current_uri);
 	void current_metadata_changed(metadata_optional_t const &new_metadata);
+	void handle_new_metadata(uri const &uri_, metadata_t const &new_metadata);
 
 	void playlist_removed(playlist &playlist_);
 

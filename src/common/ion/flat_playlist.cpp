@@ -256,11 +256,8 @@ void flat_playlist::set_resource_metadata(uri const &uri_, metadata_t const & ne
 	resource_metadata_changed_signal(boost::assign::list_of(uri_), true);
 
 	entry_t entry_ = *uri_tag_iter;
-
-	entries_by_uri.erase(uri_tag_iter);
-
 	boost::fusion::at_c < 1 > (entry_) = new_metadata;
-	entries.push_back(entry_);
+	entries_by_uri.replace(uri_tag_iter, entry_);
 
 	resource_metadata_changed_signal(boost::assign::list_of(uri_), false);
 }

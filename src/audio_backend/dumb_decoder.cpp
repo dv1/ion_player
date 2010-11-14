@@ -145,7 +145,7 @@ DUH* read_module(source &source_, long const filesize, dumb_decoder::module_type
 
 
 
-dumb_decoder::dumb_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, long const filesize, module_type const module_type_):
+dumb_decoder::dumb_decoder(send_event_callback_t const send_event_callback, source_ptr_t source_, long const filesize, module_type const module_type_, long const loop_mode):
 	decoder(send_event_callback),
 	duh(0),
 	duh_sigrenderer(0),
@@ -155,7 +155,7 @@ dumb_decoder::dumb_decoder(send_event_callback_t const send_event_callback, sour
 	if (!source_)
 		return;
 
-	loop_data_.loop_mode = -1;
+	loop_data_.loop_mode = loop_mode;
 	loop_data_.cur_num_loops = 0;
 	playback_properties_.num_channels = 0;
 
@@ -222,12 +222,18 @@ metadata_t dumb_decoder::get_metadata() const
 	if (!is_initialized()) // NOTE: not using can_playback() here, since it is valid to call get_songinfo() without any playback going on
 		return metadata_;
 
+	// loop mode
+	if (loop_data_.loop_mode >= 0)
+		set_metadata_value(metadata_, "loop_mode", int(loop_data_.loop_mode));
+
+	// module title
 	char const *title = duh_get_tag(duh, "TITLE");
 	if (title != 0)
 		set_metadata_value(metadata_, "title", title);
 	else
 		set_metadata_value(metadata_, "title", "");
 
+	// module type
 	{
 		std::string type_str;
 
@@ -245,6 +251,13 @@ metadata_t dumb_decoder::get_metadata() const
 	}
 
 	return metadata_;
+}
+
+
+void dumb_decoder::update_metadata(metadata_t const &metadata_update)
+{
+	int loop_mode = get_metadata_value < int > (metadata_update, "loop_mode", loop_data_.loop_mode);
+	set_loop_mode_impl(loop_mode);
 }
 
 
@@ -408,8 +421,11 @@ decoder_ptr_t dumb_decoder_creator::create(source_ptr_t source_, metadata_t cons
 	if (module_type_ == dumb_decoder::module_type_unknown) // this is not a module file -> exit
 		return decoder_ptr_t();
 
+	// fetch a loop mode (if present; use -1 as default, meaning "no looping")
+	long loop_mode = get_metadata_value(metadata, "loop_mode", -1);
+
 	// at this point, it is clear that this most likely is a module file -> try to load it
-	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_event_callback, source_, filesize, module_type_);
+	dumb_decoder *dumb_decoder_ = new dumb_decoder(send_event_callback, source_, filesize, module_type_, loop_mode);
 	if (!dumb_decoder_->is_initialized())
 	{
 		delete dumb_decoder_;
