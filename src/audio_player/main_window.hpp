@@ -99,6 +99,8 @@ protected slots:
 
 	void get_current_playback_position();
 
+	void backend_timeout();
+
 	void visible_playlist_changed(int page_index);
 	void set_playlist_repeating(bool state);
 
@@ -109,6 +111,7 @@ protected:
 	void change_backend();
 
 	void print_backend_line(std::string const &line);
+	void handle_backend_pong();
 
 	std::string get_playlists_filename();
 	bool load_playlists();
@@ -132,7 +135,16 @@ protected:
 
 	QProcess *backend_process;
 	scanner *scanner_;
-	QTimer *current_position_timer;
+	QTimer *current_position_timer, *backend_timeout_timer;
+
+	enum backend_timeout_modes
+	{
+		backend_timeout_normal,
+		backend_timeout_terminating,
+		backend_timeout_killing
+	};
+	backend_timeout_modes backend_timeout_mode;
+	bool pong_received;
 
 	playlists_ui *playlists_ui_;
 

@@ -30,8 +30,8 @@ namespace audio_common
 {
 
 
-audio_frontend::audio_frontend(send_line_to_backend_callback_t const &send_line_to_backend_callback):
-	base_t(send_line_to_backend_callback),
+audio_frontend::audio_frontend(send_line_to_backend_callback_t const &send_line_to_backend_callback, pong_callback_t const &pong_callback):
+	base_t(send_line_to_backend_callback, pong_callback),
 	paused(false),
 	current_position(0)
 {

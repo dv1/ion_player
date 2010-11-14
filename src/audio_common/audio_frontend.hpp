@@ -89,7 +89,7 @@ public:
 	typedef boost::signals2::signal < void() > module_entries_updated_signal_t;
 
 
-	explicit audio_frontend(send_line_to_backend_callback_t const &send_line_to_backend_callback);
+	explicit audio_frontend(send_line_to_backend_callback_t const &send_line_to_backend_callback, pong_callback_t const &pong_callback);
 
 	void pause(bool const set);
 	bool is_paused() const;

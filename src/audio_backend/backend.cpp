@@ -161,6 +161,13 @@ void backend::exec_command(std::string const &command, params_t const &params, s
 		{
 			generate_modules_list(response_command, response_params);
 		}
+		else if (command == "ping")
+		{
+			DECODER_GUARD;
+			response_command = "pong";
+			if (params.size() >= 1)
+				response_params.push_back(params[0]);
+		}
 		else if (command == "set_current_position")
 		{
 			DECODER_GUARD;

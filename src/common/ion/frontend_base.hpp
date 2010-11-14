@@ -58,6 +58,7 @@ class frontend_base:
 public:
 	typedef Playlist playlist_t;
 	typedef boost::function < void(std::string const &line) > send_line_to_backend_callback_t;
+	typedef boost::function < void() > pong_callback_t;
 	typedef boost::signals2::signal < void(uri_optional_t const &new_current_uri) > current_uri_changed_signal_t;
 	typedef boost::signals2::signal < void(metadata_optional_t const &new_metadata, bool const reset_playback_position) > current_metadata_changed_signal_t;
 	typedef boost::signals2::signal < void(uri const &uri_, metadata_t const &uri_metadata) > new_metadata_signal_t;
@@ -65,8 +66,9 @@ public:
 
 
 	// Constructor; the parameter is a callback that sends a line to the backend process' stdin.
-	explicit frontend_base(send_line_to_backend_callback_t const &send_line_to_backend_callback):
+	explicit frontend_base(send_line_to_backend_callback_t const &send_line_to_backend_callback, pong_callback_t const &pong_callback):
 		send_line_to_backend_callback(send_line_to_backend_callback),
+		pong_callback(pong_callback),
 		current_playlist(0),
 		crash_count(0),
 		num_allowed_crashes(0),
@@ -171,6 +173,12 @@ public:
 			return;
 
 		send_line_to_backend_callback("stop");
+	}
+
+
+	void send_ping()
+	{
+		send_line_to_backend_callback("ping");
 	}
 
 
@@ -315,6 +323,11 @@ protected:
 	{
 		if ((event_command_name == "transition") && (event_params.size() >= 2))
 			transition(event_params[0], event_params[1]);
+		else if (event_command_name == "pong")
+		{
+			if (pong_callback)
+				pong_callback();
+		}
 		else if (event_command_name == "metadata")
 		{
 			metadata_optional_t metadata_ = parse_metadata(event_params[1]);
@@ -517,6 +530,7 @@ protected:
 
 	// Callback & signals
 	send_line_to_backend_callback_t send_line_to_backend_callback;
+	pong_callback_t pong_callback;
 	current_uri_changed_signal_t current_uri_changed_signal;
 	current_metadata_changed_signal_t current_metadata_changed_signal;
 	new_metadata_signal_t new_metadata_signal;

@@ -2,7 +2,6 @@
 OPEN:
 
 Qt4 audio frontend:
-* introduce a PING to playback backends to detect hung up backends
 * What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
   (Note: this does NOT refer to backend crashes)
 * Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
@@ -51,7 +50,6 @@ Audio backend:
 Both:
 * Support multiple backends (this affects scanner, frontend base, audio frontend, and the resource incompatibility bit in the playlist entries)
 * Examine code for undefined cases
-* support mid-play metadata changes (including title, artist, album, song length, ....)
 * Ability to edit metadata
 * extensive testing (esp. fault tolerance)
 
@@ -59,6 +57,8 @@ Both:
 =======================================================================================
 DONE:
 
+* introduce a PING to playback backends to detect hung up backends
+* support mid-play metadata changes (including title, artist, album, song length, ....)
 * Change per-resource looping design: instead of setting the loop count with set_loop_mode for each resource, put a "loop_mode" member into the metadata
   if not present, the global loop mode shall be used; set_loop_mode would then only be used for said global loop mode
 * Add resource specific loop support to frontend

@@ -103,11 +103,23 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	position_volume_widget_ui.position->setEnabled(false);
 	position_volume_widget_ui.volume->setEnabled(false);
 
+	backend_timeout_timer = new QTimer(this);
+	backend_timeout_timer->setInterval(5000);
+	connect(backend_timeout_timer, SIGNAL(timeout()), this, SLOT(backend_timeout()));
+
 	current_position_timer = new QTimer(this);
 	current_position_timer->setInterval(500);
 	connect(current_position_timer, SIGNAL(timeout()), this, SLOT(get_current_playback_position()));
 
-	audio_frontend_ = audio_frontend_ptr_t(new audio_common::audio_frontend(boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1)));
+	backend_timeout_mode = backend_timeout_normal;
+	pong_received = true;
+
+	audio_frontend_ = audio_frontend_ptr_t(
+		new audio_common::audio_frontend(
+			boost::phoenix::bind(&main_window::print_backend_line, this, boost::phoenix::arg_names::arg1),
+			boost::phoenix::bind(&main_window::handle_backend_pong, this)
+		)
+	);
 	audio_frontend_->get_current_uri_changed_signal().connect(boost::phoenix::bind(&main_window::current_uri_changed, this, boost::phoenix::arg_names::arg1));
 	audio_frontend_->get_current_metadata_changed_signal().connect(boost::phoenix::bind(&main_window::current_metadata_changed, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 	audio_frontend_->get_new_metadata_signal().connect(boost::phoenix::bind(&main_window::handle_new_metadata, this, boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
@@ -375,27 +387,31 @@ void main_window::backend_started()
 
 void main_window::backend_error(QProcess::ProcessError process_error)
 {
-	bool restart = false, send_signals = true;
-	std::stringstream sstr;
-	sstr << "BACKEND ERROR: ";
 	switch (process_error)
 	{
-		case QProcess::FailedToStart: sstr << "failed to start"; break;
-		case QProcess::Crashed: sstr << "crashed"; restart = true; send_signals = false; break;
-		case QProcess::Timedout: sstr << "timeout"; break;
-		case QProcess::WriteError: sstr << "write error"; restart = true; break;
-		case QProcess::ReadError: sstr << "read error"; restart = true; break;
-		default: sstr << "<unknown error>"; break;
-	}
-	backend_log_dialog_->add_line("misc", sstr.str().c_str());
+		case QProcess::FailedToStart: backend_log_dialog_->add_line("misc", "Backend failed to start"); break;
 
-	audio_frontend_->backend_terminated();
+		case QProcess::Crashed:
+			backend_log_dialog_->add_line("misc", "Backend crashed or was terminated - restarting");
+			audio_frontend_->backend_terminated();
+			start_backend(false);
+			break;
 
-	if (restart)
-	{
-		backend_log_dialog_->add_line("misc", "Restarting backend");
-		stop_backend(false, false, send_signals);
-		start_backend(false);
+		case QProcess::Timedout: break; // the last wait* functions timed out - ignored
+
+		case QProcess::ReadError:
+			backend_log_dialog_->add_line("misc", "Backend read error - terminating");
+			backend_timeout_mode = backend_timeout_terminating;
+			backend_process->terminate();
+			break;
+
+		case QProcess::WriteError:
+			backend_log_dialog_->add_line("misc", "Backend standard-I/O error - terminating");
+			backend_timeout_mode = backend_timeout_terminating;
+			backend_process->terminate();	
+			break;
+
+		default: backend_log_dialog_->add_line("misc", "<unknown error>"); break;
 	}
 }
 
@@ -403,6 +419,36 @@ void main_window::backend_error(QProcess::ProcessError process_error)
 void main_window::backend_finished(int exit_code, QProcess::ExitStatus exit_status)
 {
 	backend_log_dialog_->add_line("misc", "Backend finished");
+}
+
+
+void main_window::backend_timeout()
+{
+	if (backend_process == 0)
+		return;
+
+	switch (backend_timeout_mode)
+	{
+		case backend_timeout_terminating:
+		case backend_timeout_killing:
+			backend_process->kill();
+			backend_log_dialog_->add_line("misc", "Sending backend the KILL signal");
+			backend_timeout_mode = backend_timeout_killing;
+			break;
+
+		case backend_timeout_normal:
+		default:
+			if (pong_received)
+			{
+				pong_received = false;
+				audio_frontend_->send_ping();
+			}
+			else
+			{
+				backend_timeout_mode = backend_timeout_terminating;
+				backend_process->terminate();
+			}
+	}
 }
 
 
@@ -447,7 +493,10 @@ void main_window::set_playlist_repeating(bool state)
 {
 	playlist_ui *playlist_ui_ = playlists_ui_->get_currently_visible_playlist_ui();
 	if (playlist_ui_ == 0)
-		return; // TODO: message box
+	{
+		QMessageBox::warning(this, "Cannot set repeat mode", "No playlist present in the user interface - cannot set repeat mode");
+		return;
+	}
 
 	playlist_ui_->get_playlist().set_repeating(state);
 
@@ -459,8 +508,6 @@ void main_window::set_playlist_repeating(bool state)
 
 void main_window::start_backend(bool const start_scanner)
 {
-	stop_backend();
-
 	QString backend_filepath = settings_->get_backend_filepath();
 
 	if (!QFileInfo(backend_filepath).exists() || !QFileInfo(backend_filepath).isFile())
@@ -503,6 +550,12 @@ void main_window::start_backend(bool const start_scanner)
 		return;
 	}
 
+	// reset the backend timeout
+	pong_received = true;
+	backend_timeout_mode = backend_timeout_normal;
+	backend_timeout_timer->start();
+
+	// update the module entries for the settings UI
 	audio_frontend_->update_module_entries();
 }
 
@@ -578,6 +631,14 @@ void main_window::print_backend_line(std::string const &line)
 			backend_log_dialog_->add_line("stdin", line.c_str());
 		backend_process->write((line + "\n").c_str());
 	}
+}
+
+
+void main_window::handle_backend_pong()
+{
+	backend_timeout_timer->start(); // restart timer
+	pong_received = true;
+	backend_timeout_mode = backend_timeout_normal;
 }
 
 
