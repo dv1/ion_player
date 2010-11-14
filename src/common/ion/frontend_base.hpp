@@ -47,9 +47,6 @@ namespace ion
 {
 
 
-// TODO: install exception handlers for invalid_uri exceptions
-
-
 // See Playlist concept in docs/concepts.txt
 template < typename Playlist >
 class frontend_base:
@@ -156,11 +153,14 @@ public:
 			uri_optional_t new_next_uri = get_succeeding_uri(*current_playlist, uri_);
 			if (new_next_uri)
 			{
+				candidate_for_next_uri = new_next_uri;
 				play_params.push_back(new_next_uri->get_full());
 				metadata_optional_t metadata_ = get_metadata_for(*current_playlist, *new_next_uri);
 				if (metadata_)
 					play_params.push_back(get_metadata_string(*metadata_));
 			}
+			else
+				candidate_for_next_uri = boost::none;
 		}
 
 		send_line_to_backend_callback(recombine_command_line("play", play_params));
@@ -206,6 +206,7 @@ public:
 
 		// the next uri actually changed -> store the new next uri and send command to backend
 		next_uri = new_next_uri;
+		candidate_for_next_uri = next_uri;
 
 		if (next_uri)
 			send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(new_next_uri->get_full())));
@@ -235,6 +236,17 @@ public:
 			return;
 
 		uri_optional_t uri_ = get_succeeding_uri(*current_playlist, *current_uri);
+		if (uri_)
+			play(*uri_);
+	}
+
+
+	void move_to_next_resource(uri const &cur_uri)
+	{
+		if (current_playlist == 0)
+			return;
+
+		uri_optional_t uri_ = get_succeeding_uri(*current_playlist, cur_uri);
 		if (uri_)
 			play(*uri_);
 	}
@@ -344,13 +356,46 @@ protected:
 		}
 		else if (event_command_name == "started")
 		{
-			if (event_params.size() >= 2 && !event_params[1].empty())
-				started(uri(event_params[0]), uri(event_params[1]));
-			else if (event_params.size() >= 1)
-				started(uri(event_params[0]), boost::none);
+			try
+			{
+				if (event_params.size() >= 2 && !event_params[1].empty())
+					started(uri(event_params[0]), uri(event_params[1]));
+				else if (event_params.size() >= 1)
+					started(uri(event_params[0]), boost::none);
+			}
+			catch (ion::uri::invalid_uri const &)
+			{
+				// TODO: report the invalid URI to the logger
+			}
 		}
 		else if ((event_command_name == "stopped") && (event_params.size() >= 1))
 			stopped(event_params[0]);
+		else if (((event_command_name == "unrecognized_resource") || (event_command_name == "resource_not_found") || (event_command_name == "invalid_uri")) && (event_params.size() >= 1))
+		{
+			try
+			{
+				uri uri_(event_params[0]);
+				if (current_playlist != 0)
+				{
+					mark_backend_resource_incompatibility(*current_playlist, uri_, current_backend_type);
+					if (uri_ == candidate_for_next_uri)
+					{
+						candidate_for_next_uri = get_succeeding_uri(*current_playlist, uri_);
+						if (candidate_for_next_uri)
+							send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(candidate_for_next_uri->get_full())));
+						else
+							send_line_to_backend_callback("clear_next_resource");
+					}
+				}
+				else
+					move_to_next_resource(uri_);
+			}
+			catch (ion::uri::invalid_uri const &)
+			{
+				move_to_next_resource();
+				// TODO: report the invalid URI to the logger
+			}
+		}
 		else if ((event_command_name == "resource_finished") && (event_params.size() >= 1))
 			resource_finished(event_params[0]);
 	}
@@ -384,6 +429,7 @@ protected:
 			if (added_uris.find(*actual_next_uri) != added_uris.end())
 			{
 				next_uri = *actual_next_uri;
+				candidate_for_next_uri = next_uri;
 				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 			}
 		}
@@ -431,6 +477,7 @@ protected:
 			if (next_removed)
 			{
 				next_uri = get_succeeding_uri(*current_playlist, *current_uri);
+				candidate_for_next_uri = next_uri;
 				if (next_uri)
 					send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 				else
@@ -446,6 +493,7 @@ protected:
 		if (current_playlist != 0)
 		{
 			next_uri = get_succeeding_uri(*current_playlist, new_uri);
+			candidate_for_next_uri = next_uri;
 			if (next_uri)
 				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 			current_metadata = get_metadata_for(*current_playlist, new_uri);
@@ -493,6 +541,7 @@ protected:
 		if (!next_uri_)
 		{
 			next_uri = get_succeeding_uri(*current_playlist, current_uri_);
+			candidate_for_next_uri = next_uri;
 			if (next_uri)
 				send_line_to_backend_callback(recombine_command_line("set_next_resource", boost::assign::list_of(next_uri->get_full())));
 		}
@@ -509,6 +558,7 @@ protected:
 	{
 		current_uri = boost::none;
 		next_uri = boost::none;
+		candidate_for_next_uri = boost::none;
 		current_metadata = boost::none;
 		current_uri_changed_signal(current_uri);
 		current_metadata_changed_signal(current_metadata, true);
@@ -519,6 +569,7 @@ protected:
 	{
 		current_uri = boost::none;
 		next_uri = boost::none;
+		candidate_for_next_uri = boost::none;
 		current_metadata = boost::none;
 		current_uri_changed_signal(current_uri);
 		current_metadata_changed_signal(current_metadata, true);
@@ -537,7 +588,7 @@ protected:
 	boost::signals2::connection resource_added_signal_connection, resource_removed_signal_connection;
 
 	// URIs
-	uri_optional_t current_uri, next_uri;
+	uri_optional_t current_uri, next_uri, candidate_for_next_uri;
 
 	// The playlist
 	playlist_t *current_playlist;

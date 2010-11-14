@@ -371,7 +371,7 @@ void main_window::try_read_stdout_line()
 	while (backend_process->canReadLine())
 	{
 		QString line = backend_process->readLine().trimmed();
-		if (!line.startsWith("current_position"))
+		if (!line.startsWith("current_position") && !line.startsWith("pong"))
 			backend_log_dialog_->add_line("stdout", line);
 		audio_frontend_->parse_incoming_line(line.toStdString());
 	}
@@ -445,6 +445,7 @@ void main_window::backend_timeout()
 			}
 			else
 			{
+				backend_log_dialog_->add_line("misc", "Backend PING timeout -> sending TERM signal");
 				backend_timeout_mode = backend_timeout_terminating;
 				backend_process->terminate();
 			}
@@ -627,7 +628,7 @@ void main_window::print_backend_line(std::string const &line)
 {
 	if (backend_process != 0)
 	{
-		if (line.find("get_current_position") != 0)
+		if ((line.find("get_current_position") != 0) && (line.find("ping") != 0))
 			backend_log_dialog_->add_line("stdin", line.c_str());
 		backend_process->write((line + "\n").c_str());
 	}

@@ -2,8 +2,6 @@
 OPEN:
 
 Qt4 audio frontend:
-* What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
-  (Note: this does NOT refer to backend crashes)
 * Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
 * Add filter playlists to GUI; matching function shall use wildcards
 * Make use of the systray for basic player control and minimizing to tray
@@ -32,6 +30,7 @@ Audio backend:
 * monkey's audio decoder
 * vqf decoder (decoding library not found yet)
 * m1/mame decoder
+* lazyUSF decoder for Nintendo64 USF files
 * wavpack decoder (http://www.wavpack.com/)
 * musepack (mpcdec) decoder (http://musepack.net/)
 * modplug decoder (http://gnu.ethz.ch/linuks.mine.nu/modplugplay/)
@@ -57,6 +56,8 @@ Both:
 =======================================================================================
 DONE:
 
+* What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
+  (Note: this does NOT refer to backend crashes)
 * introduce a PING to playback backends to detect hung up backends
 * support mid-play metadata changes (including title, artist, album, song length, ....)
 * Change per-resource looping design: instead of setting the loop count with set_loop_mode for each resource, put a "loop_mode" member into the metadata
@@ -144,6 +145,8 @@ With the update_metadata command, the following issues can be resolved:
 
 Note that the metadata passed in update_metadata can be partial. The fields that are not mentioned in there will not be touched. For example,
 if an URI's metadata has the entries "title" and "length", and the metadata given to update_metadata contains only "title", then "length" will not be deleted.
+
+-> DONE
 
 
 =======================================================================================
