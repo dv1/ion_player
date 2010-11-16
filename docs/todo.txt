@@ -2,8 +2,7 @@
 OPEN:
 
 Qt4 audio frontend:
-* Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
-* Add filter playlists to GUI; matching function shall use wildcards
+* Add filter playlists to GUI; matching function shall use wildcards (TODO: GUI for wildcards)
 * Make use of the systray for basic player control and minimizing to tray
 * Import/export M3U
 * Import/export individual playlists in JSON format
@@ -22,8 +21,6 @@ Qt4 audio frontend:
 Audio backend:
 * sidplay decoder (http://sidplay2.sourceforge.net/)
 * implement decoder deletion thread
-* Handle I/O failures (for example, SMB share + network cable disconnected)
-* audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
 * Investigate shared memory for passing audio data to a visualizer (use boost.interprocess for this)
 * StSound decoder (for YM music) (http://leonard.oxg.free.fr/)
 * timidity decoder (for MIDIs) (http://timidity.sourceforge.net/)
@@ -56,6 +53,9 @@ Both:
 =======================================================================================
 DONE:
 
+* audio/mods/MOD/Realms.mod causes DUMB to hang; before trying to fix it in the DUMB code, use this to test hang detection (that is, implement pings in frontend)
+* Handle I/O failures (for example, SMB share + network cable disconnected) - cannot be handled properly
+* Add "all" playlist to GUI ("all" playlist = filter_playlist with no match function set)
 * What to do if a file doesn't play because of an error (for instance, file not found)? Mark resource + transition/resource_finished.
   (Note: this does NOT refer to backend crashes)
 * introduce a PING to playback backends to detect hung up backends

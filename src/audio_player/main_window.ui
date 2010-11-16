@@ -227,18 +227,6 @@ Use the settings button above to open the dialog window.</string>
     <string>settings</string>
    </property>
   </action>
-  <action name="action_create_new_tab">
-   <property name="icon">
-    <iconset resource="resources.qrc">
-     <normaloff>:/icons/new_tab</normaloff>:/icons/new_tab</iconset>
-   </property>
-   <property name="text">
-    <string>create_new_tab</string>
-   </property>
-   <property name="toolTip">
-    <string>create_new_tab</string>
-   </property>
-  </action>
   <action name="action_add_folder_contents">
    <property name="icon">
     <iconset resource="resources.qrc">

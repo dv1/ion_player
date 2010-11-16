@@ -84,6 +84,8 @@ protected slots:
 	void set_current_volume();
 
 	void create_new_playlist();
+	void create_new_filter_playlist();
+	void create_new_all_playlist();
 	void rename_playlist();
 	void delete_playlist();
 

@@ -262,10 +262,8 @@ public:
 	proxy_entries_t const & get_proxy_entries() const { return proxy_entries; }
 
 
-	virtual bool is_mutable() const
-	{
-		return false;
-	}
+	virtual bool is_view() const { return true; }
+	virtual bool is_mutable() const { return false; }
 
 
 	virtual void add_entry(entry_t const &, bool const) {}
@@ -330,6 +328,9 @@ protected:
 		if (static_cast < void* > (playlist_) == static_cast < void* > (this))
 			return;
 
+		if (playlist_->is_view())
+			return;
+
 		uri_set_t uris;
 
 		if (emit_signal)
@@ -351,6 +352,9 @@ protected:
 		assert(playlist_ != 0);
 
 		if (entry_ == 0)
+			return;
+
+		if (playlist_->is_view())
 			return;
 
 		bool matches = true;
@@ -385,6 +389,9 @@ protected:
 	{
 		assert(playlist_ != 0);
 
+		if (playlist_->is_view())
+			return;
+
 		proxy_entries_by_uri_t &proxy_entries_by_uri = proxy_entries.template get < uri_tag > ();
 		typename proxy_entries_by_uri_t::iterator iter = proxy_entries_by_uri.find(uri_);
 		if (iter != proxy_entries_by_uri.end())
@@ -395,6 +402,9 @@ protected:
 	void remove_other_playlist(playlist *playlist_, bool const emit_signal)
 	{
 		assert(playlist_ != 0);
+
+		if (playlist_->is_view())
+			return;
 
 		uri_set_t uris;
 		if (emit_signal)
@@ -435,6 +445,9 @@ protected:
 
 	void add_playlist_signal_connections(playlist &playlist_)
 	{
+		if (playlist_.is_view())
+			return;
+
 		playlist_connections_ptr_t connections(new playlist_connections_t);
 		(*connections)[added_connection] = ion::get_resource_added_signal(playlist_).connect(boost::phoenix::bind(&self_t::resources_added, this, boost::ref(playlist_), boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
 		(*connections)[removed_connection] = ion::get_resource_removed_signal(playlist_).connect(boost::phoenix::bind(&self_t::resources_removed, this, boost::ref(playlist_), boost::phoenix::arg_names::arg1, boost::phoenix::arg_names::arg2));
@@ -452,6 +465,9 @@ protected:
 
 	void playlist_removed(playlist &playlist_)
 	{
+		if (playlist_.is_view())
+			return;
+
 		typename playlist_connections_map_t::iterator connection_map_iter = playlist_connections_map.find(&playlist_);
 		if (connection_map_iter != playlist_connections_map.end())
 		{

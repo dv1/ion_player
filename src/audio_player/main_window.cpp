@@ -27,6 +27,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QMenu>
 #include <QSystemTrayIcon>
 #include <QProcess>
 #include <QMetaType>
@@ -73,9 +74,20 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	position_volume_widget_ui.setupUi(sliders_widget);
 	main_window_ui.sliders_toolbar->addWidget(sliders_widget);
 
-	QToolButton *create_playlist_button = new QToolButton(this);
-	create_playlist_button->setDefaultAction(main_window_ui.action_create_new_tab);
+	// TODO: who owns these actions?
+	QMenu *create_playlist_menu = new QMenu(this);
+	QAction *create_playlist_action = create_playlist_menu->addAction("Create playlist");
+	QAction *create_filter_playlist_action = create_playlist_menu->addAction("Create filter playlist");
+	QAction *create_all_playlist_action = create_playlist_menu->addAction("Create all playlist");
+
+	QPushButton *create_playlist_button = new QPushButton(this);
+	create_playlist_button->setMenu(create_playlist_menu);
+	create_playlist_button->setIcon(QIcon(":/icons/new_tab"));
 	main_window_ui.playlist_tab_widget->setCornerWidget(create_playlist_button);
+
+	connect(create_playlist_action,                    SIGNAL(triggered()), this, SLOT(create_new_playlist()));
+	connect(create_filter_playlist_action,             SIGNAL(triggered()), this, SLOT(create_new_filter_playlist()));
+	connect(create_all_playlist_action,                SIGNAL(triggered()), this, SLOT(create_new_all_playlist()));
 
 	connect(main_window_ui.action_play,                SIGNAL(triggered()), this, SLOT(play()));
 	connect(main_window_ui.action_pause,               SIGNAL(triggered()), this, SLOT(pause()));
@@ -84,7 +96,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	connect(main_window_ui.action_next_song,           SIGNAL(triggered()), this, SLOT(next_song()));
 	connect(main_window_ui.action_move_to_currently_playing,            SIGNAL(triggered()), this, SLOT(move_to_currently_playing()));
 	connect(main_window_ui.action_settings,            SIGNAL(triggered()), this, SLOT(show_settings()));
-	connect(main_window_ui.action_create_new_tab,      SIGNAL(triggered()), this, SLOT(create_new_playlist()));
 	connect(main_window_ui.action_add_file,            SIGNAL(triggered()), this, SLOT(add_file_to_playlist()));
 	connect(main_window_ui.action_add_folder_contents, SIGNAL(triggered()), this, SLOT(add_folder_contents_to_playlist()));
 	connect(main_window_ui.action_add_url,             SIGNAL(triggered()), this, SLOT(add_url_to_playlist()));
@@ -261,6 +272,25 @@ void main_window::create_new_playlist()
 {
 	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist(unique_ids_));
 	set_name(*new_playlist, "New playlist");
+	add_playlist(playlists_ui_->get_playlists(), new_playlist);
+}
+
+
+void main_window::create_new_filter_playlist()
+{
+	// TODO: filter settings GUI
+	typedef filter_playlist < playlists_t > filter_playlist_t;
+	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new filter_playlist_t(playlists_ui_->get_playlists()));
+	set_name(*new_playlist, "New filter playlist");
+	add_playlist(playlists_ui_->get_playlists(), new_playlist);
+}
+
+
+void main_window::create_new_all_playlist()
+{
+	typedef filter_playlist < playlists_t > filter_playlist_t;
+	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new filter_playlist_t(playlists_ui_->get_playlists()));
+	set_name(*new_playlist, "New all playlist");
 	add_playlist(playlists_ui_->get_playlists(), new_playlist);
 }
 

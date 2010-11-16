@@ -89,6 +89,7 @@ public:
 	virtual entry_t const * get_entry(uri const &uri_) const;
 	virtual index_optional_t get_entry_index(uri const &uri_) const;
 
+	virtual bool is_view() const { return false; }
 	virtual bool is_mutable() const { return true; }
 
 	entry_range_t get_entry_range() const;
