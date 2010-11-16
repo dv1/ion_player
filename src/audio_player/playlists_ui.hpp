@@ -92,6 +92,7 @@ protected slots:
 protected:
 	void playlist_renamed(std::string const &new_name);
 	void set_loop_mode_for_clicked(int const mode);
+	QString create_tab_name(std::string const &name) const;
 
 
 	playlist &playlist_;

@@ -264,6 +264,7 @@ public:
 
 	virtual bool is_view() const { return true; }
 	virtual bool is_mutable() const { return false; }
+	virtual std::string get_prefix() const { return matching_function ? "filter" : "all"; }
 
 
 	virtual void add_entry(entry_t const &, bool const) {}
@@ -272,8 +273,23 @@ public:
 	virtual void remove_entries(uri_set_t const &, bool const) {}
 	virtual void set_resource_metadata(uri const &, metadata_t const &) {}
 	virtual void clear_entries(bool const) {}
-	virtual void load_from(Json::Value const &) {}
-	virtual void save_to(Json::Value &) const {}
+
+
+	virtual void load_from(Json::Value const &in_value)
+	{
+		set_name(in_value["name"].asString());
+		set_repeating(in_value.get("repeating", false).asBool());
+		// TODO: restore matching function
+	}
+
+
+	virtual void save_to(Json::Value &out_value) const
+	{
+		out_value["name"] = get_name();
+		out_value["type"] = matching_function ? "filter" : "all";
+		out_value["repeating"] = is_repeating();
+		// TODO: store matching function
+	}
 
 
 	void update_entries()

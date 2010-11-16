@@ -258,7 +258,9 @@ inline void load_from(playlists < Playlist > &playlists_, Json::Value const &in_
 	for (unsigned int index = 0; index < in_value.size(); ++index)
 	{
 		Json::Value json_entry = in_value[index];
-		typename playlists < Playlist > ::playlist_ptr_t new_playlist(create_playlist_func());
+		std::string type = json_entry.get("type", "").asString();
+
+		typename playlists < Playlist > ::playlist_ptr_t new_playlist(create_playlist_func(type));
 		load_from(*new_playlist, json_entry);
 		playlists_.add_playlist(new_playlist);
 	}

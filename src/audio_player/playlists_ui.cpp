@@ -60,7 +60,8 @@ playlist_ui::playlist_ui(QObject *parent, playlist &playlist_, playlists_ui &pla
 	view_widget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	view_widget->setModel(playlist_qt_model_);
 	view_widget->setContextMenuPolicy(Qt::CustomContextMenu);
-	tab_widget.addTab(view_widget, get_name(playlist_).c_str());
+
+	tab_widget.addTab(view_widget, create_tab_name(get_name(playlist_)));
 
 	connect(view_widget, SIGNAL(doubleClicked(QModelIndex const &)), this, SLOT(play_song_in_row(QModelIndex const &)));
 	connect(view_widget, SIGNAL(customContextMenuRequested(QPoint const &)), this, SLOT(custom_context_menu_requested(QPoint const &)));
@@ -93,6 +94,17 @@ playlist_ui::~playlist_ui()
 
 	delete view_widget;
 	delete playlist_qt_model_;
+}
+
+
+QString playlist_ui::create_tab_name(std::string const &name) const
+{
+	std::string prefix = playlist_.get_prefix();
+	QString playlist_name(name.c_str());
+	if (prefix.empty())
+		return playlist_name;
+	else
+		return QString("[%1] %2").arg(prefix.c_str()).arg(playlist_name);
 }
 
 
@@ -213,7 +225,7 @@ void playlist_ui::playlist_renamed(std::string const &new_name)
 {
 	int index = playlists_ui_.get_tab_widget().indexOf(view_widget);
 	if (index != -1)
-		playlists_ui_.get_tab_widget().setTabText(index, new_name.c_str());
+		playlists_ui_.get_tab_widget().setTabText(index, create_tab_name(new_name));
 }
 
 

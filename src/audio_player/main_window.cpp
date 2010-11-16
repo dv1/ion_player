@@ -679,6 +679,23 @@ std::string main_window::get_playlists_filename()
 }
 
 
+namespace
+{
+
+playlist* create_playlist_from_type(flat_playlist::unique_ids_t &unique_ids_, playlists_t &playlists_, std::string const &type)
+{
+	typedef filter_playlist < playlists_t > filter_playlist_t;
+	if ((type == "") || (type == "flat"))
+		return new flat_playlist(unique_ids_);
+	else if ((type == "filter") || (type == "all"))
+		return new filter_playlist_t(playlists_);
+	else
+		return 0;
+}
+
+}
+
+
 bool main_window::load_playlists()
 {
 	std::string playlists_filename = get_playlists_filename();
@@ -690,7 +707,16 @@ bool main_window::load_playlists()
 		{
 			Json::Value json_value;
 			playlists_file >> json_value;
-			load_from(playlists_ui_->get_playlists(), json_value, boost::phoenix::new_ < flat_playlist > (boost::phoenix::ref(unique_ids_)));
+			load_from(
+				playlists_ui_->get_playlists(),
+				json_value,
+				boost::phoenix::bind(
+					&create_playlist_from_type,
+					boost::phoenix::ref(unique_ids_),
+					boost::phoenix::ref(playlists_ui_->get_playlists()),
+					boost::phoenix::arg_names::arg1
+				)
+			);
 			return true;
 		}
 	}

@@ -83,6 +83,7 @@ public:
 
 	virtual bool is_view() const = 0;
 	virtual bool is_mutable() const = 0;
+	virtual std::string get_prefix() const = 0;
 
 	std::string get_name() const { return name; }
 

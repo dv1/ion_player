@@ -91,6 +91,7 @@ public:
 
 	virtual bool is_view() const { return false; }
 	virtual bool is_mutable() const { return true; }
+	virtual std::string get_prefix() const { return ""; }
 
 	entry_range_t get_entry_range() const;
 

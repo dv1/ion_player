@@ -340,6 +340,7 @@ void flat_playlist::load_from(Json::Value const &in_value)
 void flat_playlist::save_to(Json::Value &out_value) const
 {
 	out_value["name"] = get_name();
+	out_value["type"] = "flat";
 	out_value["repeating"] = is_repeating();
 
 	Json::Value entries_value(Json::arrayValue);
