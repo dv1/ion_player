@@ -187,6 +187,11 @@ main_window::~main_window()
 {
 	stop_backend();
 	save_playlists();
+
+	// the logic in visible_playlist_changed() causes these signals to be emitted when deleting the playlist uis -> disconnect early
+	disconnect(main_window_ui.action_repeat, SIGNAL(toggled(bool)), 0, 0);
+	disconnect(main_window_ui.action_shuffle, SIGNAL(toggled(bool)), 0, 0);
+
 	delete ui_settings_;
 	delete playlists_ui_;
 	delete settings_;
