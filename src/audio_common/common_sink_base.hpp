@@ -122,9 +122,9 @@ With reinitialization-on-demand, the policy is:
    4.3. otherwise, a second check needs to be done: compare the next decoder's frequency (treating a rate of 0 like in 4.1) with the current playback frequency;
         if they do not match, a reinitialization is neccesary (using the next decoder's frequency), otherwise do not reinitialize
 5. If a start() call is done, and playback is running, do a check similar to the one in 4.:
-   4.1. Get the current decoder's playback frequency (treating a rate of 0 like in 4.1)
-   4.2. Get the new decoder's (the one that is passed to start() as parameter) frequency (treating a rate of 0 like in 4.1)
-   4.3. If these frequencies match, no reinitialization is necessary, otherwise perform one, using the new decoder's frequency for the reinitialization
+   5.1. Get the current decoder's playback frequency (treating a rate of 0 like in 4.1)
+   5.2. Get the new decoder's (the one that is passed to start() as parameter) frequency (treating a rate of 0 like in 4.1)
+   5.3. If these frequencies match, no reinitialization is necessary, otherwise perform one, using the new decoder's frequency for the reinitialization
 
 (this one will be called the "reinitialization policy" from here on)
 

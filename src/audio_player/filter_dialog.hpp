@@ -19,33 +19,72 @@
 **************************************************************************/
 
 
-#ifndef ION_AUDIO_PLAYER_SEARCH_DIALOG_HPP
-#define ION_AUDIO_PLAYER_SEARCH_DIALOG_HPP
+#ifndef ION_AUDIO_PLAYER_FILTER_DIALOG_HPP
+#define ION_AUDIO_PLAYER_FILTER_DIALOG_HPP
 
-#include <QStringMatcher>
-#include "filter_dialog.hpp"
+#include <QDialog>
+#include <QModelIndex>
+
+#include <boost/shared_ptr.hpp>
+
+#include <ion/filter_playlist.hpp>
+
+#include "ui_filter_dialog.h"
+#include "misc_types.hpp"
 
 
 namespace ion
 {
+
+
+namespace audio_common
+{
+class audio_frontend;
+}
+
+
 namespace audio_player
 {
 
 
-class search_dialog:
-	public filter_dialog
+class playlist_qt_model;
+
+
+class filter_dialog:
+	public QDialog 
 {
+	Q_OBJECT
 public:
-	explicit search_dialog(QWidget *parent, playlists_t &playlists_, audio_common::audio_frontend &audio_frontend_);
+	explicit filter_dialog(QWidget *parent, playlists_t &playlists_, audio_common::audio_frontend &audio_frontend_);
+	~filter_dialog();
+
+
+public slots:
+	void show_filter_dialog();
+
+
+protected slots:
+	virtual void pattern_entered(QString const &pattern);
+	virtual void song_in_row_activated(QModelIndex const &index);
+	void filter_dialog_hidden();
+	void title_checkbox_state_changed(int new_state);
+	void artist_checkbox_state_changed(int new_state);
+	void album_checkbox_state_changed(int new_state);
 
 
 protected:
-	virtual void pattern_entered(QString const &pattern);
-	virtual void song_in_row_activated(QModelIndex const &index);
+	typedef filter_playlist < playlists_t > filter_playlist_t;
+	typedef boost::shared_ptr < filter_playlist_t > filter_playlist_ptr_t;
+
 	virtual bool test_for_match(playlist::entry_t const &entry_) const;
 
 
-	QStringMatcher search_string_matcher;
+	filter_playlist_ptr_t filter_playlist_;
+	playlist_qt_model *filter_qt_model_;
+	playlists_t &playlists_;
+	audio_common::audio_frontend &audio_frontend_;
+	boost::signals2::connection current_uri_changed_signal_connection;
+	Ui_filter_dialog filter_dialog_ui;
 };
 
 

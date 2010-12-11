@@ -176,7 +176,7 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 
 
 	search_dialog_ = new search_dialog(this, playlists_ui_->get_playlists(), *audio_frontend_);
-	connect(main_window_ui.action_find, SIGNAL(triggered()), search_dialog_, SLOT(show_search_dialog()));
+	connect(main_window_ui.action_find, SIGNAL(triggered()), search_dialog_, SLOT(show_filter_dialog()));
 
 
 	start_backend();
