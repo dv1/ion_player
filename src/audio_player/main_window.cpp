@@ -77,7 +77,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	// TODO: who owns these actions?
 	QMenu *create_playlist_menu = new QMenu(this);
 	QAction *create_playlist_action = create_playlist_menu->addAction("Create playlist");
-	QAction *create_filter_playlist_action = create_playlist_menu->addAction("Create filter playlist");
 	QAction *create_all_playlist_action = create_playlist_menu->addAction("Create all playlist");
 
 	QPushButton *create_playlist_button = new QPushButton(this);
@@ -86,7 +85,6 @@ main_window::main_window(uri_optional_t const &command_line_uri):
 	main_window_ui.playlist_tab_widget->setCornerWidget(create_playlist_button);
 
 	connect(create_playlist_action,                    SIGNAL(triggered()), this, SLOT(create_new_playlist()));
-	connect(create_filter_playlist_action,             SIGNAL(triggered()), this, SLOT(create_new_filter_playlist()));
 	connect(create_all_playlist_action,                SIGNAL(triggered()), this, SLOT(create_new_all_playlist()));
 
 	connect(main_window_ui.action_play,                SIGNAL(triggered()), this, SLOT(play()));
@@ -277,16 +275,6 @@ void main_window::create_new_playlist()
 {
 	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new flat_playlist(unique_ids_));
 	set_name(*new_playlist, "New playlist");
-	add_playlist(playlists_ui_->get_playlists(), new_playlist);
-}
-
-
-void main_window::create_new_filter_playlist()
-{
-	// TODO: filter settings GUI
-	typedef filter_playlist < playlists_t > filter_playlist_t;
-	playlists_traits < playlists_t > ::playlist_ptr_t new_playlist(new filter_playlist_t(playlists_ui_->get_playlists()));
-	set_name(*new_playlist, "New filter playlist");
 	add_playlist(playlists_ui_->get_playlists(), new_playlist);
 }
 

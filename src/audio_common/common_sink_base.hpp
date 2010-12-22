@@ -169,7 +169,7 @@ public:
 	{
 		// Stop is not called here; the backend does this already. Calling stop in the sink could lead to unexpected results.
 		get_derived().shutdown_audio_device();
-	}	
+	}
 
 
 	virtual void start(decoder_ptr_t decoder_, decoder_ptr_t next_decoder_)
