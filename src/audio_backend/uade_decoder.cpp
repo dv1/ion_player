@@ -135,9 +135,11 @@ struct uade_decoder::internal_data
 		state.config.no_filter_set = 1;
 		state.config.frequency = frequency;
 		state.config.frequency_set = 1;
-		/*state.config.headphones = 1;
+		state.config.no_ep_end = 1;
+		state.config.no_ep_end_set = 1;
+		state.config.headphones = 1;
 		state.config.headphones_set = 1;
-		state.config.headphones2 = 1;
+		/*state.config.headphones2 = 1;
 		state.config.headphones2_set = 1;*/
 
 		uade_spawn(&state, uade_name.c_str(), config_name.c_str());

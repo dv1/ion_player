@@ -34,7 +34,8 @@ using namespace audio_common;
 alsa_sink::alsa_sink(send_event_callback_t const &send_event_callback):
 	common_sink_base < alsa_sink > (send_event_callback, true),
 	pcm_handle(0),
-	hw_params(0)
+	hw_params(0),
+	alsa_buffer_size(0)
 {
 }
 
@@ -106,6 +107,8 @@ bool alsa_sink::initialize_audio_device_impl(unsigned int const playback_frequen
 	checked_alsa_call(snd_pcm_hw_params_get_buffer_size(hw_params, &cur_buffer_size), "getting current buffer size failed");
 	std::cout << "ALSA: buffer size range: [" << buffer_size[0] << ", " << buffer_size[1] << "]  current buffer size: " << cur_buffer_size << std::endl;
 
+	alsa_buffer_size = cur_buffer_size;
+
 	float approx_num_periods = (float(cur_buffer_size) / float(frames));
 	std::cout << "ALSA: " << frames << " samples per period -> approx. " << approx_num_periods << " periods (approx. latency: " << ((approx_num_periods - 1) * float(frames) / float(freq) * 1000.0f) << " ms)" << std::endl;
 
@@ -152,7 +155,17 @@ void alsa_sink::shutdown_audio_device()
 		snd_pcm_hw_params_free(hw_params);
 	if (pcm_handle != 0)
 	{
-		snd_pcm_drain(pcm_handle);
+		if (playback_properties_.frequency > 0)
+		{
+			snd_pcm_sframes_t available_frames = snd_pcm_avail(pcm_handle);
+			if ((available_frames >= 0) && (alsa_buffer_size > snd_pcm_uframes_t(available_frames)))
+			{
+				useconds_t usecs = uint64_t(alsa_buffer_size - available_frames) * 1000000 / playback_properties_.frequency;
+				if (usecs > 0)
+					usleep(usecs);
+			}
+		}
+		//snd_pcm_drain(pcm_handle);
 		snd_pcm_close(pcm_handle);
 	}
 

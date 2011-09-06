@@ -66,6 +66,7 @@ protected:
 	typedef std::vector < uint8_t > sample_buffer_t;
 	sample_buffer_t sample_buffer;
 	boost::mutex alsa_mutex;
+	snd_pcm_uframes_t alsa_buffer_size;
 };
 
 
